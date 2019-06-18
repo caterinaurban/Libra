@@ -1,0 +1,5 @@
+apronpy
+graphviz==0.7.1
+pycodestyle
+Sphinx==1.6.2
+sphinx-rtd-theme==0.1.9
