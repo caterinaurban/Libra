@@ -6,6 +6,7 @@ Bias Analysis
 """
 import ast
 import ctypes
+import itertools
 import os
 import sys
 import time
@@ -106,7 +107,8 @@ class BiasInterpreter(BackwardInterpreter):
     def __init__(self, cfg, semantics, widening, precursory=None):
         super().__init__(cfg, semantics, widening, precursory)
         self.sensitive = None           # sensitive feature
-        self.uncontroversial = None     # uncontroversial features
+        self.uncontroversial1 = None    # uncontroversial features / one-hot encoded
+        self.uncontroversial2 = None    # uncontroversial features / unary
 
         self.outputs = None             # output classes
 
@@ -115,7 +117,7 @@ class BiasInterpreter(BackwardInterpreter):
         self.inactive = None            # always inactive activations
         self.heuristic = None           # join heuristic
 
-    def pick(self, initial, values, lower, upper):
+    def pick(self, initial, values, ranges, pivot):
         # bound the sensitive feature between 0 and 1
         left = BinaryComparisonOperation(Literal('0'), BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
         right = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.LtE, Literal('1'))
@@ -126,15 +128,15 @@ class BiasInterpreter(BackwardInterpreter):
             conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
             range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
         # take into account lower and upper bound of all the other (uncontroversial) features
-        for feature in self.uncontroversial:
+        for feature, (lower, upper) in ranges.items():
             left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
             right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
             conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
             range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
         print('\n---------------------------')
         print('Range: {}'.format(
-            ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature in self.uncontroversial))
-        )
+            ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges.items())
+        ))
         print('---------------------------\n')
         entry = deepcopy(initial.precursory).assume({range}) if range else initial.precursory
         # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
@@ -187,10 +189,15 @@ class BiasInterpreter(BackwardInterpreter):
                 print('---------\n')
         else:       # too many disjunctions, we need to split further
             print('Too many disjunctions ({})!'.format(disjunctions))
+            (lower, upper) = ranges[self.uncontroversial2[pivot]]
             middle = lower + (upper - lower) / 2
             print('Split at: {}'.format(middle))
-            self.pick(initial, values, lower, middle)
-            self.pick(initial, values, middle, upper)
+            left = deepcopy(ranges)
+            left[self.uncontroversial2[pivot]] = (lower, middle)
+            right = deepcopy(ranges)
+            right[self.uncontroversial2[pivot]] = (middle, upper)
+            self.pick(initial, values, left, (pivot + 1) % len(self.uncontroversial2))
+            self.pick(initial, values, right, (pivot + 1) % len(self.uncontroversial2))
 
     def proceed(self, node, initial, path):
         # print('node: ', node)
@@ -308,11 +315,25 @@ class BiasInterpreter(BackwardInterpreter):
         for i in range(arity):
             self.sensitive.append(VariableIdentifier(input('Sensitive input:\n')))
         values = self.one_hots(self.sensitive)
-        # determine the uncontroversial features
-        self.uncontroversial = inputs - set(self.sensitive)
+        # determine the one-hot encoded uncontroversial features
+        self.uncontroversial1 = list()
+        while True:
+            try:
+                arity = input('Arity of the feature?\n')
+                uncontroversial = list()
+                for i in range(int(arity)):
+                    uncontroversial.append(VariableIdentifier(input('Input:\n')))
+                self.uncontroversial1.append(uncontroversial)
+            except EOFError:
+                break
+        # determine the other uncontroversial features
+        self.uncontroversial2 = list(inputs - set(self.sensitive) - set(itertools.chain(*self.uncontroversial1)))
         # do the rest
         self.outputs = outputs
-        self.pick(initial, values, 0, 1)
+        ranges = dict()
+        for uncontroversial in self.uncontroversial2:
+            ranges[uncontroversial] = (0, 1)
+        self.pick(initial, values, ranges, 0)
         print('Done!')
 
 
@@ -359,11 +380,9 @@ class BiasAnalysis(Runner):
         precursory = BoxState(variables)
         # precursory = OctagonState(self.variables)
         # precursory = PolyhedraState(self.variables)
-
         min_int = (-ctypes.c_uint(-1).value) // 2
         PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_IS_BOTTOM].algorithm = min_int
         PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_MEET].algorithm = min_int
-
         return BiasState(variables, precursory=precursory)
 
     @property
