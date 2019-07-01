@@ -117,7 +117,7 @@ class BiasInterpreter(BackwardInterpreter):
         self.inactive = None            # always inactive activations
         self.heuristic = None           # join heuristic
 
-    def pick(self, initial, values, ranges, pivot):
+    def pick(self, initial, values, assumptions, pivot1, ranges, pivot2):
         # bound the sensitive feature between 0 and 1
         left = BinaryComparisonOperation(Literal('0'), BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
         right = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.LtE, Literal('1'))
@@ -127,18 +127,24 @@ class BiasInterpreter(BackwardInterpreter):
             right = BinaryComparisonOperation(sensitive, BinaryComparisonOperation.Operator.LtE, Literal('1'))
             conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
             range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
-        # take into account lower and upper bound of all the other (uncontroversial) features
+        # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
+        for (_, assumption) in assumptions:
+            range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, assumption)
+        # take into account lower and upper bound of all the unary uncontroversial features
         for feature, (lower, upper) in ranges.items():
             left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
             right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
             conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
             range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
         print('\n---------------------------')
-        print('Range: {}'.format(
+        print('Assumptions: {}'.format(
+            ', '.join('{}'.format(case) for (case, _) in assumptions)
+        ))
+        print('Ranges: {}'.format(
             ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges.items())
         ))
         print('---------------------------\n')
-        entry = deepcopy(initial.precursory).assume({range}) if range else initial.precursory
+        entry = deepcopy(initial.precursory).assume({range})
         # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
         feasible = True
         patterns = set()
@@ -152,8 +158,8 @@ class BiasInterpreter(BackwardInterpreter):
             patterns.add((value, frozenset(activations), frozenset(active), frozenset(inactive)))
         # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
         if feasible:
-            for ((literal, value), self.activations, self.active, self.inactive) in patterns:
-                print(literal)
+            for ((case, value), self.activations, self.active, self.inactive) in patterns:
+                print(case)
                 print('activations: {{{}}}'.format(', '.join('{}'.format(activation) for activation in self.activations)))
                 print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
                 print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
@@ -189,15 +195,24 @@ class BiasInterpreter(BackwardInterpreter):
                 print('---------\n')
         else:       # too many disjunctions, we need to split further
             print('Too many disjunctions ({})!'.format(disjunctions))
-            (lower, upper) = ranges[self.uncontroversial2[pivot]]
-            middle = lower + (upper - lower) / 2
-            print('Split at: {}'.format(middle))
-            left = deepcopy(ranges)
-            left[self.uncontroversial2[pivot]] = (lower, middle)
-            right = deepcopy(ranges)
-            right[self.uncontroversial2[pivot]] = (middle, upper)
-            self.pick(initial, values, left, (pivot + 1) % len(self.uncontroversial2))
-            self.pick(initial, values, right, (pivot + 1) % len(self.uncontroversial2))
+            if pivot1 < len(self.uncontroversial1):
+                print('Case split for: {}'.format(
+                    ', '.join('{}'.format(uncontroversial) for uncontroversial in self.uncontroversial1[pivot1])
+                ))
+                for case in self.one_hots(self.uncontroversial1[pivot1]):
+                    updated = assumptions.copy()
+                    updated.add(case)
+                    self.pick(initial, values, updated, pivot1 + 1, ranges, pivot2)
+            else:
+                (lower, upper) = ranges[self.uncontroversial2[pivot2]]
+                middle = lower + (upper - lower) / 2
+                print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
+                left = deepcopy(ranges)
+                left[self.uncontroversial2[pivot2]] = (lower, middle)
+                right = deepcopy(ranges)
+                right[self.uncontroversial2[pivot2]] = (middle, upper)
+                self.pick(initial, values, assumptions, pivot1, left, (pivot2 + 1) % len(self.uncontroversial2))
+                self.pick(initial, values, assumptions, pivot1, right, (pivot2 + 1) % len(self.uncontroversial2))
 
     def proceed(self, node, initial, path):
         # print('node: ', node)
@@ -307,7 +322,6 @@ class BiasInterpreter(BackwardInterpreter):
             values.add(('{} = 1'.format(variables[i]), value))
         return values
 
-
     def analyze(self, initial: BiasState, inputs=None, outputs=None, heuristic: JoinHeuristics = None):
         # pick sensitive feature / we assume one-hot encoding
         arity = int(input('Arity of the sensitive feature?\n'))
@@ -333,7 +347,7 @@ class BiasInterpreter(BackwardInterpreter):
         ranges = dict()
         for uncontroversial in self.uncontroversial2:
             ranges[uncontroversial] = (0, 1)
-        self.pick(initial, values, ranges, 0)
+        self.pick(initial, values, set(), 0, ranges, 0)
         print('Done!')
 
 
