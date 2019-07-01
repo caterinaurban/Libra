@@ -13,7 +13,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from itertools import product
 from queue import Queue
-from typing import Optional, Tuple, Set, Dict
+from typing import Optional, Tuple, Set, Dict, List
 
 from apronpy.manager import FunId
 from apronpy.polka import PyPolkaMPQstrict
@@ -117,9 +117,14 @@ class BiasInterpreter(BackwardInterpreter):
 
     def pick(self, initial, values, lower, upper):
         # bound the sensitive feature between 0 and 1
-        left = BinaryComparisonOperation(Literal('0'), BinaryComparisonOperation.Operator.LtE, self.sensitive)
-        right = BinaryComparisonOperation(self.sensitive, BinaryComparisonOperation.Operator.LtE, Literal('1'))
+        left = BinaryComparisonOperation(Literal('0'), BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
+        right = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.LtE, Literal('1'))
         range = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+        for sensitive in self.sensitive[1:]:
+            left = BinaryComparisonOperation(Literal('0'), BinaryComparisonOperation.Operator.LtE, sensitive)
+            right = BinaryComparisonOperation(sensitive, BinaryComparisonOperation.Operator.LtE, Literal('1'))
+            conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+            range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
         # take into account lower and upper bound of all the other (uncontroversial) features
         for feature in self.uncontroversial:
             left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
@@ -146,7 +151,7 @@ class BiasInterpreter(BackwardInterpreter):
         # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
         if feasible:
             for ((literal, value), self.activations, self.active, self.inactive) in patterns:
-                print('{} = {}'.format(self.sensitive, literal))
+                print(literal)
                 print('activations: {{{}}}'.format(', '.join('{}'.format(activation) for activation in self.activations)))
                 print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
                 print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
@@ -264,51 +269,51 @@ class BiasInterpreter(BackwardInterpreter):
                 else:
                     yield state
 
-    def analyze(self, initial: BiasState, inputs=None, outputs=None, heuristic: JoinHeuristics = None):
-        # pick sensitive feature
-        self.sensitive = VariableIdentifier(input('Sensitive:\n'))
-        self.uncontroversial = inputs - {self.sensitive}
-        arity = int(input('Number of possible values?\n'))
+    def one_hots(self, variables: List[VariableIdentifier]):
+        """Compute all possible one-hots for a given list of variables.
+
+        :param variables: list of variables one-hot encoding a categorical input feature
+        :return: set of Libra expressions corresponding to each possible value of the one-hot encoding
+        (paired with a string representing the encoded value for convenience ---
+        the string is the first element of the tuple)
+        """
         values = set()
+        arity = len(variables)
         for i in range(arity):
-            value = Literal(input('Possible value ({} of {}):\n'.format(i+1, arity)))
-            lower = BinaryComparisonOperation(value, BinaryComparisonOperation.Operator.LtE, self.sensitive)
-            upper = BinaryComparisonOperation(self.sensitive, BinaryComparisonOperation.Operator.LtE, value)
-            values.add((value, BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)))
+            # the current variable has value one
+            one = Literal('1')
+            lower = BinaryComparisonOperation(one, BinaryComparisonOperation.Operator.LtE, variables[i])
+            upper = BinaryComparisonOperation(variables[i], BinaryComparisonOperation.Operator.LtE, one)
+            value = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+            # everything else has value zero
+            zero = Literal('0')
+            for j in range(0, i):
+                lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
+                upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
+                conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+                value = BinaryBooleanOperation(conj, BinaryBooleanOperation.Operator.And, value)
+            for j in range(i+1, arity):
+                lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
+                upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
+                conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+                value = BinaryBooleanOperation(value, BinaryBooleanOperation.Operator.And, conj)
+            values.add(('{} = 1'.format(variables[i]), value))
+        return values
+
+
+    def analyze(self, initial: BiasState, inputs=None, outputs=None, heuristic: JoinHeuristics = None):
+        # pick sensitive feature / we assume one-hot encoding
+        arity = int(input('Arity of the sensitive feature?\n'))
+        self.sensitive = list()
+        for i in range(arity):
+            self.sensitive.append(VariableIdentifier(input('Sensitive input:\n')))
+        values = self.one_hots(self.sensitive)
+        # determine the uncontroversial features
+        self.uncontroversial = inputs - set(self.sensitive)
+        # do the rest
         self.outputs = outputs
         self.pick(initial, values, 0, 1)
         print('Done!')
-        # # run the activation pattern analysis
-        # self.activations, self.active, self.inactive = self.precursory.analyze(initial.precursory)
-        # self.heuristic = heuristic
-        # disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
-        # paths = 2 ** disjunctions
-        # print('Paths: {}\n'.format(paths))
-        # # pick outcome
-        # for chosen in outputs:
-        #     print('--------- Outcome: {} ---------\n'.format(chosen))
-        #     remaining = outputs - {chosen}
-        #     discarded = remaining.pop()
-        #     outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-        #     for discarded in remaining:
-        #         cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-        #         outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
-        #     result = deepcopy(initial).assume({outcome}, bwd=True)
-        #     # run the bias analysis
-        #     start = time.time()
-        #     progress = 0
-        #     joined = deepcopy(result).bottom()
-        #     for state in self.proceed(self.cfg.out_node, deepcopy(result), list()):
-        #         progress += 1
-        #         if progress % 500 == 0:
-        #             print('\nProgress: {}/{}'.format(progress, paths), 'Time: {}s'.format(time.time() - start))
-        #         if state:
-        #             representation = repr(state)
-        #             if not representation.startswith('-1.0 >= 0'):
-        #                 joined = joined.join(state)
-        #                 print(representation)
-        #                 print('Time: {}s\n'.format(time.time() - start))
-        #     print('Joined: {}\n'.format(joined))
 
 
 class BiasBackwardSemantics(DefaultBackwardSemantics):
@@ -346,8 +351,8 @@ class BiasAnalysis(Runner):
         self.outputs = None
 
     def interpreter(self):
-        precursory = ActivationPatternInterpreter(self.cfg, ActivationPatternForwardSemantics(), 10)
-        return BiasInterpreter(self.cfg, BiasBackwardSemantics(), 10, precursory=precursory)
+        precursory = ActivationPatternInterpreter(self.cfg, ActivationPatternForwardSemantics(), 3)
+        return BiasInterpreter(self.cfg, BiasBackwardSemantics(), 3, precursory=precursory)
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
@@ -362,7 +367,7 @@ class BiasAnalysis(Runner):
         return BiasState(variables, precursory=precursory)
 
     @property
-    def variables(self) -> Tuple[Set[VariableIdentifier], Set[VariableIdentifier]]:
+    def variables(self):
         variables, assigned, outputs = set(), set(), set()
         worklist = Queue()
         worklist.put(self.cfg.in_node)
@@ -372,8 +377,8 @@ class BiasAnalysis(Runner):
                 variables = variables.union(stmt.ids())
                 if isinstance(stmt, Assignment):
                     assigned = assigned.union(stmt.left.ids())
-                outputs = outputs.union(stmt.ids())
-            if isinstance(current, Function):  # there is another layer
+                    outputs = outputs.union(stmt.left.ids())
+            if isinstance(current, Activation):  # there is another layer
                 outputs = set()
             for node in self.cfg.successors(current):
                 worklist.put(node)
