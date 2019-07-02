@@ -18,6 +18,7 @@ from typing import Optional, Tuple, Set, Dict, List
 
 from apronpy.manager import FunId
 from apronpy.polka import PyPolkaMPQstrict
+from apronpy.var import PyVar
 
 from libra.abstract_domains.bias.bias_domain import BiasState
 from libra.abstract_domains.numerical.interval_domain import BoxState, IntEnum
@@ -165,24 +166,28 @@ class BiasInterpreter(BackwardInterpreter):
             patterns.add((value, frozenset(activations), frozenset(active), frozenset(inactive)))
         # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
         if feasible:
-            for ((case, value), self.activations, self.active, self.inactive) in patterns:
-                print(case)
-                print('activations: {{{}}}'.format(', '.join('{}'.format(activation) for activation in self.activations)))
-                print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
-                print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
-                disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
-                paths = 2 ** disjunctions
-                print('Paths: {}\n'.format(paths))
-                # pick outcome
-                for chosen in self.outputs:
-                    print('--------- Outcome: {} ---------\n'.format(chosen))
-                    remaining = self.outputs - {chosen}
-                    discarded = remaining.pop()
-                    outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-                    for discarded in remaining:
-                        cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-                        outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
-                    result = deepcopy(initial).assume({outcome}, bwd=True)
+            # pick outcome
+            check = dict()
+            for chosen in self.outputs:
+                print('Outcome: {}\n'.format(chosen))
+                remaining = self.outputs - {chosen}
+                discarded = remaining.pop()
+                outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
+                for discarded in remaining:
+                    cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
+                    outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
+                result = deepcopy(initial).assume({outcome}, bwd=True)
+                # pick value of the sensitive feature
+                for ((case, value), self.activations, self.active, self.inactive) in patterns:
+                    print('--------- {} --------- '.format(case))
+                    print('activations: {{{}}}'.format(
+                        ', '.join('{}'.format(activation) for activation in self.activations)
+                    ))
+                    print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
+                    print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
+                    disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
+                    paths = 2 ** disjunctions
+                    print('Paths: {}\n'.format(paths))
                     # run the bias analysis
                     start = time.time()
                     progress = 0
@@ -192,16 +197,55 @@ class BiasInterpreter(BackwardInterpreter):
                         if progress % 500 == 0:
                             print('\nProgress: {}/{}'.format(progress, paths), 'Time: {}s'.format(time.time() - start))
                         if state:
-                            state = state.assume({value})   # state = state.assume({range}).assume({value})
+                            state = state.assume({value})
+                            # state = state.assume({range}).assume({value})
                             for (_, assumption) in assumptions:
                                 state = state.assume({assumption})
-                            representation = repr(state)
-                            if not representation.startswith('-1.0 >= 0'):
-                                joined = joined.join(state)
-                                print(representation)
-                                print('Time: {}s\n'.format(time.time() - start))
+
+                            # for feature, (lower, upper) in ranges.items():
+                            #     lte = BinaryComparisonOperation.Operator.LtE
+                            #     left = BinaryComparisonOperation(Literal(str(lower)), lte, feature)
+                            #     right = BinaryComparisonOperation(feature, lte, Literal(str(upper)))
+                            #     conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+                            #     state = state.assume({conj})
+
+                            # forget the sensitive variables
+                            state = state.forget(self.sensitive)
+                            # for encoding in self.uncontroversial1:
+                            #     state = state.forget(encoding)
+
+                            # representation = repr(state)
+                            # if not representation.startswith('-1.0 >= 0'):
+                            joined = joined.join(state)
+                                # print(representation)
+                                # print('Time: {}s\n'.format(time.time() - start))
                     print('Joined: {}\n'.format(joined))
+                    check[(chosen,case)] = joined
                 print('---------\n')
+            # check for bias
+            print('Checking for Bias...')
+            nobias = True
+            biases = set()
+            for (outcome1, sensitive1), value1 in check.items():
+                for (outcome2, sensitive2), value2 in check.items():
+                    if outcome1 != outcome2 and sensitive1 != sensitive2:
+                        intersection = value1.meet(value2)
+                        for encoding in self.uncontroversial1:
+                            intersection = intersection.forget(encoding)
+                        for feature, (lower, upper) in ranges.items():
+                            lte = BinaryComparisonOperation.Operator.LtE
+                            left = BinaryComparisonOperation(Literal(str(lower)), lte, feature)
+                            right = BinaryComparisonOperation(feature, lte, Literal(str(upper)))
+                            conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+                            intersection = intersection.assume({conj})
+                        representation = repr(intersection.polka)
+                        if not representation.startswith('-1.0 >= 0') and not representation == '⊥':
+                            if representation not in biases:
+                                nobias = False
+                                biases.add(representation)
+                                print('Bias Found! : {}'.format(representation))
+            if nobias:
+                print('No Bias')
         else:       # too many disjunctions, we need to split further
             print('Too many disjunctions ({})!'.format(disjunctions))
             if pivot1 < len(self.uncontroversial1):
@@ -331,7 +375,7 @@ class BiasInterpreter(BackwardInterpreter):
             values.add(('{} = 1'.format(variables[i]), value))
         return values
 
-    def analyze(self, initial: BiasState, inputs=None, outputs=None, heuristic: JoinHeuristics = None):
+    def analyze(self, initial: BiasState, inputs=None, outputs=None):
         # pick sensitive feature / we assume one-hot encoding
         arity = int(input('Arity of the sensitive feature?\n'))
         self.sensitive = list()
@@ -406,6 +450,7 @@ class BiasAnalysis(Runner):
         min_int = (-ctypes.c_uint(-1).value) // 2
         PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_IS_BOTTOM].algorithm = min_int
         PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_MEET].algorithm = min_int
+        PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_FORGET_ARRAY].algorithm = min_int
         return BiasState(variables, precursory=precursory)
 
     @property
@@ -426,7 +471,7 @@ class BiasAnalysis(Runner):
                 worklist.put(node)
         return variables.difference(assigned), variables, outputs
 
-    def main(self, path, heuristic: JoinHeuristics = None):
+    def main(self, path):
         self.path = path
         with open(self.path, 'r') as source:
             self.source = source.read()
@@ -438,10 +483,10 @@ class BiasAnalysis(Runner):
             # label = f"CFG for {name}"
             # directory = os.path.dirname(self.path)
             # renderer.render(data, filename=name, label=label, directory=directory, view=True)
-        self.run(heuristic=heuristic)
+        self.run()
 
-    def run(self, heuristic: JoinHeuristics = None):
+    def run(self):
         start = time.time()
-        self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, heuristic=heuristic)
+        self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs)
         end = time.time()
         print('Total: {}s'.format(end - start))

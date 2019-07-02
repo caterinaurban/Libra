@@ -7,7 +7,7 @@ Disjunctive relational abstract domain to be used for **algorithmic bias analysi
 :Authors: Caterina Urban
 """
 from itertools import chain
-from typing import Set
+from typing import Set, List
 
 from apronpy.environment import PyEnvironment
 from apronpy.lincons1 import PyLincons1Array
@@ -77,7 +77,9 @@ class BiasState(State):
 
     @copy_docstring(State._meet)
     def _meet(self, other) -> 'BiasState':
-        raise NotImplementedError(f"Call to _meet is unexpected!")
+        self.polka = self.polka.meet(other.polka)
+        self.mirror = self.mirror.meet(other.mirror)
+        return self
 
     @copy_docstring(State._widening)
     def _widening(self, other: 'BiasState') -> 'BiasState':
@@ -133,6 +135,12 @@ class BiasState(State):
             assert len(left) == 1 and len(right) == 1
             self._substitute(left.pop(), right.pop())
         self.result = set()  # assignments have no result, only side-effects
+        return self
+
+    def forget(self, variables: List[VariableIdentifier]) -> 'BiasState':
+        vars = [PyVar(var.name) for var in variables]
+        self.polka = self.polka.forget(vars)
+        self.mirror = self.mirror.forget(vars)
         return self
 
     _negation_free = NegationFreeExpression()
