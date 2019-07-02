@@ -127,9 +127,13 @@ class BiasInterpreter(BackwardInterpreter):
             right = BinaryComparisonOperation(sensitive, BinaryComparisonOperation.Operator.LtE, Literal('1'))
             conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
             range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
-        # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
-        for (_, assumption) in assumptions:
-            range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, assumption)
+        # bound the one-hot encoded uncontroversial features between 0 and 1
+        for encoding in self.uncontroversial1:
+            for uncontroversial in encoding:
+                left = BinaryComparisonOperation(Literal('0'), BinaryComparisonOperation.Operator.LtE, uncontroversial)
+                right = BinaryComparisonOperation(uncontroversial, BinaryComparisonOperation.Operator.LtE, Literal('1'))
+                conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+                range = BinaryBooleanOperation(range, BinaryBooleanOperation.Operator.And, conj)
         # take into account lower and upper bound of all the unary uncontroversial features
         for feature, (lower, upper) in ranges.items():
             left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
@@ -145,6 +149,9 @@ class BiasInterpreter(BackwardInterpreter):
         ))
         print('---------------------------\n')
         entry = deepcopy(initial.precursory).assume({range})
+        # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
+        for (_, assumption) in assumptions:
+            entry = entry.assume({assumption})
         # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
         feasible = True
         patterns = set()
@@ -185,7 +192,9 @@ class BiasInterpreter(BackwardInterpreter):
                         if progress % 500 == 0:
                             print('\nProgress: {}/{}'.format(progress, paths), 'Time: {}s'.format(time.time() - start))
                         if state:
-                            state = state.assume({range}).assume({value})
+                            state = state.assume({value})   # state = state.assume({range}).assume({value})
+                            for (_, assumption) in assumptions:
+                                state = state.assume({assumption})
                             representation = repr(state)
                             if not representation.startswith('-1.0 >= 0'):
                                 joined = joined.join(state)
