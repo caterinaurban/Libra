@@ -6,13 +6,14 @@ Disjunctive relational abstract domain to be used for **algorithmic bias analysi
 
 :Authors: Caterina Urban
 """
+from copy import deepcopy
 from itertools import chain
 from typing import Set, List
 
 from apronpy.environment import PyEnvironment
 from apronpy.lincons1 import PyLincons1Array
 from apronpy.polka import PyPolkaMPQstrict
-from apronpy.tcons1 import PyTcons1Array
+from apronpy.tcons1 import PyTcons1Array, PyTcons1
 from apronpy.var import PyVar
 
 from libra.abstract_domains.state import State
@@ -40,7 +41,7 @@ class BiasState(State):
             r_vars.append(PyVar(variable.name))
         self.environment = PyEnvironment([], r_vars)
         self.polka = PyPolkaMPQstrict(self.environment)
-        self.mirror = PyPolkaMPQstrict(self.environment)
+        # self.mirror = PyPolkaMPQstrict(self.environment)
 
     @copy_docstring(State.bottom)
     def bottom(self):
@@ -55,7 +56,8 @@ class BiasState(State):
     def __repr__(self):
         if self.is_bottom():
             return '⊥'
-        return '{} \n∈ {}'.format(self.polka, self.mirror)
+        # return '{} \n∈ {}'.format(self.polka, self.mirror)
+        return '{}'.format(self.polka)
 
     @copy_docstring(State.is_bottom)
     def is_bottom(self) -> bool:
@@ -72,13 +74,13 @@ class BiasState(State):
     @copy_docstring(State._join)
     def _join(self, other: 'BiasState') -> 'BiasState':
         self.polka = self.polka.join(other.polka)
-        self.mirror = self.mirror.join(other.mirror)
+        # self.mirror = self.mirror.join(other.mirror)
         return self
 
     @copy_docstring(State._meet)
     def _meet(self, other) -> 'BiasState':
         self.polka = self.polka.meet(other.polka)
-        self.mirror = self.mirror.meet(other.mirror)
+        # self.mirror = self.mirror.meet(other.mirror)
         return self
 
     @copy_docstring(State._widening)
@@ -94,19 +96,27 @@ class BiasState(State):
         if isinstance(normal, BinaryBooleanOperation):
             if normal.operator == BinaryBooleanOperation.Operator.And:
                 return self._assume(normal.left, bwd=False)._assume(normal.right, bwd=False)
+            elif normal.operator == BinaryBooleanOperation.Operator.Or:
+                right = deepcopy(self)._assume(normal.right, bwd=False)
+                return self._assume(normal.left, bwd=False).join(right)
         elif isinstance(normal, BinaryComparisonOperation):
             cond = self._lyra2apron.visit(normal, self.environment)
             abstract1 = PyPolkaMPQstrict(self.environment, array=PyTcons1Array([cond]))
             self.polka = self.polka.meet(abstract1)
-            if not bwd:
-                self.mirror = self.mirror.meet(abstract1)
+            # if not bwd:
+            #     self.mirror = self.mirror.meet(abstract1)
             return self
         raise NotImplementedError(f"Assumption of {normal.__class__.__name__} is unsupported!")
 
-    def assume(self, condition: Set[Expression], bwd: bool = False) -> 'BiasState':
-        assert len(condition) == 1
-        self._assume(condition.pop(), bwd=bwd)
-        return self
+    def assume(self, condition, bwd: bool = False) -> 'BiasState':
+        if isinstance(condition, PyTcons1):
+            abstract1 = PyPolkaMPQstrict(self.environment, array=PyTcons1Array([condition]))
+            self.polka = self.polka.meet(abstract1)
+            return self
+        else:
+            assert len(condition) == 1
+            self._assume(condition.pop(), bwd=bwd)
+            return self
 
     @copy_docstring(State._substitute)
     def _substitute(self, left: Expression, right: Expression) -> 'BiasState':
@@ -114,7 +124,7 @@ class BiasState(State):
             var = PyVar(left.name)
             expr = self._lyra2apron.visit(right, self.environment)
             self.polka = self.polka.substitute(var, expr)
-            self.mirror = self.mirror.substitute(var, expr)
+            # self.mirror = self.mirror.substitute(var, expr)
             return self
         elif isinstance(left, list):
             assert all(isinstance(lhs, VariableIdentifier) for lhs in left)
@@ -122,7 +132,7 @@ class BiasState(State):
             vars = [PyVar(lhs.name) for lhs in left]
             exprs = [self._lyra2apron.visit(rhs, self.environment) for rhs in right]
             self.polka = self.polka.substitute(vars, exprs)
-            self.mirror = self.mirror.substitute(vars, exprs)
+            # self.mirror = self.mirror.substitute(vars, exprs)
             return self
         raise NotImplementedError(f"Substitution of {left.__class__.__name__} is unsupported!")
 
@@ -140,7 +150,7 @@ class BiasState(State):
     def forget(self, variables: List[VariableIdentifier]) -> 'BiasState':
         vars = [PyVar(var.name) for var in variables]
         self.polka = self.polka.forget(vars)
-        self.mirror = self.mirror.forget(vars)
+        # self.mirror = self.mirror.forget(vars)
         return self
 
     _negation_free = NegationFreeExpression()

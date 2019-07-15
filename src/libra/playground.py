@@ -33,10 +33,12 @@ from libra.engine.bias.bias_analysis import BiasAnalysis
 
 # BiasAnalysis().main("tests/example2.py")    # unfair
 
-BiasAnalysis().main("tests/example3.py")    # unfair
+# BiasAnalysis().main("tests/example3.py")    # unfair
 
-# BiasAnalysis().main("tests/model-10-5-0.97.py")     # unfair
+BiasAnalysis().main("tests/model-10-5-0.97.py")     # unfair
 
 # BiasAnalysis().main("tests/model-10-6-1.00.py")
 
 # BiasAnalysis().main("tests/model-20-6-1.00.py")
+
+# BiasAnalysis().main("tests/census/model-5-3-acc79.1-bias20-small.py")

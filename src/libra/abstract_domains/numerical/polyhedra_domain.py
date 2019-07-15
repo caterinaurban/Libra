@@ -53,7 +53,7 @@ class PolyhedraMPQstrictState(APRONState):
         super().__init__(variables, PyPolkaMPQstrict, precursory=precursory)
 
 
-PolyhedraState =  PolyhedraMPQstrictState
+PolyhedraState = PolyhedraMPQstrictState
 
 
 class PolyhedraRlllooseState(APRONState):

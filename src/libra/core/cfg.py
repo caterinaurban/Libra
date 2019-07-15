@@ -60,7 +60,7 @@ class Node(metaclass=ABCMeta):
 
 
 class Basic(Node):
-    def __init__(self, identifier: int, stmts: List[Statement] = None):
+    def __init__(self, identifier: int, stmts=None):
         """Basic node of a control flow graph.
 
         :param identifier: identifier associated with the node
@@ -74,7 +74,7 @@ class Basic(Node):
 
 class Function(Node):
 
-    def __init__(self, identifier: int, stmts: List[Statement] = None):
+    def __init__(self, identifier: int, stmts=None):
         """Basic node of a control flow graph.
 
         :param identifier: identifier associated with the node
@@ -88,7 +88,7 @@ class Function(Node):
 
 class Activation(Node):
 
-    def __init__(self, identifier: int, stmts: List[Statement] = None):
+    def __init__(self, identifier: int, stmts=None):
         """Basic node of a control flow graph.
 
         :param identifier: identifier associated with the node
@@ -101,7 +101,7 @@ class Activation(Node):
 
 
 class Loop(Node):
-    def __init__(self, identifier: int, stmts: List[Statement] = None):
+    def __init__(self, identifier: int, stmts=None):
         """Loop head node of a control flow graph.
 
         :param identifier: identifier associated with the block
@@ -244,7 +244,7 @@ class ControlFlowGraph:
         :param node: given node
         :return: set of predecessors of the node
         """
-        return {edge.source for edge in self.in_edges(node)}
+        return {edge.source.identifier for edge in self.in_edges(node)}
 
     def out_edges(self, node: Node) -> Set[Edge]:
         """Outgoing edges of a given node.

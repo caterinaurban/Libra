@@ -15,7 +15,7 @@ from typing import Set, Type
 
 from apronpy.abstract1 import Abstract1, PyAbstract1
 from apronpy.environment import PyEnvironment
-from apronpy.tcons1 import PyTcons1Array
+from apronpy.tcons1 import PyTcons1Array, PyTcons1
 from apronpy.var import PyVar
 
 from libra.abstract_domains.state import State
@@ -72,6 +72,9 @@ class APRONState(State, metaclass=ABCMeta):
     @copy_docstring(State.is_top)
     def is_top(self) -> bool:
         return self.state.is_top()
+
+    def bound_variable(self, variable: VariableIdentifier):
+        return self.state.bound_variable(PyVar(variable.name))
 
     @copy_docstring(State._less_equal)
     def _less_equal(self, other: 'APRONState') -> bool:
@@ -133,6 +136,16 @@ class APRONState(State, metaclass=ABCMeta):
             self.state = self.state.meet(abstract1)
             return self
         raise NotImplementedError(f"Assumption of {normal.__class__.__name__} is unsupported!")
+
+    def assume(self, condition, bwd: bool = False) -> 'APRONState':
+        if isinstance(condition, PyTcons1):
+            abstract1 = self.domain(self.environment, array=PyTcons1Array([condition]))
+            self.state = self.state.meet(abstract1)
+            return self
+        else:
+            assert len(condition) == 1
+            self._assume(condition.pop(), bwd=bwd)
+            return self
 
     @copy_docstring(State._substitute)
     def _substitute(self, left: Expression, right: Expression) -> 'APRONState':

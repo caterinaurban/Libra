@@ -8,7 +8,12 @@ Libra's internal representation of Python statements.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import List, Set
+from typing import List, Set, Tuple
+
+from apronpy.coeff import PyMPQScalarCoeff
+from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir
+from apronpy.texpr1 import PyTexpr1
+from apronpy.var import PyVar
 
 from libra.core.expressions import Expression, VariableIdentifier
 
@@ -46,6 +51,78 @@ class ProgramPoint:
         :return: unambiguous string representation
         """
         return "[line:{0.line}, column:{0.column}]".format(self)
+
+
+class StatementVisitor(metaclass=ABCMeta):
+
+    def visit(self, stmt, *args, **kwargs):
+        """Visit of a statement."""
+        method = 'visit_' + stmt.__class__.__name__
+        if hasattr(self, method):
+            return getattr(self, method)(stmt, *args, **kwargs)
+        error = f"Missing visitor for {stmt.__class__.__name__} in {self.__class__.__qualname__}!"
+        raise NotImplementedError(error)
+
+    @abstractmethod
+    def visit_LiteralEvaluation(self, stmt: 'LiteralEvaluation'):
+        """Visit of a literal evaluation."""
+
+    @abstractmethod
+    def visit_VariableAccess(self, stmt: 'VariableAccess'):
+        """Visit of a variable access."""
+
+    @abstractmethod
+    def visit_Assignment(self, expr: 'Assignment'):
+        """Visit of an assignment."""
+
+    @abstractmethod
+    def visit_Call(self, stmt: 'Call'):
+        """Visit of a call."""
+
+    def generic_visit(self, expr, *args, **kwargs):
+        raise ValueError(
+            f"{self.__class__.__qualname__} does not support generic visit of expressions! "
+            f"Define handling for a {expr.__class__.__name__} expression explicitly!")
+
+
+class Lyra2APRON(StatementVisitor):
+
+    def visit_LiteralEvaluation(self, stmt: 'LiteralEvaluation', environment=None, usub=False) -> PyTexpr1:
+        if usub:
+            cst = PyMPQScalarCoeff(-float(stmt.literal.val))
+        else:
+            cst = PyMPQScalarCoeff(float(stmt.literal.val))
+        return PyTexpr1.cst(environment, cst)
+
+    def visit_VariableAccess(self, stmt: 'VariableAccess', environment=None, usub=False) -> PyTexpr1:
+        assert not usub
+        return PyTexpr1.var(environment, PyVar(stmt.variable.name))
+
+    def visit_Assignment(self, stmt: 'Assignment', environment=None, usub=False) -> Tuple[PyTexpr1, PyTexpr1]:
+        assert not usub
+        left = PyVar(stmt.left.variable.name)  # self.visit(stmt.left, environment=environment, usub=usub)
+        right = self.visit(stmt.right, environment=environment, usub=usub)
+        return left, right
+
+    def visit_Call(self, stmt: 'Call', environment=None, usub=False):
+        assert not usub
+        if stmt.name == 'usub':
+            return self.visit(stmt.arguments[0], environment=environment, usub=True)
+        elif stmt.name == 'add':
+            left = self.visit(stmt.arguments[0], environment=environment, usub=usub)
+            right = self.visit(stmt.arguments[1], environment=environment, usub=usub)
+            return PyTexpr1.binop(TexprOp.AP_TEXPR_ADD, left, right, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
+        elif stmt.name == 'sub':
+            left = self.visit(stmt.arguments[0], environment=environment, usub=usub)
+            right = self.visit(stmt.arguments[1], environment=environment, usub=usub)
+            return PyTexpr1.binop(TexprOp.AP_TEXPR_SUB, left, right, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
+        elif stmt.name == 'mult':
+            left = self.visit(stmt.arguments[0], environment=environment, usub=usub)
+            right = self.visit(stmt.arguments[1], environment=environment, usub=usub)
+            return PyTexpr1.binop(TexprOp.AP_TEXPR_MUL, left, right, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
+        elif stmt.name == 'ReLU':
+            return PyVar(stmt.arguments[0].variable.name)  # self.visit(stmt.arguments[0], environment=environment, usub=usub)
+        raise ValueError(f"Conversion of {stmt} to APRON is unsupported!")
 
 
 class Statement(metaclass=ABCMeta):
