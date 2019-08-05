@@ -4,6 +4,7 @@ Interval Analysis
 
 :Author: Caterina Urban
 """
+from apronpy.manager import PyBoxMPQManager
 
 from libra.engine.backward import BackwardInterpreter
 from libra.engine.forward import ForwardInterpreter
@@ -26,10 +27,10 @@ class ForwardIntervalAnalysis(Runner):
 class ForwardBoxAnalysis(Runner):
 
     def interpreter(self):
-        return ForwardInterpreter(self.cfg, DefaultForwardSemantics(), 3)
+        return ForwardInterpreter(self.cfg, PyBoxMPQManager(), DefaultForwardSemantics(), 3)
 
     def state(self):
-        return BoxState(self.variables)
+        return BoxState(PyBoxMPQManager(), self.variables)
 
 
 class BackwardIntervalAnalysis(Runner):

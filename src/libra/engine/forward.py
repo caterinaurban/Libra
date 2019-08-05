@@ -10,6 +10,8 @@ from copy import deepcopy
 from queue import Queue
 from typing import Optional, List
 
+from apronpy.manager import PyManager
+
 from libra.engine.interpreter import Interpreter
 from libra.engine.result import AnalysisResult
 from libra.semantics.forward import ForwardSemantics
@@ -21,7 +23,7 @@ from libra.core.cfg import Basic, Loop, Conditional, Edge, Node, Function, Activ
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
 
-    def __init__(self, cfg, semantics: ForwardSemantics, widening, precursory=None):
+    def __init__(self, cfg, manager: PyManager, semantics: ForwardSemantics, widening, precursory=None):
         """Forward control flow graph interpreter construction.
 
         :param cfg: control flow graph to analyze
@@ -30,6 +32,7 @@ class ForwardInterpreter(Interpreter):
         :param precursory: precursory control flow graph interpreter
         """
         super().__init__(cfg, semantics, widening, precursory)
+        self.manager = manager
 
     def analyze(self, initial: State) -> AnalysisResult:
         from libra.engine.backward import BackwardInterpreter

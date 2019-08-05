@@ -7,6 +7,7 @@ Bias Analysis
 import ast
 import ctypes
 import itertools
+import multiprocessing
 import os
 import sys
 import time
@@ -21,20 +22,18 @@ from apronpy.coeff import PyMPQScalarCoeff
 from apronpy.environment import PyEnvironment
 from apronpy.interval import PyInterval
 from apronpy.lincons0 import ConsTyp
-from apronpy.manager import FunId
-from apronpy.polka import PyPolkaMPQstrict
-from apronpy.t1p import PyT1pMPQ
+from apronpy.manager import FunId, PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
+from apronpy.polka import PyPolka
 from apronpy.tcons1 import PyTcons1, PyTcons1Array
 from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
-from pip._vendor.colorama import Fore, Style
+from pip._vendor.colorama import Fore, Style, Back
 
 from libra.abstract_domains.bias.bias_domain import BiasState
 from libra.abstract_domains.numerical.interval_domain import BoxState, IntEnum
 from libra.abstract_domains.numerical.octagon_domain import OctagonState
 from libra.abstract_domains.numerical.polyhedra_domain import PolyhedraState
-from libra.abstract_domains.numerical.taylor1p_domain import Taylor1pState, Taylor1pMPQState
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
@@ -55,8 +54,8 @@ rdir = TexprRdir.AP_RDIR_RND
 
 class ActivationPatternInterpreter(ForwardInterpreter):
 
-    def __init__(self, cfg, semantics, widening, precursory=None):
-        super().__init__(cfg, semantics, widening, precursory)
+    def __init__(self, cfg, manager, semantics, widening, precursory=None):
+        super().__init__(cfg, manager, semantics, widening, precursory)
         self.symbolic = False
 
     def analyze(self, initial: BoxState, forced_active=None, forced_inactive=None):
@@ -127,21 +126,21 @@ class ActivationPatternInterpreter(ForwardInterpreter):
                 activations.add(current)
                 if forced_active and current in forced_active:
                     active = deepcopy(state)
-                    state = self.semantics.ReLU_call_semantics(current.stmts, active, True)
+                    state = self.semantics.ReLU_call_semantics(current.stmts, active, self.manager, True)
                     activated.add(current)
                 elif forced_inactive and current in forced_inactive:
                     if self.symbolic:
                         zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
                         symbols[str(current.stmts)] = (current.stmts, zero)
                     inactive = deepcopy(state)
-                    state = self.semantics.ReLU_call_semantics(current.stmts, inactive, False)
+                    state = self.semantics.ReLU_call_semantics(current.stmts, inactive, self.manager, False)
                     deactivated.add(current)
                 else:
                     active, inactive = deepcopy(state), deepcopy(state)
                     # active path
-                    state1 = self.semantics.ReLU_call_semantics(current.stmts, active, True)
+                    state1 = self.semantics.ReLU_call_semantics(current.stmts, active, self.manager, True)
                     # inactive path
-                    state2 = self.semantics.ReLU_call_semantics(current.stmts, inactive, False)
+                    state2 = self.semantics.ReLU_call_semantics(current.stmts, inactive, self.manager, False)
                     if state1.is_bottom():
                         if self.symbolic:
                             zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
@@ -167,7 +166,8 @@ class ActivationPatternForwardSemantics(DefaultForwardSemantics):
         state.state = state.state.assign(stmt[0], stmt[1])
         return state
 
-    def ReLU_call_semantics(self, stmt, state, active: bool = True) -> State:
+    def ReLU_call_semantics(self, stmt, state, manager: PyManager = None, active: bool = True) -> State:
+        assert manager is not None
         # assert len(stmt.arguments) == 1  # exactly one argument is expected
         # argument = stmt.arguments[0]
         # assert isinstance(argument, VariableAccess)
@@ -178,7 +178,7 @@ class ActivationPatternForwardSemantics(DefaultForwardSemantics):
             # return state.assume(cond)
             expr = PyTexpr1.var(state.environment, stmt)
             cond = PyTcons1.make(expr, ConsTyp.AP_CONS_SUPEQ)
-            abstract1 = state.domain(state.environment, array=PyTcons1Array([cond]))
+            abstract1 = state.domain(manager, state.environment, array=PyTcons1Array([cond]))
             state.state = state.state.meet(abstract1)
             return state
         else:  # assume h < 0, assign h = 0
@@ -187,7 +187,7 @@ class ActivationPatternForwardSemantics(DefaultForwardSemantics):
             expr = PyTexpr1.var(state.environment, stmt)
             neg = PyTexpr1.unop(TexprOp.AP_TEXPR_NEG, expr, rtype, rdir)
             cond = PyTcons1.make(neg, ConsTyp.AP_CONS_SUP)
-            abstract1 = state.domain(state.environment, array=PyTcons1Array([cond]))
+            abstract1 = state.domain(manager, state.environment, array=PyTcons1Array([cond]))
             zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
             state.state = state.state.meet(abstract1).assign(stmt, zero)
             return state
@@ -202,8 +202,8 @@ debug = False
 
 class BiasInterpreter(BackwardInterpreter):
 
-    def __init__(self, cfg, semantics, widening, precursory=None):
-        super().__init__(cfg, semantics, widening, precursory)
+    def __init__(self, cfg, manager, semantics, widening, precursory=None):
+        super().__init__(cfg, manager, semantics, widening, precursory)
         self._initial: BiasState = None                                 # initial analysis state
 
         self.sensitive: List[VariableIdentifier] = None                 # sensitive feature
@@ -221,7 +221,7 @@ class BiasInterpreter(BackwardInterpreter):
         self.patterns = defaultdict(set)    # packing of abstract activation patterns
         self.partitions = 0
 
-        self.difference = 0.25          # minimum range (default: 0.25)
+        self.difference = 0#.0625          # minimum range (default: 0.25)
         self.size = 2                   # minimum pack size
         # relu splitting
         self.splits: Dict[int, Dict[VariableIdentifier, PyTexpr1]] = None       # splitting information
@@ -231,7 +231,7 @@ class BiasInterpreter(BackwardInterpreter):
 
         self.feasible = 0               # percentage that could be analyzed
         self.epaths = 0
-        self.biased = 0                 # percentage that is biased
+        self.biased = multiprocessing.Value('d', 0.0)                 # percentage that is biased
         self.unbiased = 0               # percentage that is unbiased
         self.unfeasible = 0             # percentage that was ignored
         self.ipaths = 0
@@ -258,7 +258,7 @@ class BiasInterpreter(BackwardInterpreter):
         paths = 0
         for idx, value in enumerate(self.values):
             # print(Fore.YELLOW + '--------- {} --------- '.format(value[0]).replace('x042', 'male').replace('x043', 'female'))
-            result = deepcopy(state).assume({value[1]})
+            result = deepcopy(state).assume({value[1]}, manager=self.precursory.manager)
             forced_active = key[idx][0] if key else None
             forced_inactive = key[idx][1] if key else None
             activations, active, inactive = self.precursory.analyze(result, forced_active=forced_active, forced_inactive=forced_inactive)
@@ -274,19 +274,19 @@ class BiasInterpreter(BackwardInterpreter):
             patterns.append((value, frozenset(activations), frozenset(active), frozenset(inactive)))
         return feasible, patterns, paths
 
-    def doit(self, key, pack, do=False):
+    def doit(self, color, key, pack, manager, do=False):
         check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]] = dict()
         for idx, (case, value) in enumerate(self.values):
             self.active, self.inactive = key[idx]
-            print('--------- {} --------- '.format(case).replace('x014', 'male').replace('x015', 'female').replace('y0', 'male').replace('y1', 'female'))
+            print(color + '--------- {} --------- '.format(case).replace('x014', 'male').replace('x015', 'female').replace('y0', 'male').replace('y1', 'female'), Style.RESET_ALL)
             # print('activations: {{{}}}'.format(
             #     ', '.join('{}'.format(activation) for activation in self.activations)
             # ))
-            print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
-            print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
+            print(color + 'active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)), Style.RESET_ALL)
+            print(color + 'inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)), Style.RESET_ALL)
             disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
             paths = 2 ** disjunctions
-            print('Paths: {}'.format(paths))
+            print(color + 'Paths: {}'.format(paths), Style.RESET_ALL)
             for chosen in self.outputs:
                 remaining = self.outputs - {chosen}
                 discarded = remaining.pop()
@@ -294,34 +294,36 @@ class BiasInterpreter(BackwardInterpreter):
                 for discarded in remaining:
                     cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
                     outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
-                result = self.initial.assume({outcome}, bwd=True)
+                result = self.initial.assume({outcome}, manager=manager, bwd=True)
                 check[(chosen, case)] = set()
                 for state in self.proceed(self.cfg.out_node, deepcopy(result), list(), do):
                     if state:
-                        state = state.assume({value})
+                        state = state.assume({value}, manager=manager)
                         check[(chosen, case)].add(state)
-        print('===========================', Style.RESET_ALL)
+        print(color + '===========================', Style.RESET_ALL)
 
         # check for bias
         for assumptions, ranges, percent in pack:
-            print('\n---------------------------')
-            print('1-Hot: {}'.format(
+            print()
+            print(color + '---------------------------', Style.RESET_ALL)
+            print(color + '1-Hot: {}'.format(
                 ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
-            ))
-            print('Ranges: {}'.format(
+            ), Style.RESET_ALL)
+            print(color + 'Ranges: {}'.format(
                 ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
-            ))
-            print('---------------------------\n')
+            ), Style.RESET_ALL)
+            print(color + '---------------------------', Style.RESET_ALL)
+            print()
             partition = deepcopy(check)
             for states in partition.values():
                 for state in states:
                     for (_, assumption) in assumptions:
-                        state = state.assume({assumption})
+                        state = state.assume({assumption}, manager=manager)
                     # forget the sensitive variables
                     state = state.forget(self.sensitive)
-            self.bias_check(partition, ranges, percent)
+            self.bias_check(color, partition, ranges, percent)
 
-    def bias_check(self, check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]],
+    def bias_check(self, color, check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]],
                    # assumptions0,
                    ranges: Dict[VariableIdentifier, Tuple[int, int]],
                    percent: float):
@@ -341,7 +343,7 @@ class BiasInterpreter(BackwardInterpreter):
                                 left = BinaryComparisonOperation(Literal(str(lower)), lte, feature)
                                 right = BinaryComparisonOperation(feature, lte, Literal(str(upper)))
                                 conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
-                                intersection = intersection.assume({conj})
+                                intersection = intersection.assume({conj}, manager=self.manager)
                             # for assumption in assumptions0:
                             #     intersection = intersection.assume(assumption)
                             representation = repr(intersection.polka)
@@ -349,12 +351,13 @@ class BiasInterpreter(BackwardInterpreter):
                                 nobias = False
                                 if representation not in biases:
                                     biases.add(representation)
-                                    print(Fore.RED + '✘ Bias Found! : {}'.format(representation), Style.RESET_ALL)
+                                    print(color + Fore.RED + '✘ Bias Found! : {}'.format(representation), Style.RESET_ALL)
         if nobias:
             self.unbiased += percent
-            print(Fore.GREEN + '✔︎ No Bias', Style.RESET_ALL)
+            print(color + Fore.GREEN + '✔︎ No Bias', Style.RESET_ALL)
         else:
-            self.biased += percent
+            with self.biased.get_lock():
+                self.biased.value += percent
 
     def pick(self,
              assumptions,                                           # (initially empty)
@@ -382,10 +385,10 @@ class BiasInterpreter(BackwardInterpreter):
             conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
             bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
 
-        entry = self.initial.precursory.assume({bounds})
+        entry = self.initial.precursory.assume({bounds}, manager=self.precursory.manager)
         # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
         for (_, assumption) in assumptions:
-            entry = entry.assume({assumption})
+            entry = entry.assume({assumption}, manager=self.precursory.manager)
         # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
         feasibility_and_patterns = self.feasibility_and_patterns(entry, key=key, do=do)
         feasible: bool = feasibility_and_patterns[0]
@@ -481,17 +484,17 @@ class BiasInterpreter(BackwardInterpreter):
                 # pack one_hots
                 Key: Tuple[Tuple[Set[Node], Set[Node]], ...]
                 packs: Dict[Key, Set[OneHotN]] = defaultdict(set)
-                entry = self.initial.precursory.assume({bounds})
+                entry = self.initial.precursory.assume({bounds}, manager=self.precursory.manager)
                 for (_, assumption) in assumptions:
-                    entry = entry.assume({assumption})
+                    entry = entry.assume({assumption}, manager=self.precursory.manager)
                 for one_hot in one_hots:
                     result1 = deepcopy(entry)
                     for item in one_hot:
-                        result1 = result1.assume({item[1]})
+                        result1 = result1.assume({item[1]}, manager=self.precursory.manager)
 
                     key = list()
                     for value in self.values:
-                        result2 = deepcopy(result1).assume({value[1]})
+                        result2 = deepcopy(result1).assume({value[1]}, manager=self.precursory.manager)
                         _, active, inactive = self.precursory.analyze(result2)
                         # print(Fore.YELLOW + '--------- {}, {} --------- '.format(', '.join('{}'.format(item[0]) for item in one_hot), value[0]).replace('x014', 'male').replace('x015', 'female'))
                         # print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in active)))
@@ -578,7 +581,7 @@ class BiasInterpreter(BackwardInterpreter):
             if node in self.active:  # only the active path is viable
                 if debug:
                     print('active')
-                state = self.semantics.ReLU_call_semantics(node.stmts, state, True)
+                state = self.semantics.ReLU_call_semantics(node.stmts, state, self.manager, True)
                 if state.is_bottom():
                     yield None
                 else:
@@ -590,7 +593,7 @@ class BiasInterpreter(BackwardInterpreter):
             elif node in self.inactive:  # only the inactive path is viable
                 if debug:
                     print('inactive')
-                state = self.semantics.ReLU_call_semantics(node.stmts, state, False)
+                state = self.semantics.ReLU_call_semantics(node.stmts, state, self.manager, False)
                 # left = node.stmts[0].arguments[0].variable
                 # right = Literal('0')
                 # state = state.substitute({left}, {right})
@@ -612,10 +615,10 @@ class BiasInterpreter(BackwardInterpreter):
                 # left = node.stmts[0].arguments[0].variable
                 # right = Literal('0')
                 # state2 = deepcopy(state).substitute({left}, {right})
-                state1 = self.semantics.ReLU_call_semantics(node.stmts, active, True)
+                state1 = self.semantics.ReLU_call_semantics(node.stmts, active, self.manager, True)
                 if debug:
                     print(state1)
-                state2 = self.semantics.ReLU_call_semantics(node.stmts, inactive, False)
+                state2 = self.semantics.ReLU_call_semantics(node.stmts, inactive, self.manager, False)
                 if debug:
                     print(state2)
                 if join:
@@ -691,6 +694,16 @@ class BiasInterpreter(BackwardInterpreter):
             values.add((variables[i], value))
         return values
 
+    def work(self, color, job, manager, pattnum):
+        for idx, (key, pack) in job:
+            print()
+            print(color + '===========================', Style.RESET_ALL)
+            print(color + 'Pattern #{} of {} [{}]'.format(idx+1, pattnum, len(pack)), Style.RESET_ALL)
+
+            self.doit(color, key, pack, manager=manager)
+            print(Fore.YELLOW + 'Progress: {} of {} patterns ({}% biased)'.format(idx+1, pattnum, self.biased.value), Style.RESET_ALL)
+
+
     def analyze(self, initial: BiasState,
                 inputs: Set[VariableIdentifier] = None,                             # input variables
                 outputs: Set[VariableIdentifier] = None,                            # output variables
@@ -763,31 +776,101 @@ class BiasInterpreter(BackwardInterpreter):
         print('|| Pre-Analysis ||')
         print('||==============||', Style.RESET_ALL)
 
+        start1 = time.time()
         self.pick(set(), 0, ranges, 0, set(self.uncontroversial2), 100)
+        end1 = time.time()
         # self.pick2(1, 0, set(), set(), set(), set(), set(), 0, set(), 0, set(self.uncontroversial2), ranges, 100)
 
         pattnum = len(self.patterns)
-        print(Fore.BLUE + '\nFound: {} patterns for {} partitions'.format(pattnum, self.partitions), Style.RESET_ALL)
-        # for key, pack in self.patterns.items():
-        #     sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
-        #     skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
-        #     print(Fore.YELLOW, skey, '->', sset(pack), Style.RESET_ALL)
+        print(Fore.BLUE + '\nFound: {} patterns for {} partitions'.format(pattnum, self.partitions))
+        prioritized = sorted(self.patterns.items(), key=lambda v: len(v[1]), reverse=True)
+        for key, pack in prioritized:
+            sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
+            skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
+            print(skey, '->', len(pack))
+
+        compressed = dict()
+        for key1 in self.patterns:
+            unmerged = True
+            for key2 in compressed:
+                # if key2 is a subset of key1, we keep key2 and merge key1 with key2 (mergeable1)
+                # if key1 is a subset of key2, we add key1 and add key2 to key1 (mergeable2)
+                mergeable1, mergeable2 = True, True
+                for s1, s2 in key1:
+                    for s3, s4 in key2:
+                        if (not s3.issubset(s1)) or (not s4.issubset(s2)):
+                            mergeable1 = False
+                        if (not s1.issubset(s3)) or (not s2.issubset(s4)):
+                            mergeable2 = False
+                if mergeable1:
+                    unmerged = False
+                    compressed[key2] = compressed[key2].union(self.patterns[key1])
+                    break
+                if mergeable2:
+                    unmerged = False
+                    compressed[key1] = compressed[key2].union(self.patterns[key1])
+                    del compressed[key2]
+                    break
+            if unmerged:
+                compressed[key1] = self.patterns[key1]
+        prioritized = sorted(compressed.items(), key=lambda v: len(v[1]), reverse=True)
+        if len(compressed) < len(self.patterns):
+            print('Compressed to: {} patterns'.format(len(compressed)))
+            for key, pack in prioritized:
+                sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
+                skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
+                print(skey, '->', len(pack))
+
+        print('Pre-Analysis Time: {}s'.format(end1 - start1), Style.RESET_ALL)
 
         print(Fore.BLUE + '\n||==========||')
         print('|| Analysis ||')
         print('||==========||', Style.RESET_ALL)
 
-        for idx, (key, pack) in enumerate(self.patterns.items()):
-            sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
-            skey = '\n'.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
-            print(Fore.LIGHTMAGENTA_EX + '\n===========================')
-            print('Pack #{} of {} [{}]'.format(idx+1, len(self.patterns), len(pack)))
+        cpu = multiprocessing.cpu_count()
+        print('\nNumber of CPUs: {}'.format(cpu))
 
-            self.doit(key, pack)
-            print(Fore.YELLOW + 'Progress: {} of {} patterns ({}% biased)'.format(idx+1, pattnum, self.biased), Style.RESET_ALL)
+        # job dispatching
+        jobs = [list() for _ in range(cpu)]
+        for idx, (key, pack) in enumerate(prioritized):
+            p = idx % (2 * cpu)
+            if p < cpu:
+                p = p
+            else:
+                p = -(p - cpu + 1)
+            jobs[p].append((idx, (key, pack)))
+        for idx, job in enumerate(jobs):
+            print('job #{}: {}'.format(idx, ','.join('{}'.format(task[0]) for task in job)))
 
-        print(Fore.BLUE + '\nResult: {}% of {}% ({}% biased)'.format(self.feasible, self.explored, self.biased))
-        print('Done!')
+        colors = [
+            Style.RESET_ALL,
+            Back.BLACK + Fore.WHITE,
+            Back.LIGHTRED_EX + Fore.BLACK,
+            Back.MAGENTA + Fore.BLACK,
+            Back.BLUE + Fore.BLACK,
+            Back.CYAN + Fore.BLACK,
+            Back.LIGHTGREEN_EX + Fore.BLACK,
+            Back.YELLOW + Fore.BLACK,
+        ]
+
+        start2 = time.time()
+        # instantiating the processes
+        processes = list()
+        for idx, job in enumerate(jobs):
+            man = PyPolkaMPQstrictManager()
+            process = multiprocessing.Process(target=self.work, args=(colors[idx], job, man, len(compressed)))
+            processes.append(process)
+            process.start()
+        # completing the processes
+        for process in processes:
+            process.join()
+        end2 = time.time()
+
+        print(Fore.BLUE + '\nResult: {}% of {}% ({}% biased)'.format(self.feasible, self.explored, self.biased.value))
+        print('Pre-Analysis Time: {}s'.format(end1 - start1))
+        print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
+
+        print('\nDone!')
 
 
 class BiasBackwardSemantics(DefaultBackwardSemantics):
@@ -800,7 +883,8 @@ class BiasBackwardSemantics(DefaultBackwardSemantics):
         # state.mirror = state.mirror.substitute(stmt[0], stmt[1])
         return state
 
-    def ReLU_call_semantics(self, stmt, state, active: bool = True) -> State:
+    def ReLU_call_semantics(self, stmt, state, manager: PyManager = None, active: bool = True) -> State:
+        assert manager is not None
         # assert len(stmt.arguments) == 1  # exactly one argument is expected
         # argument = stmt.arguments[0]
         # assert isinstance(argument, VariableAccess)
@@ -811,7 +895,7 @@ class BiasBackwardSemantics(DefaultBackwardSemantics):
             # return state.assume(cond)
             expr = PyTexpr1.var(state.environment, stmt)
             cond = PyTcons1.make(expr, ConsTyp.AP_CONS_SUPEQ)
-            abstract1 = PyPolkaMPQstrict(state.environment, array=PyTcons1Array([cond]))
+            abstract1 = PyPolka(manager, state.environment, array=PyTcons1Array([cond]))
             state.polka = state.polka.meet(abstract1)
             # state.mirror = state.mirror.meet(abstract1)
             return state
@@ -822,7 +906,7 @@ class BiasBackwardSemantics(DefaultBackwardSemantics):
             zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
             neg = PyTexpr1.binop(TexprOp.AP_TEXPR_SUB, zero, expr, rtype, rdir)
             cond = PyTcons1.make(neg, ConsTyp.AP_CONS_SUP)
-            abstract1 = PyPolkaMPQstrict(state.environment, array=PyTcons1Array([cond]))
+            abstract1 = PyPolka(manager, state.environment, array=PyTcons1Array([cond]))
             zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
             state.polka = state.polka.substitute(stmt, zero).meet(abstract1)
             # state.mirror = state.mirror.substitute(stmt, zero).meet(abstract1)
@@ -837,24 +921,26 @@ class BiasAnalysis(Runner):
         self.outputs: Set[VariableIdentifier] = None                            # output variables
         self.splits: Dict[int, Dict[VariableIdentifier, PyTexpr1]] = None       # partitioning information
         self.relus: Dict[VariableIdentifier, Node] = None                       # relus information
+        self.man1: PyManager = PyBoxMPQManager()
+        self.man2: PyManager = PyPolkaMPQstrictManager()
+        min_int = (-ctypes.c_uint(-1).value) // 2
+        self.man2.manager.contents.option.funopt[FunId.AP_FUNID_IS_BOTTOM].algorithm = min_int
+        self.man2.manager.contents.option.funopt[FunId.AP_FUNID_IS_TOP].algorithm = min_int
+        self.man2.manager.contents.option.funopt[FunId.AP_FUNID_MEET].algorithm = min_int
+        self.man2.manager.contents.option.funopt[FunId.AP_FUNID_JOIN].algorithm = min_int
+        self.man2.manager.contents.option.funopt[FunId.AP_FUNID_FORGET_ARRAY].algorithm = min_int
 
     def interpreter(self):
-        precursory = ActivationPatternInterpreter(self.cfg, ActivationPatternForwardSemantics(), 3)
-        return BiasInterpreter(self.cfg, BiasBackwardSemantics(), 2, precursory=precursory)
+        precursory = ActivationPatternInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), 3)
+        return BiasInterpreter(self.cfg, self.man2, BiasBackwardSemantics(), 2, precursory=precursory)
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
-        precursory = BoxState(variables)
+        precursory = BoxState(self.man1, variables)
         # precursory = OctagonState(variables)
         # precursory = PolyhedraState(variables)
         # precursory = Taylor1pMPQState(variables)
-        min_int = (-ctypes.c_uint(-1).value) // 2
-        PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_IS_BOTTOM].algorithm = min_int
-        PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_IS_TOP].algorithm = min_int
-        PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_MEET].algorithm = min_int
-        PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_JOIN].algorithm = min_int
-        PyPolkaMPQstrict.manager.contents.option.funopt[FunId.AP_FUNID_FORGET_ARRAY].algorithm = min_int
-        return BiasState(variables, precursory=precursory)
+        return BiasState(self.man2, variables, precursory=precursory)
 
     @property
     def variables(self):

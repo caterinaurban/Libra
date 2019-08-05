@@ -11,8 +11,9 @@ is represented as an interval.
 from copy import deepcopy
 from math import inf
 
-from apronpy.box import PyBoxMPQ, PyBoxD, PyBoxMPFR
+from apronpy.box import PyBox
 from apronpy.environment import PyEnvironment
+from apronpy.manager import PyManager
 from apronpy.tcons1 import PyTcons1Array
 
 from libra.abstract_domains.basis import Basis
@@ -212,49 +213,34 @@ class IntervalState(Basis):
     _evaluation = ExpressionEvaluation()  # static class member shared between all instances
 
 
-class BoxDState(APRONState):
+class BoxState(APRONState):
     """Interval analysis state based on APRON. An element of the interval abstract domain.
 
     .. document private methods
-    .. automethod:: BoxDState._assign
-    .. automethod:: BoxDState._assume
-    .. automethod:: BoxDState._output
-    .. automethod:: BoxDState._substitute
+    .. automethod:: BoxState._assign
+    .. automethod:: BoxState._assume
+    .. automethod:: BoxState._output
+    .. automethod:: BoxState._substitute
 
     """
 
-    def __init__(self, variables: Set[VariableIdentifier], precursory: State = None):
-        super().__init__(variables, PyBoxD, precursory=precursory)
+    def __init__(self, manager: PyManager, variables: Set[VariableIdentifier], precursory: State = None):
+        super().__init__(manager, variables, PyBox, precursory=precursory)
 
-
-class BoxMPQState(APRONState):
-    """Interval analysis state based on APRON. An element of the interval abstract domain.
-
-    .. document private methods
-    .. automethod:: BoxMPQState._assign
-    .. automethod:: BoxMPQState._assume
-    .. automethod:: BoxMPQState._output
-    .. automethod:: BoxMPQState._substitute
-
-    """
-
-    def __init__(self, variables: Set[VariableIdentifier], precursory: State = None):
-        super().__init__(variables, PyBoxMPQ, precursory=precursory)
-
-
-BoxState = BoxMPQState
-
-
-class BoxMPFRState(APRONState):
-    """Interval analysis state based on APRON. An element of the interval abstract domain.
-
-    .. document private methods
-    .. automethod:: BoxMPFRState._assign
-    .. automethod:: BoxMPFRState._assume
-    .. automethod:: BoxMPFRState._output
-    .. automethod:: BoxMPFRState._substitute
-
-    """
-
-    def __init__(self, variables: Set[VariableIdentifier], precursory: State = None):
-        super().__init__(variables, PyBoxMPFR, precursory=precursory)
+    # def __repr__(self):
+    #     if self.is_bottom():
+    #         return "⊥"
+    #     env = self.environment.environment.contents
+    #
+    #     result = '{'
+    #     result += ','.join('{}: {}'.format(env.var_of_dim[i].decode('utf-8'), self.bound_variable(PyVar(env.var_of_dim[i]))) for i in range(env.intdim))
+    #     result += '|'
+    #     result += ','.join(
+    #         '{}: {}'.format(env.var_of_dim[env.intdim + i].decode('utf-8'), self.bound_variable(VariableIdentifier(env.var_of_dim[env.intdim + i].decode('utf-8')))) for
+    #         i in range(env.realdim)
+    #     )
+    #     result += '}'
+    #     return result
+    #
+    #
+    #     # return '{}'.format(self.state)

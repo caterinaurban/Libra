@@ -10,41 +10,24 @@ is represented by a conjunction of linear constraints.
 """
 from typing import Set
 
-from apronpy.oct import PyOctD, PyOctMPQ
+from apronpy.manager import PyManager
+from apronpy.oct import PyOct
 
 from libra.abstract_domains.numerical.apron_domain import APRONState
 from libra.abstract_domains.state import State
 from libra.core.expressions import VariableIdentifier
 
 
-class OctagonDState(APRONState):
+class OctagonState(APRONState):
     """Octagon analysis state based on APRON. An element of the octagon abstract domain.
 
     .. document private methods
-    .. automethod:: OctagonDState._assign
-    .. automethod:: OctagonDState._assume
-    .. automethod:: OctagonDState._output
-    .. automethod:: OctagonDState._substitute
+    .. automethod:: OctagonState._assign
+    .. automethod:: OctagonState._assume
+    .. automethod:: OctagonState._output
+    .. automethod:: OctagonState._substitute
 
     """
 
-    def __init__(self, variables: Set[VariableIdentifier], precursory: State = None):
-        super().__init__(variables, PyOctD, precursory=precursory)
-
-
-class OctagonMPQState(APRONState):
-    """Octagon analysis state based on APRON. An element of the octagon abstract domain.
-
-    .. document private methods
-    .. automethod:: OctagonMPQState._assign
-    .. automethod:: OctagonMPQState._assume
-    .. automethod:: OctagonMPQState._output
-    .. automethod:: OctagonMPQState._substitute
-
-    """
-
-    def __init__(self, variables: Set[VariableIdentifier], precursory: State = None):
-        super().__init__(variables, PyOctMPQ, precursory=precursory)
-
-
-OctagonState = OctagonMPQState
+    def __init__(self, manager: PyManager, variables: Set[VariableIdentifier], precursory: State = None):
+        super().__init__(manager, variables, PyOct, precursory=precursory)

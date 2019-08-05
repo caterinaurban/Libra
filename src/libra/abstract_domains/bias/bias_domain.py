@@ -12,7 +12,8 @@ from typing import Set, List
 
 from apronpy.environment import PyEnvironment
 from apronpy.lincons1 import PyLincons1Array
-from apronpy.polka import PyPolkaMPQstrict
+from apronpy.manager import PyManager
+from apronpy.polka import PyPolka
 from apronpy.tcons1 import PyTcons1Array, PyTcons1
 from apronpy.var import PyVar
 
@@ -34,23 +35,23 @@ class BiasState(State):
 
     """
 
-    def __init__(self, variables: Set[VariableIdentifier], precursory: State = None):
+    def __init__(self, manager: PyManager, variables: Set[VariableIdentifier], precursory: State = None):
         super().__init__(precursory=precursory)
         r_vars = list()
         for variable in variables:
             r_vars.append(PyVar(variable.name))
         self.environment = PyEnvironment([], r_vars)
-        self.polka = PyPolkaMPQstrict(self.environment)
+        self.polka = PyPolka(manager, self.environment)
         # self.mirror = PyPolkaMPQstrict(self.environment)
 
     @copy_docstring(State.bottom)
-    def bottom(self):
-        self.polka = PyPolkaMPQstrict.bottom(self.environment)
+    def bottom(self, manager: PyManager = None):
+        self.polka = PyPolka.bottom(manager, self.environment)
         return self
 
     @copy_docstring(State.top)
-    def top(self):
-        self.polka = PyPolkaMPQstrict.top(self.environment)
+    def top(self, manager: PyManager = None):
+        self.polka = PyPolka.top(manager, self.environment)
         return self
 
     def __repr__(self):
@@ -91,31 +92,33 @@ class BiasState(State):
         raise NotImplementedError(f"Call to _assign is unexpected!")
 
     @copy_docstring(State._assume)
-    def _assume(self, condition: Expression, bwd: bool = False) -> 'BiasState':
+    def _assume(self, condition: Expression, manager: PyManager = None, bwd: bool = False) -> 'BiasState':
+        assert manager is not None
         normal = self._negation_free.visit(condition)
         if isinstance(normal, BinaryBooleanOperation):
             if normal.operator == BinaryBooleanOperation.Operator.And:
-                return self._assume(normal.left, bwd=False)._assume(normal.right, bwd=False)
+                return self._assume(normal.left, manager=manager, bwd=False)._assume(normal.right, manager=manager, bwd=False)
             elif normal.operator == BinaryBooleanOperation.Operator.Or:
-                right = deepcopy(self)._assume(normal.right, bwd=False)
-                return self._assume(normal.left, bwd=False).join(right)
+                right = deepcopy(self)._assume(normal.right, manager=manager, bwd=False)
+                return self._assume(normal.left, manager=manager, bwd=False).join(right)
         elif isinstance(normal, BinaryComparisonOperation):
             cond = self._lyra2apron.visit(normal, self.environment)
-            abstract1 = PyPolkaMPQstrict(self.environment, array=PyTcons1Array([cond]))
+            abstract1 = PyPolka(manager, self.environment, array=PyTcons1Array([cond]))
             self.polka = self.polka.meet(abstract1)
             # if not bwd:
             #     self.mirror = self.mirror.meet(abstract1)
             return self
         raise NotImplementedError(f"Assumption of {normal.__class__.__name__} is unsupported!")
 
-    def assume(self, condition, bwd: bool = False) -> 'BiasState':
+    def assume(self, condition, manager: PyManager = None, bwd: bool = False) -> 'BiasState':
+        assert manager is not None
         if isinstance(condition, PyTcons1):
-            abstract1 = PyPolkaMPQstrict(self.environment, array=PyTcons1Array([condition]))
+            abstract1 = PyPolka(manager, self.environment, array=PyTcons1Array([condition]))
             self.polka = self.polka.meet(abstract1)
             return self
         else:
             assert len(condition) == 1
-            self._assume(condition.pop(), bwd=bwd)
+            self._assume(condition.pop(), manager=manager, bwd=bwd)
             return self
 
     @copy_docstring(State._substitute)
