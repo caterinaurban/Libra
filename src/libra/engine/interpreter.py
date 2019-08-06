@@ -15,7 +15,7 @@ from libra.semantics.semantics import Semantics
 
 
 class Interpreter(metaclass=ABCMeta):
-    def __init__(self, cfg: ControlFlowGraph, semantics, widening, precursory=None):
+    def __init__(self, cfg: ControlFlowGraph, semantics, widening=2, precursory=None):
         """Control flow graph interpreter.
 
         :param cfg: control flow graph to analyze
@@ -49,7 +49,7 @@ class Interpreter(metaclass=ABCMeta):
         return self._precursory
 
     @abstractmethod
-    def analyze(self, initial: State) -> AnalysisResult:
+    def analyze(self, initial: State):
         """Run the analysis.
 
         :param initial: initial analysis state

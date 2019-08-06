@@ -15,8 +15,10 @@ from typing import Set, Type
 
 from apronpy.abstract1 import Abstract1, PyAbstract1
 from apronpy.environment import PyEnvironment
+from apronpy.linexpr1 import PyLinexpr1
 from apronpy.manager import PyManager
 from apronpy.tcons1 import PyTcons1Array, PyTcons1
+from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 
 from libra.abstract_domains.state import State
@@ -76,8 +78,14 @@ class APRONState(State, metaclass=ABCMeta):
     def is_top(self) -> bool:
         return self.state.is_top()
 
-    def bound_variable(self, variable: VariableIdentifier):
-        return self.state.bound_variable(PyVar(variable.name))
+    def bound_variable(self, variable: PyVar):
+        return self.state.bound_variable(variable)
+
+    def bound_linexpr(self, linexpr: PyLinexpr1):
+        return self.state.bound_linexpr(linexpr)
+
+    def bound_texpr(self, texpr: PyTexpr1):
+        return self.state.bound_texpr(texpr)
 
     @copy_docstring(State._less_equal)
     def _less_equal(self, other: 'APRONState') -> bool:
