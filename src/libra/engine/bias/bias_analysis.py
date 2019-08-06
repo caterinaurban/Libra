@@ -15,7 +15,7 @@ from abc import ABCMeta
 from collections import defaultdict
 from copy import deepcopy
 from itertools import product
-from queue import Queue
+from queue import Queue, Empty
 from typing import Optional, Tuple, Set, Dict, List, FrozenSet
 
 from apronpy.coeff import PyMPQScalarCoeff
@@ -214,14 +214,14 @@ class BiasInterpreter(BackwardInterpreter):
 
         self.outputs: Set[VariableIdentifier] = None                    # output classes
 
-        self.activations = None         # number of activation nodes
+        self.activations = None         # activation nodes
         self.active = None              # always active activations
         self.inactive = None            # always inactive activations
         Key: Tuple[Tuple[Set[Node], Set[Node]], ...]
-        self.patterns = defaultdict(set)    # packing of abstract activation patterns
-        self.partitions = 0
+        self.patterns = multiprocessing.Manager().dict()          # packing of abstract activation patterns
+        self.partitions = multiprocessing.Value('i', 0)
 
-        self.difference = 0#.0625          # minimum range (default: 0.25)
+        self.difference = 0.25          # minimum range (default: 0.25)
         self.size = 2                   # minimum pack size
         # relu splitting
         self.splits: Dict[int, Dict[VariableIdentifier, PyTexpr1]] = None       # splitting information
@@ -229,12 +229,13 @@ class BiasInterpreter(BackwardInterpreter):
         self.affines: List[VariableIdentifier]                                  # relus for splitting
         self.relus = Dict[VariableIdentifier, Node]                             # relu information
 
-        self.feasible = 0               # percentage that could be analyzed
+        self.feasible = multiprocessing.Value('d', 0.0)                # percentage that could be analyzed
         self.epaths = 0
-        self.biased = multiprocessing.Value('d', 0.0)                 # percentage that is biased
+        self.biased = multiprocessing.Value('d', 0.0)                  # percentage that is biased
         self.unbiased = 0               # percentage that is unbiased
-        self.unfeasible = 0             # percentage that was ignored
+        self.unfeasible = multiprocessing.Value('d', 0.0)              # percentage that was ignored
         self.ipaths = 0
+        self.stop = multiprocessing.Value('i', 0)
 
     @property
     def initial(self):
@@ -250,15 +251,15 @@ class BiasInterpreter(BackwardInterpreter):
 
         :return: percentage that was explored
         """
-        return self.feasible + self.unfeasible
+        return self.feasible.value + self.unfeasible.value
 
-    def feasibility_and_patterns(self, state, key=None, do=False):
+    def feasibility_and_patterns(self, state, manager, key=None, do=False):
         feasible = True
         patterns: List[Tuple[Tuple[VariableIdentifier, BinaryBooleanOperation], Set[Node], Set[Node], Set[Node]]] = list()
         paths = 0
         for idx, value in enumerate(self.values):
             # print(Fore.YELLOW + '--------- {} --------- '.format(value[0]).replace('x042', 'male').replace('x043', 'female'))
-            result = deepcopy(state).assume({value[1]}, manager=self.precursory.manager)
+            result = deepcopy(state).assume({value[1]}, manager=manager)
             forced_active = key[idx][0] if key else None
             forced_inactive = key[idx][1] if key else None
             activations, active, inactive = self.precursory.analyze(result, forced_active=forced_active, forced_inactive=forced_inactive)
@@ -359,206 +360,348 @@ class BiasInterpreter(BackwardInterpreter):
             with self.biased.get_lock():
                 self.biased.value += percent
 
-    def pick(self,
-             assumptions,                                           # (initially empty)
-             pivot1: int,                                           # (initially 0)
-             ranges: Dict[VariableIdentifier, Tuple[float, float]],     #
-             pivot2: int,                                           # (initially 0)
-             splittable: Set[VariableIdentifier],                   # (initially containing all custom encoded features)
-             percent: float,                                        # percentage being analyzed (initially 100)
-             key=None,
-             do=False):
-        print(Fore.LIGHTMAGENTA_EX + '\n---------------------------')
-        print('1-Hot: {}'.format(
-            ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
-        ))
-        print('Ranges: {}'.format(
-            ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges.items())
-        ))
-        print('---------------------------\n', Style.RESET_ALL)
+    # def pick(self,
+    #          assumptions,                                           # (initially empty)
+    #          pivot1: int,                                           # (initially 0)
+    #          ranges: Dict[VariableIdentifier, Tuple[float, float]],     #
+    #          pivot2: int,                                           # (initially 0)
+    #          splittable: Set[VariableIdentifier],                   # (initially containing all custom encoded features)
+    #          percent: float,                                        # percentage being analyzed (initially 100)
+    #          key=None,
+    #          do=False):
+    #     print(Fore.LIGHTMAGENTA_EX + '\n---------------------------')
+    #     print('1-Hot: {}'.format(
+    #         ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
+    #     ))
+    #     print('Ranges: {}'.format(
+    #         ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges.items())
+    #     ))
+    #     print('---------------------------\n', Style.RESET_ALL)
+    #
+    #     # bound the custom encoded uncontroversial features between their current lower and upper bounds
+    #     bounds = self.bounds
+    #     for feature, (lower, upper) in ranges.items():
+    #         left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
+    #         right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
+    #         conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+    #         bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
+    #
+    #     entry = self.initial.precursory.assume({bounds}, manager=self.precursory.manager)
+    #     # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
+    #     for (_, assumption) in assumptions:
+    #         entry = entry.assume({assumption}, manager=self.precursory.manager)
+    #     # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
+    #     feasibility_and_patterns = self.feasibility_and_patterns(entry, key=key, do=do)
+    #     feasible: bool = feasibility_and_patterns[0]
+    #     # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
+    #     if feasible or do:
+    #         if feasible:
+    #             self.partitions += 1
+    #             self.feasible += percent
+    #             self.epaths += feasibility_and_patterns[2]
+    #         patterns: List[Tuple[Tuple[VariableIdentifier, BinaryBooleanOperation], Set[Node], Set[Node], Set[Node]]] = feasibility_and_patterns[1]
+    #         key = list()
+    #         for _, self.activations, active, inactive in patterns:
+    #             key.append((frozenset(active), frozenset(inactive)))
+    #
+    #         value = (frozenset(assumptions), frozenset(ranges.items()), percent)
+    #         _key = tuple(key)
+    #         if _key not in self.patterns:
+    #             self.patterns[_key] = set()
+    #         self.patterns[_key].add(value)    # self.partitions
+    #
+    #         # # pick outcome
+    #         # check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]] = dict()
+    #         # for chosen in self.outputs:
+    #         #     print(Fore.BLUE + 'Outcome: {}\n'.format(chosen), Style.RESET_ALL)
+    #         #     remaining = self.outputs - {chosen}
+    #         #     discarded = remaining.pop()
+    #         #     outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
+    #         #     for discarded in remaining:
+    #         #         cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
+    #         #         outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
+    #         #     result = self.initial.assume({outcome}, bwd=True)
+    #         #     # pick value of the sensitive feature
+    #         #     for ((case, value), self.activations, self.active, self.inactive) in patterns:
+    #         #         check[(chosen, case)] = set()
+    #         #         print('--------- {} --------- '.format(case).replace('x014', 'male').replace('x015', 'female'))
+    #         #         print('activations: {{{}}}'.format(
+    #         #             ', '.join('{}'.format(activation) for activation in self.activations)
+    #         #         ))
+    #         #         print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
+    #         #         print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
+    #         #         disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
+    #         #         paths = 2 ** disjunctions
+    #         #         print('Paths: {}\n'.format(paths))
+    #         #         # run the bias analysis
+    #         #         start = time.time()
+    #         #         progress = 0
+    #         #         joined = deepcopy(result).bottom()
+    #         #         for state in self.proceed(self.cfg.out_node, deepcopy(result), list(), do):
+    #         #             progress += 1
+    #         #             # if progress % 500 == 0:
+    #         #             #     print('\nProgress: {}/{}'.format(progress, paths), 'Time: {}s'.format(time.time() - start))
+    #         #             if state:
+    #         #                 state = state.assume({value})
+    #         #                 # state = state.assume({bounds}).assume({value})
+    #         #                 for (_, assumption) in assumptions:
+    #         #                     state = state.assume({assumption})
+    #         #
+    #         #                 # for feature, (lower, upper) in ranges.items():
+    #         #                 #     lte = BinaryComparisonOperation.Operator.LtE
+    #         #                 #     left = BinaryComparisonOperation(Literal(str(lower)), lte, feature)
+    #         #                 #     right = BinaryComparisonOperation(feature, lte, Literal(str(upper)))
+    #         #                 #     conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+    #         #                 #     state = state.assume({conj})
+    #         #
+    #         #                 # forget the sensitive variables
+    #         #                 state = state.forget(self.sensitive)
+    #         #                 # for encoding in self.uncontroversial1:
+    #         #                 #     state = state.forget(encoding)
+    #         #
+    #         #                 if debug:
+    #         #                     representation = repr(state.polka)
+    #         #                 # if not representation.startswith('-1.0 >= 0'):
+    #         #                 check[(chosen, case)].add(state)
+    #         #                 joined = joined.join(state)
+    #         #                 if debug:
+    #         #                     print(representation)
+    #         #                     print('Time: {}s\n'.format(time.time() - start))
+    #         #         print('Joined: {}\n'.format(joined))
+    #         #         # check[(chosen, case)] = joined
+    #         #     print('---------\n')
+    #         # # check for bias
+    #         # self.bias_check(check, ranges, percent)
+    #         print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible.value, self.explored), Style.RESET_ALL)
+    #     else:       # too many disjunctions, we need to split further
+    #         print('Too many disjunctions!')
+    #
+    #         if pivot1 < len(self.uncontroversial1):     # we still have to split the one-hot encoded
+    #             print('1-hot splitting for: {}'.format(
+    #                 ' | '.join(', '.join('{}'.format(var) for var in encoding) for encoding in self.uncontroversial1)
+    #             ))
+    #
+    #             OneHot1: Tuple[VariableIdentifier, BinaryBooleanOperation]          # one-hot value for 1 feature
+    #             OneHotN: Tuple[OneHot1, ...]                                        # one-hot values for n features
+    #             one_hots: List[OneHotN] = list(itertools.product(*(self.one_hots(encoding) for encoding in self.uncontroversial1)))
+    #
+    #             # pack one_hots
+    #             Key: Tuple[Tuple[Set[Node], Set[Node]], ...]
+    #             packs: Dict[Key, Set[OneHotN]] = defaultdict(set)
+    #             entry = self.initial.precursory.assume({bounds}, manager=self.precursory.manager)
+    #             for (_, assumption) in assumptions:
+    #                 entry = entry.assume({assumption}, manager=self.precursory.manager)
+    #             for one_hot in one_hots:
+    #                 result1 = deepcopy(entry)
+    #                 for item in one_hot:
+    #                     result1 = result1.assume({item[1]}, manager=self.precursory.manager)
+    #
+    #                 key = list()
+    #                 for value in self.values:
+    #                     result2 = deepcopy(result1).assume({value[1]}, manager=self.precursory.manager)
+    #                     _, active, inactive = self.precursory.analyze(result2)
+    #                     # print(Fore.YELLOW + '--------- {}, {} --------- '.format(', '.join('{}'.format(item[0]) for item in one_hot), value[0]).replace('x014', 'male').replace('x015', 'female'))
+    #                     # print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in active)))
+    #                     # print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in inactive)))
+    #                     # print('score: {}'.format(len(active) + len(inactive)))
+    #                     key.append((frozenset(active), frozenset(inactive)))
+    #                 packs[tuple(key)].add(one_hot)
+    #             print(Fore.YELLOW + '\nPacks:')
+    #             score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
+    #             for key, pack in sorted(packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
+    #                 sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
+    #                 skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
+    #                 sscore = '(score: {})'.format(score(key) + len(pack))
+    #                 spack = ' | '.join('{}'.format(','.join('{}'.format(item[0]) for item in one_hot)) for one_hot in pack)
+    #                 print(Fore.YELLOW, skey, '->', spack, sscore, Style.RESET_ALL)
+    #
+    #             # # run the analysis on each one_hot combination at the time
+    #             # for one_hot in one_hots:
+    #             #     _assumptions = assumptions.copy()
+    #             #     for item in one_hot:
+    #             #         _assumptions.add((frozenset({item[0]}), item[1]))
+    #             #     self.pick(_assumptions, len(self.uncontroversial1), ranges, pivot2, splittable, percent / len(one_hots))
+    #
+    #             # run the analysis on the ranked packs
+    #             score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
+    #             for key, pack in sorted(packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
+    #                 _assumptions = assumptions.copy()
+    #                 items: List[OneHotN] = list(pack)       # multiple one-hot values for n features
+    #                 for i in range(len(items[0])):          # for each feature...
+    #                     vars: Set[VariableIdentifier] = set()
+    #                     var, case = items[0][i]
+    #                     vars.add(var)
+    #                     for item in items[1:]:
+    #                         var, nxt = item[i]
+    #                         vars.add(var)
+    #                         case = BinaryBooleanOperation(case, BinaryBooleanOperation.Operator.Or, nxt)
+    #                     _assumptions.add((frozenset(vars), case))
+    #                 newpercent = percent * len(pack) / len(one_hots)
+    #                 self.pick(_assumptions, len(self.uncontroversial1), ranges, pivot2, splittable, newpercent, key=key)
+    #
+    #         else:       # we can split the rest
+    #             if self.uncontroversial2 and splittable:
+    #                 (lower, upper) = ranges[self.uncontroversial2[pivot2]]
+    #                 if upper - lower <= self.difference:
+    #                     print('Cannot range split for {} anymore!'.format(self.uncontroversial2[pivot2]))
+    #                     remained = splittable.copy()
+    #                     remained.remove(self.uncontroversial2[pivot2])
+    #                     self.pick(assumptions, pivot1, ranges, (pivot2 + 1) % len(self.uncontroversial2), remained, percent)
+    #                 else:
+    #                     middle = lower + (upper - lower) / 2
+    #                     print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
+    #                     left = deepcopy(ranges)
+    #                     left[self.uncontroversial2[pivot2]] = (lower, middle)
+    #                     right = deepcopy(ranges)
+    #                     right[self.uncontroversial2[pivot2]] = (middle, upper)
+    #                     newpercent = percent / 2
+    #                     self.pick(assumptions, pivot1, left, (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent)
+    #                     self.pick(assumptions, pivot1, right, (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent)
+    #             else:
+    #                 self.unfeasible.value += percent
+    #                 self.ipaths += feasibility_and_patterns[2]
+    #                 print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
+    #                 print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible.value, self.explored), Style.RESET_ALL)
+    #                 # self.pick(assumptions, pivot1, ranges, pivot2, splittable, percent, do=True)
 
-        # bound the custom encoded uncontroversial features between their current lower and upper bounds
-        bounds = self.bounds
-        for feature, (lower, upper) in ranges.items():
-            left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
-            right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
-            conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
-            bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
+    def worker(self, queue, manager):
+        while True:
+            assumptions, pivot1, ranges, pivot2, splittable, percent, key = queue.get(block=True)
+            if assumptions is None:
+                queue.put((None, None, None, None, None, None, None))
+                break
+            print(Fore.LIGHTMAGENTA_EX + '\n---------------------------')
+            print('1-Hot: {}'.format(
+                ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
+            ))
+            print('Ranges: {}'.format(
+                ', '.join(
+                    '{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
+            ))
+            print('---------------------------\n', Style.RESET_ALL)
 
-        entry = self.initial.precursory.assume({bounds}, manager=self.precursory.manager)
-        # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
-        for (_, assumption) in assumptions:
-            entry = entry.assume({assumption}, manager=self.precursory.manager)
-        # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
-        feasibility_and_patterns = self.feasibility_and_patterns(entry, key=key, do=do)
-        feasible: bool = feasibility_and_patterns[0]
-        # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
-        if feasible or do:
+            # bound the custom encoded uncontroversial features between their current lower and upper bounds
+            bounds = self.bounds
+            for feature, (lower, upper) in ranges:
+                left = BinaryComparisonOperation(Literal(str(lower)), BinaryComparisonOperation.Operator.LtE, feature)
+                right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
+                conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+                bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
+
+            entry = self.initial.precursory.assume({bounds}, manager=manager)
+            # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
+            for (_, assumption) in assumptions:
+                entry = entry.assume({assumption}, manager=manager)
+            # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
+            feasibility_and_patterns = self.feasibility_and_patterns(entry, manager, key=key)
+            feasible: bool = feasibility_and_patterns[0]
+            # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
             if feasible:
-                self.partitions += 1
-                self.feasible += percent
+                with self.partitions.get_lock():
+                    self.partitions.value += 1
+                with self.feasible.get_lock():
+                    self.feasible.value += percent
                 self.epaths += feasibility_and_patterns[2]
-            patterns: List[Tuple[Tuple[VariableIdentifier, BinaryBooleanOperation], Set[Node], Set[Node], Set[Node]]] = feasibility_and_patterns[1]
-            key = list()
-            for _, self.activations, active, inactive in patterns:
-                key.append((frozenset(active), frozenset(inactive)))
+                patterns: List[Tuple[Tuple[VariableIdentifier, BinaryBooleanOperation], Set[Node], Set[Node], Set[Node]]] = feasibility_and_patterns[1]
+                key = list()
+                for _, _, active, inactive in patterns:
+                    key.append((frozenset(active), frozenset(inactive)))
 
-            value = (frozenset(assumptions), frozenset(ranges.items()), percent)
-            self.patterns[tuple(key)].add(value)    # self.partitions
-
-            # # pick outcome
-            # check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]] = dict()
-            # for chosen in self.outputs:
-            #     print(Fore.BLUE + 'Outcome: {}\n'.format(chosen), Style.RESET_ALL)
-            #     remaining = self.outputs - {chosen}
-            #     discarded = remaining.pop()
-            #     outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-            #     for discarded in remaining:
-            #         cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-            #         outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
-            #     result = self.initial.assume({outcome}, bwd=True)
-            #     # pick value of the sensitive feature
-            #     for ((case, value), self.activations, self.active, self.inactive) in patterns:
-            #         check[(chosen, case)] = set()
-            #         print('--------- {} --------- '.format(case).replace('x014', 'male').replace('x015', 'female'))
-            #         print('activations: {{{}}}'.format(
-            #             ', '.join('{}'.format(activation) for activation in self.activations)
-            #         ))
-            #         print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)))
-            #         print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)))
-            #         disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
-            #         paths = 2 ** disjunctions
-            #         print('Paths: {}\n'.format(paths))
-            #         # run the bias analysis
-            #         start = time.time()
-            #         progress = 0
-            #         joined = deepcopy(result).bottom()
-            #         for state in self.proceed(self.cfg.out_node, deepcopy(result), list(), do):
-            #             progress += 1
-            #             # if progress % 500 == 0:
-            #             #     print('\nProgress: {}/{}'.format(progress, paths), 'Time: {}s'.format(time.time() - start))
-            #             if state:
-            #                 state = state.assume({value})
-            #                 # state = state.assume({bounds}).assume({value})
-            #                 for (_, assumption) in assumptions:
-            #                     state = state.assume({assumption})
-            #
-            #                 # for feature, (lower, upper) in ranges.items():
-            #                 #     lte = BinaryComparisonOperation.Operator.LtE
-            #                 #     left = BinaryComparisonOperation(Literal(str(lower)), lte, feature)
-            #                 #     right = BinaryComparisonOperation(feature, lte, Literal(str(upper)))
-            #                 #     conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
-            #                 #     state = state.assume({conj})
-            #
-            #                 # forget the sensitive variables
-            #                 state = state.forget(self.sensitive)
-            #                 # for encoding in self.uncontroversial1:
-            #                 #     state = state.forget(encoding)
-            #
-            #                 if debug:
-            #                     representation = repr(state.polka)
-            #                 # if not representation.startswith('-1.0 >= 0'):
-            #                 check[(chosen, case)].add(state)
-            #                 joined = joined.join(state)
-            #                 if debug:
-            #                     print(representation)
-            #                     print('Time: {}s\n'.format(time.time() - start))
-            #         print('Joined: {}\n'.format(joined))
-            #         # check[(chosen, case)] = joined
-            #     print('---------\n')
-            # # check for bias
-            # self.bias_check(check, ranges, percent)
-            print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible, self.explored), Style.RESET_ALL)
-        else:       # too many disjunctions, we need to split further
-            print('Too many disjunctions!')
-
-            if pivot1 < len(self.uncontroversial1):     # we still have to split the one-hot encoded
-                print('1-hot splitting for: {}'.format(
-                    ' | '.join(', '.join('{}'.format(var) for var in encoding) for encoding in self.uncontroversial1)
-                ))
-
-                OneHot1: Tuple[VariableIdentifier, BinaryBooleanOperation]          # one-hot value for 1 feature
-                OneHotN: Tuple[OneHot1, ...]                                        # one-hot values for n features
-                one_hots: List[OneHotN] = list(itertools.product(*(self.one_hots(encoding) for encoding in self.uncontroversial1)))
-
-                # pack one_hots
-                Key: Tuple[Tuple[Set[Node], Set[Node]], ...]
-                packs: Dict[Key, Set[OneHotN]] = defaultdict(set)
-                entry = self.initial.precursory.assume({bounds}, manager=self.precursory.manager)
-                for (_, assumption) in assumptions:
-                    entry = entry.assume({assumption}, manager=self.precursory.manager)
-                for one_hot in one_hots:
-                    result1 = deepcopy(entry)
-                    for item in one_hot:
-                        result1 = result1.assume({item[1]}, manager=self.precursory.manager)
-
-                    key = list()
-                    for value in self.values:
-                        result2 = deepcopy(result1).assume({value[1]}, manager=self.precursory.manager)
-                        _, active, inactive = self.precursory.analyze(result2)
-                        # print(Fore.YELLOW + '--------- {}, {} --------- '.format(', '.join('{}'.format(item[0]) for item in one_hot), value[0]).replace('x014', 'male').replace('x015', 'female'))
-                        # print('active: {{{}}}'.format(', '.join('{}'.format(active) for active in active)))
-                        # print('inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in inactive)))
-                        # print('score: {}'.format(len(active) + len(inactive)))
-                        key.append((frozenset(active), frozenset(inactive)))
-                    packs[tuple(key)].add(one_hot)
-                print(Fore.YELLOW + '\nPacks:')
-                score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
-                for key, pack in sorted(packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
-                    sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
-                    skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
-                    sscore = '(score: {})'.format(score(key) + len(pack))
-                    spack = ' | '.join('{}'.format(','.join('{}'.format(item[0]) for item in one_hot)) for one_hot in pack)
-                    print(Fore.YELLOW, skey, '->', spack, sscore, Style.RESET_ALL)
-
-                # # run the analysis on each one_hot combination at the time
-                # for one_hot in one_hots:
-                #     _assumptions = assumptions.copy()
-                #     for item in one_hot:
-                #         _assumptions.add((frozenset({item[0]}), item[1]))
-                #     self.pick(_assumptions, len(self.uncontroversial1), ranges, pivot2, splittable, percent / len(one_hots))
-
-                # run the analysis on the ranked packs
-                score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
-                for key, pack in sorted(packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
-                    _assumptions = assumptions.copy()
-                    items: List[OneHotN] = list(pack)       # multiple one-hot values for n features
-                    for i in range(len(items[0])):          # for each feature...
-                        vars: Set[VariableIdentifier] = set()
-                        var, case = items[0][i]
-                        vars.add(var)
-                        for item in items[1:]:
-                            var, nxt = item[i]
-                            vars.add(var)
-                            case = BinaryBooleanOperation(case, BinaryBooleanOperation.Operator.Or, nxt)
-                        _assumptions.add((frozenset(vars), case))
-                    newpercent = percent * len(pack) / len(one_hots)
-                    self.pick(_assumptions, len(self.uncontroversial1), ranges, pivot2, splittable, newpercent, key=key)
-
-            else:       # we can split the rest
-                if self.uncontroversial2 and splittable:
-                    (lower, upper) = ranges[self.uncontroversial2[pivot2]]
-                    if upper - lower <= self.difference:
-                        print('Cannot range split for {} anymore!'.format(self.uncontroversial2[pivot2]))
-                        remained = splittable.copy()
-                        remained.remove(self.uncontroversial2[pivot2])
-                        self.pick(assumptions, pivot1, ranges, (pivot2 + 1) % len(self.uncontroversial2), remained, percent)
-                    else:
-                        middle = lower + (upper - lower) / 2
-                        print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
-                        left = deepcopy(ranges)
-                        left[self.uncontroversial2[pivot2]] = (lower, middle)
-                        right = deepcopy(ranges)
-                        right[self.uncontroversial2[pivot2]] = (middle, upper)
-                        newpercent = percent / 2
-                        self.pick(assumptions, pivot1, left, (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent)
-                        self.pick(assumptions, pivot1, right, (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent)
+                value = (frozenset(assumptions), frozenset(ranges), percent)
+                _key = tuple(key)
+                if _key not in self.patterns:
+                    self.patterns[_key] = {value}
                 else:
-                    self.unfeasible += percent
-                    self.ipaths += feasibility_and_patterns[2]
-                    print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
-                    print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible, self.feasible + self.unfeasible), Style.RESET_ALL)
-                    # self.pick(assumptions, pivot1, ranges, pivot2, splittable, percent, do=True)
+                    curr = self.patterns[_key]
+                    curr.add(value)
+                    self.patterns[_key] = curr
+                print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible.value, self.explored), Style.RESET_ALL)
+            else:  # too many disjunctions, we need to split further
+                print('Too many disjunctions!')
+
+                if pivot1 < len(self.uncontroversial1):  # we still have to split the one-hot encoded
+                    print('1-hot splitting for: {}'.format(
+                        ' | '.join(
+                            ', '.join('{}'.format(var) for var in encoding) for encoding in self.uncontroversial1)
+                    ))
+
+                    OneHot1: Tuple[VariableIdentifier, BinaryBooleanOperation]  # one-hot value for 1 feature
+                    OneHotN: Tuple[OneHot1, ...]  # one-hot values for n features
+                    one_hots: List[OneHotN] = list(
+                        itertools.product(*(self.one_hots(encoding) for encoding in self.uncontroversial1)))
+
+                    # pack one_hots
+                    Key: Tuple[Tuple[Set[Node], Set[Node]], ...]
+                    packs: Dict[Key, Set[OneHotN]] = defaultdict(set)
+                    entry = self.initial.precursory.assume({bounds}, manager=manager)
+                    for (_, assumption) in assumptions:
+                        entry = entry.assume({assumption}, manager=manager)
+                    for one_hot in one_hots:
+                        result1 = deepcopy(entry)
+                        for item in one_hot:
+                            result1 = result1.assume({item[1]}, manager=manager)
+
+                        key = list()
+                        for value in self.values:
+                            result2 = deepcopy(result1).assume({value[1]}, manager=manager)
+                            _, active, inactive = self.precursory.analyze(result2)
+                            key.append((frozenset(active), frozenset(inactive)))
+                        packs[tuple(key)].add(one_hot)
+                    print(Fore.YELLOW + '\nPacks:')
+                    score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
+                    for key, pack in sorted(packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
+                        sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
+                        skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
+                        sscore = '(score: {})'.format(score(key) + len(pack))
+                        spack = ' | '.join('{}'.format(','.join('{}'.format(item[0]) for item in one_hot)) for one_hot in pack)
+                        print(Fore.YELLOW, skey, '->', spack, sscore, Style.RESET_ALL)
+
+                    # run the analysis on the ranked packs
+                    score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
+                    for key, pack in sorted(packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
+                        _assumptions = list(assumptions)
+                        items: List[OneHotN] = list(pack)  # multiple one-hot values for n features
+                        for i in range(len(items[0])):  # for each feature...
+                            vars: Set[VariableIdentifier] = set()
+                            var, case = items[0][i]
+                            vars.add(var)
+                            for item in items[1:]:
+                                var, nxt = item[i]
+                                vars.add(var)
+                                case = BinaryBooleanOperation(case, BinaryBooleanOperation.Operator.Or, nxt)
+                            _assumptions.append((frozenset(vars), case))
+                        newpercent = percent * len(pack) / len(one_hots)
+                        queue.put((_assumptions, len(self.uncontroversial1), ranges, pivot2, splittable, newpercent, key))
+
+                else:  # we can split the rest
+                    rangesdict = dict(ranges)
+                    if self.uncontroversial2 and splittable:
+                        (lower, upper) = rangesdict[self.uncontroversial2[pivot2]]
+                        if upper - lower <= self.difference:
+                            print('Cannot range split for {} anymore!'.format(self.uncontroversial2[pivot2]))
+                            remained = splittable.copy()
+                            remained.remove(self.uncontroversial2[pivot2])
+                            queue.put((assumptions, pivot1, ranges, (pivot2 + 1) % len(self.uncontroversial2), remained, percent, None))
+                        else:
+                            middle = lower + (upper - lower) / 2
+                            print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
+                            left = deepcopy(rangesdict)
+                            left[self.uncontroversial2[pivot2]] = (lower, middle)
+                            right = deepcopy(rangesdict)
+                            right[self.uncontroversial2[pivot2]] = (middle, upper)
+                            newpercent = percent / 2
+                            queue.put((assumptions, pivot1, list(left.items()), (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent, None))
+                            queue.put((assumptions, pivot1, list(right.items()), (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent, None))
+                    else:
+                        with self.unfeasible.get_lock():
+                            self.unfeasible.value += percent
+                        self.ipaths += feasibility_and_patterns[2]
+                        print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
+                        print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible.value, self.explored), Style.RESET_ALL)
+                        # self.pick(assumptions, pivot1, ranges, pivot2, splittable, percent, do=True)
+            if self.explored >= 100.0:
+                queue.put((None, None, None, None, None, None, None))
+
 
     def proceed(self, node, initial, path, join):
         if debug:
@@ -707,6 +850,7 @@ class BiasInterpreter(BackwardInterpreter):
     def analyze(self, initial: BiasState,
                 inputs: Set[VariableIdentifier] = None,                             # input variables
                 outputs: Set[VariableIdentifier] = None,                            # output variables
+                activations: Set[Node] = None,                                      # activations
                 splits: Dict[int, Dict[VariableIdentifier, PyTexpr1]] = None,       # partitioning information
                 relus: Dict[VariableIdentifier, Node] = Node):                      # relus information
         self._initial = initial
@@ -768,6 +912,7 @@ class BiasInterpreter(BackwardInterpreter):
         """
         do the analysis
         """
+        self.activations = activations
         self.splits = splits
         self.affines = list(splits[self.layer].keys())
         self.relus = relus
@@ -776,13 +921,32 @@ class BiasInterpreter(BackwardInterpreter):
         print('|| Pre-Analysis ||')
         print('||==============||', Style.RESET_ALL)
 
+        cpu = multiprocessing.cpu_count()
+        print('\nNumber of CPUs: {}'.format(cpu))
+        queue = multiprocessing.Queue()
+        queue.put((list(), 0, list(ranges.items()), 0, list(self.uncontroversial2), 100, None))
+
         start1 = time.time()
-        self.pick(set(), 0, ranges, 0, set(self.uncontroversial2), 100)
+        # self.pick(set(), 0, ranges, 0, set(self.uncontroversial2), 100)
+
+        # instantiating the processes
+        processes = list()
+        for _ in range(cpu):
+            man = PyBoxMPQManager()
+            process = multiprocessing.Process(target=self.worker, args=(queue, man))
+            processes.append(process)
+            process.start()
+        # completing the processes
+        for process in processes:
+            process.join()
+
+        # pool = multiprocessing.Pool(cpu, self.worker, (queue,))
+        # pool.close()
+        # pool.join()
         end1 = time.time()
-        # self.pick2(1, 0, set(), set(), set(), set(), set(), 0, set(), 0, set(self.uncontroversial2), ranges, 100)
 
         pattnum = len(self.patterns)
-        print(Fore.BLUE + '\nFound: {} patterns for {} partitions'.format(pattnum, self.partitions))
+        print(Fore.BLUE + '\nFound: {} patterns for {} partitions'.format(pattnum, self.partitions.value))
         prioritized = sorted(self.patterns.items(), key=lambda v: len(v[1]), reverse=True)
         for key, pack in prioritized:
             sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
@@ -825,23 +989,10 @@ class BiasInterpreter(BackwardInterpreter):
 
         print(Fore.BLUE + '\n||==========||')
         print('|| Analysis ||')
-        print('||==========||', Style.RESET_ALL)
+        print('||==========||\n', Style.RESET_ALL)
 
         cpu = multiprocessing.cpu_count()
         print('\nNumber of CPUs: {}'.format(cpu))
-
-        # job dispatching
-        jobs = [list() for _ in range(cpu)]
-        for idx, (key, pack) in enumerate(prioritized):
-            p = idx % (2 * cpu)
-            if p < cpu:
-                p = p
-            else:
-                p = -(p - cpu + 1)
-            jobs[p].append((idx, (key, pack)))
-        for idx, job in enumerate(jobs):
-            print('job #{}: {}'.format(idx, ','.join('{}'.format(task[0]) for task in job)))
-
         colors = [
             Style.RESET_ALL,
             Back.BLACK + Fore.WHITE,
@@ -853,12 +1004,33 @@ class BiasInterpreter(BackwardInterpreter):
             Back.YELLOW + Fore.BLACK,
         ]
 
+        # job dispatching
+        workload = self.partitions.value / cpu
+        jobs = [list() for _ in range(cpu)]
+        # for idx, (key, pack) in enumerate(prioritized):
+        #     p = idx % (2 * cpu)
+        #     if p < cpu:
+        #         p = p
+        #     else:
+        #         p = -(p - cpu + 1)
+        #     jobs[p].append((idx, (key, pack)))
+        j = 0
+        load = 0
+        for idx, (key, pack) in enumerate(prioritized):
+            load += len(pack)
+            jobs[j].append((idx, (key, pack)))
+            if load >= workload:
+                j += 1
+                load = 0
+        for idx, job in enumerate(jobs):
+            print('job #{}: {}'.format(idx, ','.join('{}'.format(task[0]) for task in job)))
+
         start2 = time.time()
         # instantiating the processes
         processes = list()
         for idx, job in enumerate(jobs):
             man = PyPolkaMPQstrictManager()
-            process = multiprocessing.Process(target=self.work, args=(colors[idx], job, man, len(compressed)))
+            process = multiprocessing.Process(target=self.work, args=(colors[idx % len(colors)], job, man, len(compressed)))
             processes.append(process)
             process.start()
         # completing the processes
@@ -866,7 +1038,7 @@ class BiasInterpreter(BackwardInterpreter):
             process.join()
         end2 = time.time()
 
-        print(Fore.BLUE + '\nResult: {}% of {}% ({}% biased)'.format(self.feasible, self.explored, self.biased.value))
+        print(Fore.BLUE + '\nResult: {}% of {}% ({}% biased)'.format(self.feasible.value, self.explored, self.biased.value))
         print('Pre-Analysis Time: {}s'.format(end1 - start1))
         print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
 
@@ -919,6 +1091,7 @@ class BiasAnalysis(Runner):
         super().__init__()
         self.inputs: Set[VariableIdentifier] = None                             # input variables
         self.outputs: Set[VariableIdentifier] = None                            # output variables
+        self.activations: Set[Node] = None                                      # activations
         self.splits: Dict[int, Dict[VariableIdentifier, PyTexpr1]] = None       # partitioning information
         self.relus: Dict[VariableIdentifier, Node] = None                       # relus information
         self.man1: PyManager = PyBoxMPQManager()
@@ -963,6 +1136,7 @@ class BiasAnalysis(Runner):
     _lyra2apron = Lyra2APRON()
 
     def lyra2apron(self, environment):
+        activations = set()
         splits: Dict[int, Dict[VariableIdentifier, PyTexpr1]] = dict()
         relus: Dict[VariableIdentifier, Node] = dict()
         layer: int = 1
@@ -985,6 +1159,7 @@ class BiasAnalysis(Runner):
                 newnode = Function(current.identifier, (vars, exprs))
                 self.cfg.nodes[current.identifier] = newnode
             elif isinstance(current, Activation):
+                activations.add(current)
                 relus[current.stmts[0].arguments[0].variable] = current
                 variable = self._lyra2apron.visit(current.stmts[0], environment)
                 newnode = Activation(current.identifier, variable)
@@ -994,7 +1169,7 @@ class BiasAnalysis(Runner):
                 worklist.put(node)
         # delete last added layer because there are no ReLUs there
         del splits[layer - 1]
-        return splits, relus
+        return activations, splits, relus
 
     def main(self, path):
         self.path = path
@@ -1015,11 +1190,11 @@ class BiasAnalysis(Runner):
             for variable in variables:
                 r_vars.append(PyVar(variable.name))
             environment = PyEnvironment([], r_vars)
-            self.splits, self.relus = self.lyra2apron(environment)
+            self.activations, self.splits, self.relus = self.lyra2apron(environment)
         self.run()
 
     def run(self):
         start = time.time()
-        self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, splits=self.splits, relus=self.relus)
+        self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations, splits=self.splits, relus=self.relus)
         end = time.time()
         print('Total: {}s'.format(end - start), Style.RESET_ALL)
