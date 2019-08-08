@@ -4,31 +4,25 @@ Forward Analysis Engine
 
 :Author: Caterina Urban
 """
-
-from collections import deque, defaultdict
 from copy import deepcopy
 from queue import Queue
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, Tuple
 
-from apronpy.coeff import PyMPQScalarCoeff, CoeffDiscr, PyMPQIntervalCoeff, PyMPFRIntervalCoeff, PyDoubleIntervalCoeff, \
-    PyMPFRScalarCoeff, PyDoubleScalarCoeff
-from apronpy.environment import PyEnvironment
+from apronpy.coeff import PyMPQScalarCoeff
 from apronpy.lincons0 import ConsTyp
 from apronpy.manager import PyManager
-from apronpy.scalar import PyMPQScalar, ScalarDiscr
+from apronpy.scalar import PyMPQScalar
 from apronpy.tcons1 import PyTcons1, PyTcons1Array
 from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir, TexprDiscr
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 
-from libra.abstract_domains.numerical.interval_domain import BoxState, PyMPQInterval
-from libra.core.expressions import VariableIdentifier
+from libra.abstract_domains.numerical.interval_domain import BoxState
 from libra.engine.interpreter import Interpreter
-from libra.engine.result import AnalysisResult
-from libra.semantics.forward import ForwardSemantics, DefaultForwardSemantics
+from libra.semantics.forward import DefaultForwardSemantics
 
 from libra.abstract_domains.state import State
-from libra.core.cfg import Basic, Loop, Conditional, Edge, Node, Function, Activation
+from libra.core.cfg import Node, Function, Activation
 
 
 rtype = TexprRtype.AP_RTYPE_REAL

@@ -6,50 +6,25 @@ Bias Analysis
 """
 import ast
 import ctypes
-import itertools
-import multiprocessing
-import os
-import sys
 import time
-from abc import ABCMeta
-from collections import defaultdict
-from copy import deepcopy
-from itertools import product
-from queue import Queue, Empty
-from typing import Optional, Tuple, Set, Dict, List, FrozenSet
+from queue import Queue
+from typing import Set, Dict
 
-from apronpy.coeff import PyMPQScalarCoeff
 from apronpy.environment import PyEnvironment
-from apronpy.interval import PyInterval
-from apronpy.lincons0 import ConsTyp
 from apronpy.manager import FunId, PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
-from apronpy.polka import PyPolka
-from apronpy.tcons1 import PyTcons1, PyTcons1Array
-from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
-from pip._vendor.colorama import Fore, Style, Back
+from pip._vendor.colorama import Style
 
 from libra.abstract_domains.bias.bias_domain import BiasState
-from libra.abstract_domains.numerical.interval_domain import BoxState, IntEnum
-from libra.abstract_domains.numerical.octagon_domain import OctagonState
-from libra.abstract_domains.numerical.polyhedra_domain import PolyhedraState
-from libra.abstract_domains.state import State
+from libra.abstract_domains.numerical.interval_domain import BoxState
 from libra.core.cfg import Node, Function, Activation
-from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
-from libra.core.statements import Call, VariableAccess, Assignment, Lyra2APRON
+from libra.core.expressions import VariableIdentifier
+from libra.core.statements import Assignment, Lyra2APRON
 from libra.engine.backward import BackwardInterpreter, BiasBackwardSemantics
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
-from libra.engine.result import AnalysisResult
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
-from libra.semantics.backward import DefaultBackwardSemantics
-from libra.semantics.forward import DefaultForwardSemantics
-from libra.visualization.graph_renderer import CFGRenderer
-
-
-
-# debug = False
 
 
 class BiasAnalysis(Runner):
@@ -168,6 +143,7 @@ class BiasAnalysis(Runner):
 
     def run(self):
         start = time.time()
-        self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations)
+        log = self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations)
         end = time.time()
         print('Total: {}s'.format(end - start), Style.RESET_ALL)
+        print('{} {}s'.format(log, end - start))

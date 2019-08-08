@@ -1,72 +1,65 @@
 
 import faulthandler
 faulthandler.enable()
-
-######################
-# Numerical Analyses #
-######################
-
-# from libra.engine.numerical.interval_analysis import ForwardIntervalAnalysis
-# ForwardIntervalAnalysis().main("tests/example.py")
-
-# from libra.engine.numerical.interval_analysis import ForwardBoxAnalysis
-# ForwardBoxAnalysis().main("tests/example.py")
-
-# from libra.engine.numerical.interval_analysis import BackwardIntervalAnalysis
-# BackwardIntervalAnalysis().main("tests/example.py")
-
-# from libra.engine.numerical.polyhedra_analysis import ForwardPolyhedraAnalysis
-# ForwardPolyhedraAnalysis().main("tests/example.py")
-
-# from libra.engine.numerical.polyhedra_analysis import BackwardPolyhedraAnalysis
-# BackwardPolyhedraAnalysis().main("tests/example.py")
-
-#################
-# Bias Analyses #
-#################
-
-from libra.engine.bias.bias_analysis import BiasAnalysis
+from libra.engine.bias_analysis import BiasAnalysis
 
 # BiasAnalysis().main("tests/example.py")
-# BiasAnalysis().main("tests/example0.py")
-# BiasAnalysis().main("tests/example2.py")
-# BiasAnalysis().main("tests/example3.py")
+# BiasAnalysis('playground.txt').main("tests/example0.py")
+# BiasAnalysis('playground.txt').main("tests/example2.py")
+# BiasAnalysis('playground.txt').main("tests/example3.py")
 
-# # 25.0% (25.0% biased) 0.17382192611694336s 3.322619915008545s 3.528939723968506s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0.25, widening=4).main("tests/model-10-5-0.97.py")
-# # 25.0% (25.0% biased) 0.6399009227752686s 0.30579304695129395s 0.9775271415710449s
+# # 25.0 (25.0% biased) 0.15158510208129883s 3.6247379779815674s 3.8694889545440674s
+# BiasAnalysis('playground.txt', difference=0.25, widening=4).main("tests/model-10-5-0.97.py")
+# # 25.0 (25.0% biased) 0.8611981868743896s 0.3377547264099121s 1.257138967514038s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0.25, widening=2).main("tests/model-10-5-0.97.py")
-# # 25.0% (25.0% biased) 0.6397461891174316s 0.31095409393310547s 0.9934120178222656s
+# # 25.0 (25.0% biased) 0.812960147857666s 0.30427026748657227s 1.1739461421966553s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0.25, widening=3).main("tests/model-10-5-0.97.py")
-# # 25.0% (25.0% biased) 0.6328930854797363s 0.31067585945129395s 0.9749112129211426s
+# # 25.0 (25.0% biased) 0.829779863357544s 0.3374330997467041s 1.231825828552246s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0.25, widening=4).main("tests/model-10-5-0.97.py")
+# # 25.0 (25.0% biased) 0.3660581111907959s 0.32540297508239746s 0.7585849761962891s
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.25, widening=2).main("tests/model-10-5-0.97.py")
+# # 25.0 (25.0% biased) 0.3202991485595703s 0.3031191825866699s 0.6830089092254639s <===
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.25, widening=3).main("tests/model-10-5-0.97.py")
+# # 25.0 (25.0% biased) 0.3634219169616699s 0.3383219242095947s 0.7663030624389648s
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.25, widening=4).main("tests/model-10-5-0.97.py")
 
-# # 25.0% (25.0% biased) 0.2308197021484375s 0.7276649475097656s 0.992746114730835s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0.125, widening=2).main("tests/model-10-5-0.97.py")
-# # 37.5% (37.5% biased) 0.22934508323669434s 1.027214765548706s 1.2892968654632568s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0.125, widening=3).main("tests/model-10-5-0.97.py")
-# # 37.5% (37.5% biased) 0.2405529022216797s 3.3661580085754395s 3.637967824935913s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0.125, widening=4).main("tests/model-10-5-0.97.py")
-# # 50.0% (50.0% biased) 0.8401069641113281s 0.4834442138671875s 1.3561789989471436s
+# # 25.0 (25.0% biased) 0.24852204322814941s 0.7434532642364502s 1.0528631210327148s
+# BiasAnalysis('playground.txt', difference=0.125, widening=2).main("tests/model-10-5-0.97.py")
+# # 37.5 (37.5% biased) 0.20398998260498047s 1.0458550453186035s 1.3371529579162598s
+# BiasAnalysis('playground.txt', difference=0.125, widening=3).main("tests/model-10-5-0.97.py")
+# # 37.5 (37.5% biased) 0.19133996963500977s 3.363255023956299s 3.618574857711792s
+# BiasAnalysis('playground.txt', difference=0.125, widening=4).main("tests/model-10-5-0.97.py")
+# # 50.0 (50.0% biased) 1.1622118949890137s 0.491041898727417s 1.7147769927978516s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0.125, widening=2).main("tests/model-10-5-0.97.py")
-# # 50.0% (50.0% biased) 0.8726568222045898s 0.48987889289855957s 1.3988838195800781s
+# # 50.0 (50.0% biased) 1.149907112121582s 0.48775792121887207s 1.703446865081787s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0.125, widening=3).main("tests/model-10-5-0.97.py")
-# # 50.0% (50.0% biased) 0.8680739402770996s 0.4996151924133301s 1.401702880859375s
+# # 50.0 (50.0% biased) 1.1623070240020752s 0.4915308952331543s 1.713324785232544s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0.125, widening=4).main("tests/model-10-5-0.97.py")
+# # 50.0 (50.0% biased) 0.44672584533691406s 0.489605188369751s 0.997532844543457s <===
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.125, widening=2).main("tests/model-10-5-0.97.py")
+# # 50.0 (50.0% biased) 0.4320809841156006s 0.5026333332061768s 0.9987890720367432s
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.125, widening=3).main("tests/model-10-5-0.97.py")
+# # 50.0 (50.0% biased) 0.443835973739624s 0.5086121559143066s 1.0177128314971924s
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.125, widening=4).main("tests/model-10-5-0.97.py")
 
-# 100.0% (73.6328125% biased) 1.4397509098052979s 6.321099042892456s 7.872607946395874s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0, widening=2).main("tests/model-10-5-0.97.py")     # 7.834737300872803s
-# 100.0% (74.21875% biased) 1.0723309516906738s 7.6071250438690186s 8.770008087158203s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0, widening=3).main("tests/model-10-5-0.97.py")     # 9.138473987579346s
-# 100.0% (74.21875% biased) 0.8227808475494385s 9.023157119750977s 9.921536922454834s
-# BiasAnalysis('playground.txt', symbolic1=False, difference=0, widening=4).main("tests/model-10-5-0.97.py")     # 10.073421716690063s
-# 100.0% (75.0% biased) 2.3313472270965576s 3.279317855834961s 5.673985958099365s
-# BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=2).main("tests/model-10-5-0.97.py")     # 13.498871088027954s
-BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=2).main("tests/model-10-5-0.97.py")     # 13.498871088027954s
-# 100.0% (75.0% biased) 1.8078088760375977s 3.4563162326812744s 5.3152501583099365s
-# BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=3).main("tests/model-10-5-0.97.py")     # 10.897016763687134s
-# 100.0% (75.0% biased) 1.3733391761779785s 3.664357900619507s 5.084070920944214s
-# BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=4).main("tests/model-10-5-0.97.py")     # 9.397150993347168s
+# # 100.0 (73.6328125% biased) 1.3627080917358398s 5.73189115524292s 7.26416277885437s
+BiasAnalysis('playground.txt', difference=0, widening=2).main("tests/model-10-5-0.97.py")   # reference
+# # 100.0 (74.21875% biased) 1.022963047027588s 7.4370551109313965s 8.591149091720581s
+# BiasAnalysis('playground.txt', difference=0, widening=3).main("tests/model-10-5-0.97.py")
+# # 100.0 (74.21875% biased) 0.7698900699615479s 8.733776092529297s 9.602909326553345s
+# BiasAnalysis('playground.txt', difference=0, widening=4).main("tests/model-10-5-0.97.py")
+# # 100.0 (75.0% biased) 9.67160177230835s 3.0475850105285645s 12.805122137069702s
+# BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=2).main("tests/model-10-5-0.97.py")
+# # 100.0 (75.0% biased) 7.141970157623291s 3.414651870727539s 10.635745763778687s
+# BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=3).main("tests/model-10-5-0.97.py")
+# # 100.0 (75.0% biased) 5.4372148513793945s 3.6349539756774902s 9.142781019210815s
+# BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=4).main("tests/model-10-5-0.97.py")
+# # 100.0 (75.0% biased) 1.504511833190918s 3.1173629760742188s 4.713061094284058s
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=2).main("tests/model-10-5-0.97.py")
+# # 100.0 (75.0% biased) 1.173940896987915s 3.3100898265838623s 4.566112995147705s
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=3).main("tests/model-10-5-0.97.py")
+# # 100.0 (75.0% biased) 0.8827242851257324s 3.5295209884643555s 4.481604099273682s <===
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=4).main("tests/model-10-5-0.97.py")
 
-# BiasAnalysis().main("tests/model-10-6-1.00.py")
-# BiasAnalysis().main("tests/model-20-6-1.00.py")
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.25, widening=4).main("tests/model-10-6-1.00.py")
+# BiasAnalysis('playground.txt', symbolic2=True, difference=0.0625, widening=4).main("tests/model-20-6-1.00.py")

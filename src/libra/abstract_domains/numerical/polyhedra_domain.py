@@ -8,20 +8,14 @@ is represented by a conjunction of linear constraints.
 
 :Authors: Caterina Urban
 """
-from copy import deepcopy
 from typing import Set
 
-from apronpy.environment import PyEnvironment
 from apronpy.manager import PyManager
 from apronpy.polka import PyPolka
-from apronpy.tcons1 import PyTcons1Array
-from apronpy.var import PyVar
 
 from libra.abstract_domains.numerical.apron_domain import APRONState
 from libra.abstract_domains.state import State
-from libra.core.expressions import VariableIdentifier, Expression, BinaryBooleanOperation, \
-    BinaryComparisonOperation, NegationFreeExpression, Lyra2APRON
-from libra.core.utils import copy_docstring
+from libra.core.expressions import VariableIdentifier
 
 
 class PolyhedraState(APRONState):

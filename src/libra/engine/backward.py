@@ -5,68 +5,67 @@ Backward Analysis Engine
 :Author: Caterina Urban
 """
 
-from collections import deque
-from copy import deepcopy
-from queue import Queue
-from typing import List, Optional
-
-from apronpy.manager import PyManager
-
-from libra.engine.interpreter import Interpreter
-from libra.engine.result import AnalysisResult
-from libra.semantics.backward import BackwardSemantics
-
-from libra.abstract_domains.state import State
-from libra.core.cfg import Basic, Loop, Conditional, Edge, Node, Function, Activation
-
-
-import ast
-import ctypes
 import itertools
-import multiprocessing
-import os
-import sys
+import operator
 import time
-from abc import ABCMeta
-from collections import defaultdict
 from copy import deepcopy
-from itertools import product
-from queue import Queue, Empty
-from typing import Optional, Tuple, Set, Dict, List, FrozenSet
+from functools import reduce
+from multiprocessing import Value, Manager, Queue, Process, cpu_count, Lock
+from typing import Tuple, Set, Dict, List, FrozenSet
 
 from apronpy.coeff import PyMPQScalarCoeff
-from apronpy.environment import PyEnvironment
-from apronpy.interval import PyInterval
 from apronpy.lincons0 import ConsTyp
-from apronpy.manager import FunId, PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
+from apronpy.manager import PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
 from apronpy.polka import PyPolka
 from apronpy.tcons1 import PyTcons1, PyTcons1Array
 from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir
 from apronpy.texpr1 import PyTexpr1
-from apronpy.var import PyVar
 from pip._vendor.colorama import Fore, Style, Back
 
 from libra.abstract_domains.bias.bias_domain import BiasState
-from libra.abstract_domains.numerical.interval_domain import BoxState, IntEnum
-from libra.abstract_domains.numerical.octagon_domain import OctagonState
-from libra.abstract_domains.numerical.polyhedra_domain import PolyhedraState
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
-from libra.core.statements import Call, VariableAccess, Assignment, Lyra2APRON
-from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
-from libra.engine.result import AnalysisResult
-from libra.engine.runner import Runner
-from libra.frontend.cfg_generator import ast_to_cfg
+from libra.engine.interpreter import Interpreter
 from libra.semantics.backward import DefaultBackwardSemantics
-from libra.semantics.forward import DefaultForwardSemantics
-from libra.visualization.graph_renderer import CFGRenderer
-
 
 rtype = TexprRtype.AP_RTYPE_REAL
 rdir = TexprRdir.AP_RDIR_RND
 OneHot1 = Tuple[VariableIdentifier, BinaryBooleanOperation]      # one-hot value for 1 feature
 OneHotN = Tuple[OneHot1, ...]                                    # one-hot values for n features
+lock = Lock()
+
+
+def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
+    """Compute all possible one-hots for a given list of variables
+
+    :param variables: list of variables one-hot encoding a categorical input feature
+    :return: set of Libra expressions corresponding to each possible value of the one-hot encoding
+    (paired with the variable being one in the encoded value for convenience ---
+    the variable is the first element of the tuple)
+    """
+    values: Set[OneHot1] = set()
+    arity = len(variables)
+    for i in range(arity):
+        # the current variable has value one
+        one = Literal('1')
+        lower = BinaryComparisonOperation(one, BinaryComparisonOperation.Operator.LtE, variables[i])
+        upper = BinaryComparisonOperation(variables[i], BinaryComparisonOperation.Operator.LtE, one)
+        value = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+        # everything else has value zero
+        zero = Literal('0')
+        for j in range(0, i):
+            lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
+            upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
+            conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+            value = BinaryBooleanOperation(conj, BinaryBooleanOperation.Operator.And, value)
+        for j in range(i + 1, arity):
+            lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
+            upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
+            conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+            value = BinaryBooleanOperation(value, BinaryBooleanOperation.Operator.And, conj)
+        values.add((variables[i], value))
+    return values
 
 
 class BackwardInterpreter(Interpreter):
@@ -74,8 +73,7 @@ class BackwardInterpreter(Interpreter):
 
     def __init__(self, cfg, manager, semantics, specification, widening=2, difference=0.25, precursory=None):
         super().__init__(cfg, semantics, widening=widening, precursory=precursory)
-        self.manager: PyManager = manager
-
+        self.manager: PyManager = manager                               # manager to be used for the analysis
         self._initial: BiasState = None                                 # initial analysis state
 
         self.specification = specification                              # input specification file
@@ -87,22 +85,20 @@ class BackwardInterpreter(Interpreter):
 
         self.outputs: Set[VariableIdentifier] = None                    # output classes
 
-        self.activations = None         # activation nodes
-        self.active = None              # always active activations
-        self.inactive = None            # always inactive activations
-        self.count = multiprocessing.Value('i', 0)                  # 1-hot split count
-        self.packs = multiprocessing.Manager().dict()               # packing of 1-hot splits
-        Key: Tuple[Tuple[Set[Node], Set[Node]], ...]
-        self.patterns = multiprocessing.Manager().dict()            # packing of abstract activation patterns
-        self.partitions = multiprocessing.Value('i', 0)
+        self.activations = None                                         # activation nodes
+        self.active = None                                              # always active activations
+        self.inactive = None                                            # always inactive activations
+        self.packs = Manager().dict()                                   # packing of 1-hot splits
+        self.count = 0                                                  # 1-hot split count
+        self.patterns = Manager().dict()                                # packing of abstract activation patterns
+        self.partitions = Value('i', 0)
 
-        self.difference = difference    # minimum range (default: 0.25)
-        self.size = 2                   # minimum pack size
+        self.difference = difference                                    # minimum range (default: 0.25)
 
-        self.feasible = multiprocessing.Value('d', 0.0)                # percentage that could be analyzed
-        self.biased = multiprocessing.Value('d', 0.0)                  # percentage that is biased
-        self.unfeasible = multiprocessing.Value('d', 0.0)              # percentage that was ignored
-        self.analyzed = multiprocessing.Value('i', 0)                  # analyzed patterns
+        self.biased = Value('d', 0.0)                                   # percentage that is biased
+        self.feasible = Value('d', 0.0)                                 # percentage that could be analyzed
+        self.explored = Value('d', 0.0)                                 # percentage that was explored
+        self.analyzed = Value('i', 0)                                   # analyzed patterns
 
     @property
     def initial(self):
@@ -111,45 +107,6 @@ class BackwardInterpreter(Interpreter):
         :return: a deep copy of the initial analysis state
         """
         return deepcopy(self._initial)
-
-    @property
-    def explored(self):
-        """Explored percentage
-
-        :return: percentage that was explored
-        """
-        return self.feasible.value + self.unfeasible.value
-
-    def one_hots(self, variables: List[VariableIdentifier]) -> Set[OneHot1]:
-        """Compute all possible one-hots for a given list of variables
-
-        :param variables: list of variables one-hot encoding a categorical input feature
-        :return: set of Libra expressions corresponding to each possible value of the one-hot encoding
-        (paired with the variable being one in the encoded value for convenience ---
-        the variable is the first element of the tuple)
-        """
-        values: Set[OneHot1] = set()
-        arity = len(variables)
-        for i in range(arity):
-            # the current variable has value one
-            one = Literal('1')
-            lower = BinaryComparisonOperation(one, BinaryComparisonOperation.Operator.LtE, variables[i])
-            upper = BinaryComparisonOperation(variables[i], BinaryComparisonOperation.Operator.LtE, one)
-            value = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
-            # everything else has value zero
-            zero = Literal('0')
-            for j in range(0, i):
-                lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
-                upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
-                conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
-                value = BinaryBooleanOperation(conj, BinaryBooleanOperation.Operator.And, value)
-            for j in range(i+1, arity):
-                lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
-                upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
-                conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
-                value = BinaryBooleanOperation(value, BinaryBooleanOperation.Operator.And, conj)
-            values.add((variables[i], value))
-        return values
 
     def feasibility(self, state, manager, key=None, do=False):
         """Determine feasibility (and activation patterns) for a partition of the input space
@@ -177,14 +134,22 @@ class BackwardInterpreter(Interpreter):
         return feasible, patterns, disjunctions
 
     def producer(self, queue3):
-        one_hots = itertools.product(*(self.one_hots(encoding) for encoding in self.uncontroversial1))
-        count = 0
-        for count, one_hot in enumerate(one_hots):
+        """Produce all possible combinations of one-hots for the one-hot encoded uncontroversial features
+
+        :param queue3: queue in which to put the combinations
+        """
+        one_hotn = itertools.product(*(one_hots(encoding) for encoding in self.uncontroversial1))
+        for one_hot in one_hotn:
             queue3.put(one_hot)
-        self.count.value = count+1
         queue3.put(None)
 
     def consumer(self, queue3, entry, manager):
+        """Consume a combination of one-hots and put it in its abstract activation pattern pack
+
+        :param queue3: queue from which to get the combination
+        :param entry: state from which to start the (forward) analysis
+        :param manager: manager to be used for the analysis
+        """
         while True:
             one_hot = queue3.get(block=True)
             if one_hot is None:
@@ -199,36 +164,33 @@ class BackwardInterpreter(Interpreter):
                 active, inactive = self.precursory.analyze(result2)
                 key.append((frozenset(active), frozenset(inactive)))
             _key = tuple(key)
-            if _key not in self.packs:
-                self.packs[_key] = {one_hot}
-            else:
-                curr = self.packs[_key]
-                curr.add(one_hot)
-                self.packs[_key] = curr
+            lock.acquire()
+            curr = self.packs.get(_key, set())
+            curr.add(one_hot)
+            self.packs[_key] = curr
+            lock.release()
 
     def packing(self, entry):
-        print('1-hot splitting for: {}'.format(
-            ' | '.join(
-                ', '.join('{}'.format(var) for var in encoding) for encoding in self.uncontroversial1)
-        ))
+        """Pack all combinations of one-hots into abstract activation pattern packs
 
-        # prepare the queue
-        queue3 = multiprocessing.Queue()
-        # do the 1-hot splitting
+        :param entry: state from which to start the (forward) analysis
+        """
+        queue3 = Queue()
         start3 = time.time()
         processes = list()
-        process = multiprocessing.Process(target=self.producer, args=(queue3,))
+        process = Process(target=self.producer, args=(queue3,))
         processes.append(process)
-        process.start()
-        for _ in range(multiprocessing.cpu_count() - 1):
-            process = multiprocessing.Process(target=self.consumer, args=(queue3, entry, PyBoxMPQManager()))
+        for _ in range(cpu_count() - 1):
+            process = Process(target=self.consumer, args=(queue3, entry, PyBoxMPQManager()))
             processes.append(process)
+        for process in processes:
             process.start()
         for process in processes:
             process.join()
         end3 = time.time()
-
-        print(Fore.YELLOW + '\nFound {} Packs:'.format(self.count.value))
+        _count = sum(len(pack) for pack in self.packs.values())
+        assert self.count == _count
+        print(Fore.YELLOW + '\nFound {} Packs for {} 1-Hot Combinations:'.format(len(self.packs), _count))
         score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
         for key, pack in sorted(self.packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
             sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
@@ -236,24 +198,29 @@ class BackwardInterpreter(Interpreter):
             sscore = '(score: {})'.format(score(key) + len(pack))
             spack = ' | '.join('{}'.format(','.join('{}'.format(item[0]) for item in one_hot)) for one_hot in pack)
             print(Fore.YELLOW, skey, '->', spack, sscore, Style.RESET_ALL)
-        print(Fore.YELLOW + '1-Hot Splitting Time: {}s'.format(end3 - start3), Style.RESET_ALL)
+        print(Fore.YELLOW + '1-Hot Splitting Time: {}s\n'.format(end3 - start3), Style.RESET_ALL)
 
-    def worker1(self, queue1, manager):
+    def worker1(self, id, color, queue1, manager):
+        """Partition the analysis into feasible chunks and pack them into abstract activation pattern packs
+
+        :param id: id of the process
+        :param color: color associated with the process (for logging)
+        :param queue1: queue from which to get the current chunk
+        :param manager: manager to be used for the (forward) analysis
+        """
         while True:
             assumptions, pivot1, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
-            if assumptions is None:
+            if assumptions is None:     # no more chunks
                 queue1.put((None, None, None, None, None, None, None))
                 break
-            print(Fore.LIGHTMAGENTA_EX + '\n---------------------------')
-            print('1-Hot: {}'.format(
+            r_assumptions = '1-Hot: {}'.format(
                 ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
-            ))
-            print('Ranges: {}'.format(
-                ', '.join(
-                    '{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
-            ))
-            print('---------------------------\n', Style.RESET_ALL)
-
+            ) if assumptions else ''
+            r_ranges = 'Ranges: {}'.format(
+                ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
+            )
+            r_partition = '{} | {}'.format(r_assumptions, r_ranges) if r_assumptions else '{}'.format(r_ranges)
+            print(color + r_partition, Style.RESET_ALL)
             # bound the custom encoded uncontroversial features between their current lower and upper bounds
             bounds = self.bounds
             for feature, (lower, upper) in ranges:
@@ -261,63 +228,71 @@ class BackwardInterpreter(Interpreter):
                 right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
                 conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
                 bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
-
             entry = self.initial.precursory.assume({bounds}, manager=manager)
             # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
             for (_, assumption) in assumptions:
                 entry = entry.assume({assumption}, manager=manager)
-            # find the (abstract) activation patterns corresponding to each possible value of the sensitive feature
+            # determine chunk feasibility for each possible value of the sensitive feature
             feasibility = self.feasibility(entry, manager, key=key)
             feasible: bool = feasibility[0]
-            # perform the analysis, if feasible, or partition the space of values of all the uncontroversial features
-            if feasible:
+            # pack the chunk, if feasible, or partition the space of values of all the uncontroversial features
+            if feasible:    # the analysis is feasible
                 with self.partitions.get_lock():
                     self.partitions.value += 1
                 with self.feasible.get_lock():
                     self.feasible.value += percent
+                with self.explored.get_lock():
+                    self.explored.value += percent
+                    if self.explored.value >= 100:
+                        queue1.put((None, None, None, None, None, None, None))
                 patterns: List[Tuple[OneHot1, Set[Node], Set[Node]]] = feasibility[1]
                 key = list()
                 for _, active, inactive in patterns:
                     key.append((frozenset(active), frozenset(inactive)))
-
-                value = (frozenset(assumptions), frozenset(ranges), percent)
                 _key = tuple(key)
-                if _key not in self.patterns:
-                    self.patterns[_key] = {value}
-                else:
-                    curr = self.patterns[_key]
-                    curr.add(value)
-                    self.patterns[_key] = curr
-                print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible.value, self.explored), Style.RESET_ALL)
+                value = (frozenset(assumptions), frozenset(ranges), percent)
+                lock.acquire()
+                curr = self.patterns.get(_key, set())
+                curr.add(value)
+                self.patterns[_key] = curr
+                lock.release()
+                progress = 'Progress for #{}: {}% of {}%'.format(id, self.feasible.value, self.explored.value)
+                print(Fore.YELLOW + progress, Style.RESET_ALL)
             else:  # too many disjunctions, we need to split further
                 print('Too many disjunctions ({})!'.format(feasibility[2]))
                 if pivot1 < len(self.uncontroversial1):  # we still have to split the one-hot encoded
-                    self.packing(entry)
+                    print('1-hot splitting for: {}'.format(
+                        ' | '.join(
+                            ', '.join('{}'.format(var) for var in encoding) for encoding in self.uncontroversial1)
+                    ))
+                    self.packing(entry)     # pack the one-hot combinations
                     # run the analysis on the ranked packs
                     score = lambda k: sum(len(s[0]) + len(s[1]) for s in k)
                     for key, pack in sorted(self.packs.items(), key=lambda v: score(v[0]) + len(v[1]), reverse=True):
                         _assumptions = list(assumptions)
                         items: List[OneHotN] = list(pack)  # multiple one-hot values for n features
                         for i in range(len(items[0])):  # for each feature...
-                            vars: Set[VariableIdentifier] = set()
+                            variables: Set[VariableIdentifier] = set()
                             var, case = items[0][i]
-                            vars.add(var)
+                            variables.add(var)
                             for item in items[1:]:
                                 var, nxt = item[i]
-                                vars.add(var)
+                                variables.add(var)
                                 case = BinaryBooleanOperation(case, BinaryBooleanOperation.Operator.Or, nxt)
-                            _assumptions.append((frozenset(vars), case))
-                        newpercent = percent * len(pack) / self.count.value
-                        queue1.put((_assumptions, len(self.uncontroversial1), ranges, pivot2, splittable, newpercent, key))
+                            _assumptions.append((frozenset(variables), case))
+                        _percent = percent * len(pack) / self.count
+                        _pivot1 = len(self.uncontroversial1)
+                        queue1.put((_assumptions, _pivot1, ranges, pivot2, splittable, _percent, key))
                 else:  # we can split the rest
                     if self.uncontroversial2 and splittable:
                         rangesdict = dict(ranges)
                         (lower, upper) = rangesdict[self.uncontroversial2[pivot2]]
                         if upper - lower <= self.difference:
                             print('Cannot range split for {} anymore!'.format(self.uncontroversial2[pivot2]))
-                            remained = list(splittable)
-                            remained.remove(self.uncontroversial2[pivot2])
-                            queue1.put((assumptions, pivot1, ranges, (pivot2 + 1) % len(self.uncontroversial2), list(remained), percent, None))
+                            _splittable = list(splittable)
+                            _splittable.remove(self.uncontroversial2[pivot2])
+                            _pivot2 = (pivot2 + 1) % len(self.uncontroversial2)
+                            queue1.put((assumptions, pivot1, ranges, _pivot2, list(_splittable), percent, None))
                         else:
                             middle = lower + (upper - lower) / 2
                             print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
@@ -325,27 +300,32 @@ class BackwardInterpreter(Interpreter):
                             left[self.uncontroversial2[pivot2]] = (lower, middle)
                             right = deepcopy(rangesdict)
                             right[self.uncontroversial2[pivot2]] = (middle, upper)
-                            newpercent = percent / 2
-                            queue1.put((assumptions, pivot1, list(left.items()), (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent, None))
-                            queue1.put((assumptions, pivot1, list(right.items()), (pivot2 + 1) % len(self.uncontroversial2), splittable, newpercent, None))
+                            _pivot2 = (pivot2 + 1) % len(self.uncontroversial2)
+                            _percent = percent / 2
+                            queue1.put((assumptions, pivot1, list(left.items()), _pivot2, splittable, _percent, None))
+                            queue1.put((assumptions, pivot1, list(right.items()), _pivot2, splittable, _percent, None))
                     else:
-                        with self.unfeasible.get_lock():
-                            self.unfeasible.value += percent
+                        with self.explored.get_lock():
+                            self.explored.value += percent
+                            if self.explored.value >= 100:
+                                queue1.put((None, None, None, None, None, None, None))
                         print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
-                        print(Fore.YELLOW + 'Progress: {}% of {}%'.format(self.feasible.value, self.explored), Style.RESET_ALL)
+                        progress = 'Progress for #{}: {}% of {}%'.format(id, self.feasible.value, self.explored.value)
+                        print(Fore.YELLOW + progress, Style.RESET_ALL)
                         # self.pick(assumptions, pivot1, ranges, pivot2, splittable, percent, do=True)
-            if self.explored >= 100.0:
-                queue1.put((None, None, None, None, None, None, None))
 
-    def bias_check(self, color, check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]],
-                   # assumptions0,
-                   ranges: Dict[VariableIdentifier, Tuple[int, int]],
-                   percent: float):
-        print('Checking for Bias...')
+    def bias_check(self, chunk, result, ranges, percent):
+        """Check for algorithmic bias
+
+        :param chunk: chunk to be checked (string representation)
+        :param result: result of the (backward) analysis for the current abstract activation pattern
+        :param ranges: ranges for the custom encoded uncontroversial features in the chunk
+        :param percent: percent of the input space covered by the chunk
+        """
         nobias = True
         biases = set()
-        for (outcome1, sensitive1), value1 in check.items():
-            for (outcome2, sensitive2), value2 in check.items():
+        for (outcome1, sensitive1), value1 in result.items():
+            for (outcome2, sensitive2), value2 in result.items():
                 if outcome1 != outcome2 and sensitive1 != sensitive2:
                     for val1 in value1:
                         for val2 in value2:
@@ -365,20 +345,21 @@ class BackwardInterpreter(Interpreter):
                                 nobias = False
                                 if representation not in biases:
                                     biases.add(representation)
-                                    print(color + Fore.RED + '✘ Bias Found! : {}'.format(representation), Style.RESET_ALL)
+                                    found = '✘ Bias Found! in {}:\n{}'.format(chunk, representation)
+                                    print(Fore.RED + found, Style.RESET_ALL)
         if nobias:
-            print(color + Fore.GREEN + '✔︎ No Bias', Style.RESET_ALL)
+            print(Fore.GREEN + '✔︎ No Bias in {}'.format(chunk), Style.RESET_ALL)
         else:
             with self.biased.get_lock():
                 self.biased.value += percent
 
     def from_node(self, node, initial, join):
-        """Analyze the CFG
+        """Run the backward analysis
 
-        :param node: node from which to start the analysis
-        :param initial: state from which to start the analysis
+        :param node: node from which to start the (backward) analysis
+        :param initial: state from which to start the (backward) analysis
         :param join: whether joins should be performed
-        :return: the result of the analysis (at the beginning of the CFG)
+        :return: the result of the (backward) analysis (at the beginning of the CFG)
         """
         state = initial
         if isinstance(node, Function):
@@ -433,68 +414,61 @@ class BackwardInterpreter(Interpreter):
             else:
                 yield state
 
-    def doit(self, color, key, pack, manager, do=False):
-        check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]] = dict()
-        for idx, (case, value) in enumerate(self.values):
-            self.active, self.inactive = key[idx]
-            print(color + '--------- {} --------- '.format(case).replace('x014', 'male').replace('x015', 'female').replace('y0', 'male').replace('y1', 'female'), Style.RESET_ALL)
-            # print('activations: {{{}}}'.format(
-            #     ', '.join('{}'.format(activation) for activation in self.activations)
-            # ))
-            print(color + 'active: {{{}}}'.format(', '.join('{}'.format(active) for active in self.active)), Style.RESET_ALL)
-            print(color + 'inactive: {{{}}}'.format(', '.join('{}'.format(inactive) for inactive in self.inactive)), Style.RESET_ALL)
-            disjunctions = len(self.activations) - len(self.active) - len(self.inactive)
-            paths = 2 ** disjunctions
-            print(color + 'Paths: {}'.format(paths), Style.RESET_ALL)
-            for chosen in self.outputs:
-                remaining = self.outputs - {chosen}
-                discarded = remaining.pop()
-                outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-                for discarded in remaining:
-                    cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
-                    outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
-                result = self.initial.assume({outcome}, manager=manager, bwd=True)
-                check[(chosen, case)] = set()
-                for state in self.from_node(self.cfg.out_node, deepcopy(result), do):
-                    if state:
-                        state = state.assume({value}, manager=manager)
-                        check[(chosen, case)].add(state)
-        print(color + '===========================', Style.RESET_ALL)
+    def worker2(self, id, color, queue2, manager, total):
+        """Run the analysis for an abstract activation pattern and check the corresponding chunks for algorithmic bias
 
-        # check for bias
-        for assumptions, ranges, percent in pack:
-            print()
-            print(color + '---------------------------', Style.RESET_ALL)
-            print(color + '1-Hot: {}'.format(
-                ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
-            ), Style.RESET_ALL)
-            print(color + 'Ranges: {}'.format(
-                ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
-            ), Style.RESET_ALL)
-            print(color + '---------------------------', Style.RESET_ALL)
-            print()
-            partition = deepcopy(check)
-            for states in partition.values():
-                for state in states:
-                    for (_, assumption) in assumptions:
-                        state = state.assume({assumption}, manager=manager)
-                    # forget the sensitive variables
-                    state = state.forget(self.sensitive)
-            self.bias_check(color, partition, ranges, percent)
-
-    def worker2(self, p, color, queue2, manager, pattnum):
+        :param id: id of the process
+        :param color: color associated with the process (for logging)
+        :param queue2: queue from which to get the current abstract activation pattern and corresponding chunks
+        :param manager: manager to be used for the (backward) analysis
+        :param total: total number of abstract activation patterns
+        """
         while True:
             idx, (key, pack) = queue2.get(block=True)
-            if idx is None:
+            if idx is None:     # no more abstract activation patterns
                 queue2.put((None, (None, None)))
                 break
-            print()
-            print(color + '===========================', Style.RESET_ALL)
-            print(color + 'Pattern #{} of {} [{}]'.format(idx, pattnum, len(pack)), Style.RESET_ALL)
-            self.doit(color, key, pack, manager=manager)
+            print(color + 'Pattern #{} of {} [{}]'.format(idx, total, len(pack)), Style.RESET_ALL)
+            check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]] = dict()
+            for idx, (case, value) in enumerate(self.values):
+                self.active, self.inactive = key[idx]
+                for chosen in self.outputs:
+                    remaining = self.outputs - {chosen}
+                    discarded = remaining.pop()
+                    outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
+                    for discarded in remaining:
+                        cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
+                        outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
+                    result = self.initial.assume({outcome}, manager=manager, bwd=True)
+                    check[(chosen, case)] = set()
+                    for state in self.from_node(self.cfg.out_node, deepcopy(result), False):
+                        if state:
+                            state = state.assume({value}, manager=manager)
+                            check[(chosen, case)].add(state)
+            # check for bias
+            for assumptions, ranges, percent in pack:
+                r_assumptions = '1-Hot: {}'.format(
+                    ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
+                ) if assumptions else ''
+                r_ranges = 'Ranges: {}'.format(
+                    ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
+                )
+                r_partition = '{} | {}'.format(r_assumptions, r_ranges) if r_assumptions else '{}'.format(r_ranges)
+                partition = deepcopy(check)
+                for states in partition.values():
+                    for state in states:
+                        for (_, assumption) in assumptions:
+                            state.assume({assumption}, manager=manager)
+                        # forget the sensitive variables
+                        state.forget(self.sensitive)
+                self.bias_check(r_partition, partition, ranges, percent)
             with self.analyzed.get_lock():
                 self.analyzed.value += len(pack)
-            print(Fore.YELLOW + 'Progress for #{}: {} of {} partitions ({}% biased)'.format(p, self.analyzed.value, self.partitions.value, self.biased.value), Style.RESET_ALL)
+            analyzed = self.analyzed.value
+            partitions = self.partitions.value
+            biased = self.biased.value
+            progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, partitions, biased)
+            print(Fore.YELLOW + progress, Style.RESET_ALL)
 
     def analyze(self, initial, inputs=None, outputs=None, activations=None):
         """Backward analysis checking for algorithmic bias
@@ -519,7 +493,7 @@ class BackwardInterpreter(Interpreter):
             self.sensitive = list()
             for i in range(arity):
                 self.sensitive.append(VariableIdentifier(specification.readline().strip()))
-            self.values: List[OneHot1] = list(self.one_hots(self.sensitive))
+            self.values: List[OneHot1] = list(one_hots(self.sensitive))
             # bound the sensitive feature between 0 and 1
             zero = Literal('0')
             one = Literal('1')
@@ -544,6 +518,7 @@ class BackwardInterpreter(Interpreter):
                     self.uncontroversial1.append(uncontroversial)
                 except ValueError:
                     break
+            self.count = reduce(operator.mul, (len(encoding) for encoding in self.uncontroversial1), 1)
             # bound the one-hot encoded uncontroversial features between 0 and 1
             for encoding in self.uncontroversial1:
                 for uncontroversial in encoding:
@@ -552,7 +527,7 @@ class BackwardInterpreter(Interpreter):
                     conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
                     self.bounds = BinaryBooleanOperation(self.bounds, BinaryBooleanOperation.Operator.And, conj)
             """
-            determine the custom encoded uncontroversial features
+            determine the custom encoded uncontroversial features and fix their ranges
             """
             self.uncontroversial2 = list(inputs - set(self.sensitive) - set(itertools.chain(*self.uncontroversial1)))
             ranges: Dict[VariableIdentifier, Tuple[int, int]] = dict()
@@ -565,10 +540,10 @@ class BackwardInterpreter(Interpreter):
             #     self.bounds = BinaryBooleanOperation(self.bounds, BinaryBooleanOperation.Operator.And, conj)
         self.outputs = outputs
         self.activations = activations
-        cpu = multiprocessing.cpu_count()
+        cpu = cpu_count()
         print('\nAvailable CPUs: {}'.format(cpu))
         colors = [
-            Style.RESET_ALL,
+            Fore.LIGHTMAGENTA_EX,
             Back.BLACK + Fore.WHITE,
             Back.LIGHTRED_EX + Fore.BLACK,
             Back.MAGENTA + Fore.BLACK,
@@ -582,15 +557,16 @@ class BackwardInterpreter(Interpreter):
         """
         print(Fore.BLUE + '\n||==============||')
         print('|| Pre-Analysis ||')
-        print('||==============||', Style.RESET_ALL)
+        print('||==============||\n', Style.RESET_ALL)
         # prepare the queue
-        queue1 = multiprocessing.Queue()
+        queue1 = Manager().Queue()
         queue1.put((list(), 0, list(ranges.items()), 0, list(self.uncontroversial2), 100, None))
         # run the pre-analysis
         start1 = time.time()
         processes = list()
-        for _ in range(cpu):
-            process = multiprocessing.Process(target=self.worker1, args=(queue1, PyBoxMPQManager()))
+        for i in range(cpu):
+            color = colors[i % len(colors)]
+            process = Process(target=self.worker1, args=(i, color, queue1, PyBoxMPQManager()))
             processes.append(process)
             process.start()
         for process in processes:
@@ -643,7 +619,7 @@ class BackwardInterpreter(Interpreter):
         print('|| Analysis ||')
         print('||==========||\n', Style.RESET_ALL)
         # prepare the queue
-        queue2 = multiprocessing.Queue()
+        queue2 = Queue()
         for idx, (key, pack) in enumerate(prioritized):
             queue2.put((idx+1, (key, pack)))
         queue2.put((None, (None, None)))
@@ -653,17 +629,21 @@ class BackwardInterpreter(Interpreter):
         for i in range(cpu):
             color = colors[i % len(colors)]
             man = PyPolkaMPQstrictManager()
-            process = multiprocessing.Process(target=self.worker2, args=(i, color, queue2, man, len(compressed)))
+            process = Process(target=self.worker2, args=(i, color, queue2, man, len(compressed)))
             processes.append(process)
             process.start()
         for process in processes:
             process.join()
         end2 = time.time()
         #
-        print(Fore.BLUE + '\nResult: {}% of {}% ({}% biased)'.format(self.feasible.value, self.explored, self.biased.value))
+        result = '\nResult: {}% of {}% ({}% biased)'.format(self.feasible.value, self.explored.value, self.biased.value)
+        print(Fore.BLUE + result)
         print('Pre-Analysis Time: {}s'.format(end1 - start1))
         print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
+
+        log = '{} ({}% biased) {}s {}s'.format(self.feasible.value, self.biased.value, end1 - start1, end2 - start2)
         print('\nDone!')
+        return log
 
 
 class BiasBackwardSemantics(DefaultBackwardSemantics):
