@@ -117,7 +117,7 @@ def dict_to_texpr(todict, env):
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager: PyManager, semantics, symbolic1=False, symbolic2=False):
+    def __init__(self, cfg, manager: PyManager, semantics, widening=3, symbolic1=False, symbolic2=False):
         """Forward control flow graph interpreter construction.
 
         :param cfg: control flow graph to analyze
@@ -125,12 +125,12 @@ class ForwardInterpreter(Interpreter):
         :param widening: number of iterations before widening
         :param precursory: precursory control flow graph interpreter
         """
-        super().__init__(cfg, semantics)
+        super().__init__(cfg, semantics, widening)
         self.manager = manager
         self.symbolic1 = symbolic1
         self.symbolic2 = symbolic2
 
-    def analyze(self, initial: BoxState, forced_active=None, forced_inactive=None):
+    def analyze(self, initial: BoxState, earlystop=True, forced_active=None, forced_inactive=None):
         """Forward analysis extracting abstract activation patterns.
 
         :param initial: initial state of the analysis
@@ -141,6 +141,7 @@ class ForwardInterpreter(Interpreter):
         state = deepcopy(initial)
         activated, deactivated = set(), set()
         symbols: Dict[str, Tuple[PyVar, PyTexpr1]] = dict()
+        unknowns = 0
 
         while not worklist.empty():
             current: Node = worklist.get()  # retrieve the current node
@@ -210,8 +211,13 @@ class ForwardInterpreter(Interpreter):
                         deactivated.add(current)
                     elif state2.is_bottom():
                         activated.add(current)
-                    elif self.symbolic1 or self.symbolic2:
-                        del symbols[str(current.stmts)]
+                    else:
+                        unknowns = unknowns + 1
+                        if earlystop and unknowns > self.widening:
+                            print('Early Stop')
+                            break
+                        if self.symbolic1 or self.symbolic2:
+                            del symbols[str(current.stmts)]
                     state = state1.join(state2)
             # update worklist
             for node in self.cfg.successors(current):

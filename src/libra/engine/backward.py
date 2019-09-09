@@ -161,7 +161,7 @@ class BackwardInterpreter(Interpreter):
             key = list()
             for value in self.values:
                 result2 = deepcopy(result1).assume({value[1]}, manager=manager)
-                active, inactive = self.precursory.analyze(result2)
+                active, inactive = self.precursory.analyze(result2, earlystop=False)
                 key.append((frozenset(active), frozenset(inactive)))
             _key = tuple(key)
             lock.acquire()

@@ -52,7 +52,7 @@ class BiasAnalysis(Runner):
         self.man2.manager.contents.option.funopt[FunId.AP_FUNID_FORGET_ARRAY].algorithm = min_int
 
     def interpreter(self):
-        precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), symbolic1=self.symbolic1, symbolic2=self.symbolic2)
+        precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening, symbolic1=self.symbolic1, symbolic2=self.symbolic2)
         return BackwardInterpreter(self.cfg, self.man2, BiasBackwardSemantics(), self.spec, widening=self.widening, difference=self.difference, precursory=precursory)
 
     def state(self):
