@@ -581,27 +581,26 @@ class BackwardInterpreter(Interpreter):
             print(skey, '->', len(pack))
         #
         compressed = dict()
-        for key1 in self.patterns:
+        for key1, pack1 in sorted(self.patterns.items(), key=lambda v: len(v[1]), reverse=False):
             unmerged = True
             for key2 in compressed:
                 mergeable1, mergeable2 = True, True
-                for s1, s2 in key1:
-                    for s3, s4 in key2:
-                        if (not s3.issubset(s1)) or (not s4.issubset(s2)):
-                            mergeable1 = False
-                        if (not s1.issubset(s3)) or (not s2.issubset(s4)):
-                            mergeable2 = False
+                for (s11, s12), (s21, s22) in zip(key1, key2):
+                    if (not s21.issubset(s11)) or (not s22.issubset(s12)):
+                        mergeable1 = False
+                    if (not s11.issubset(s21)) or (not s12.issubset(s22)):
+                        mergeable2 = False
                 if mergeable1:
                     unmerged = False
-                    compressed[key2] = compressed[key2].union(self.patterns[key1])
+                    compressed[key2] = compressed[key2].union(pack1)
                     break
                 if mergeable2:
                     unmerged = False
-                    compressed[key1] = compressed[key2].union(self.patterns[key1])
+                    compressed[key1] = compressed[key2].union(pack1)
                     del compressed[key2]
                     break
             if unmerged:
-                compressed[key1] = self.patterns[key1]
+                compressed[key1] = pack1
         prioritized = sorted(compressed.items(), key=lambda v: len(v[1]), reverse=True)
         if len(compressed) < len(self.patterns):
             print('Compressed to: {} patterns'.format(len(compressed)))
