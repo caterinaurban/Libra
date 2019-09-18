@@ -23,6 +23,8 @@ BiasAnalysis('income.txt', difference=0.5, widening=2).main("tests/income/income
 # BiasAnalysis('income.txt', symbolic2=True, difference=0.5, widening=3).main("tests/income/income-1-6-82.1-0.04.py")
 # # 62.70833333333361 (23.750000000000085% biased) 13.530396938323975s 587.1695568561554s 600.8682231903076s (~10min)
 # BiasAnalysis('income.txt', symbolic2=True, difference=0.5, widening=4).main("tests/income/income-1-6-82.1-0.04.py")
+# #
+# BiasAnalysis('income.txt', symbolic1=True, difference=0.5, widening=8).main("tests/income/income-1-6-82.1-0.04.py")
 
 # # 48.51562500000273 (11.22395833333343% biased) 62.11487102508545s 199.22669315338135s 262.3733539581299s (~4.5min)
 # BiasAnalysis('income.txt', difference=0.25, widening=2).main("tests/income/income-1-6-82.1-0.04.py")    # reference
