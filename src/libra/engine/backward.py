@@ -14,12 +14,14 @@ from multiprocessing import Value, Manager, Queue, Process, cpu_count, Lock
 from typing import Tuple, Set, Dict, List, FrozenSet
 
 from apronpy.coeff import PyMPQScalarCoeff
+from apronpy.interval import Interval
 from apronpy.lincons0 import ConsTyp
 from apronpy.manager import PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
 from apronpy.polka import PyPolka
 from apronpy.tcons1 import PyTcons1, PyTcons1Array
 from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir
 from apronpy.texpr1 import PyTexpr1
+from apronpy.var import PyVar
 from pip._vendor.colorama import Fore, Style, Back
 
 from libra.abstract_domains.bias.bias_domain import BiasState
@@ -209,9 +211,9 @@ class BackwardInterpreter(Interpreter):
         :param manager: manager to be used for the (forward) analysis
         """
         while True:
-            assumptions, pivot1, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
+            assumptions, pivot1, unpacked, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
             if assumptions is None:     # no more chunks
-                queue1.put((None, None, None, None, None, None, None))
+                queue1.put((None, None, None, None, None, None, None, None))
                 break
             r_assumptions = '1-Hot: {}'.format(
                 ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
@@ -244,13 +246,13 @@ class BackwardInterpreter(Interpreter):
                 with self.explored.get_lock():
                     self.explored.value += percent
                     if self.explored.value >= 100:
-                        queue1.put((None, None, None, None, None, None, None))
+                        queue1.put((None, None, None, None, None, None, None, None))
                 patterns: List[Tuple[OneHot1, Set[Node], Set[Node]]] = feasibility[1]
                 key = list()
                 for _, active, inactive in patterns:
                     key.append((frozenset(active), frozenset(inactive)))
                 _key = tuple(key)
-                value = (frozenset(assumptions), frozenset(ranges), percent)
+                value = (frozenset(assumptions), frozenset(unpacked), frozenset(ranges), percent)
                 lock.acquire()
                 curr = self.patterns.get(_key, set())
                 curr.add(value)
@@ -280,9 +282,10 @@ class BackwardInterpreter(Interpreter):
                                 variables.add(var)
                                 case = BinaryBooleanOperation(case, BinaryBooleanOperation.Operator.Or, nxt)
                             _assumptions.append((frozenset(variables), case))
-                        _percent = percent * len(pack) / self.count
+                        _unpacked = frozenset(frozenset(item) for item in pack)
                         _pivot1 = len(self.uncontroversial1)
-                        queue1.put((_assumptions, _pivot1, ranges, pivot2, splittable, _percent, key))
+                        _percent = percent * len(pack) / self.count
+                        queue1.put((_assumptions, _pivot1, _unpacked, ranges, pivot2, splittable, _percent, key))
                 else:  # we can split the rest
                     if self.uncontroversial2 and splittable:
                         rangesdict = dict(ranges)
@@ -292,7 +295,8 @@ class BackwardInterpreter(Interpreter):
                             _splittable = list(splittable)
                             _splittable.remove(self.uncontroversial2[pivot2])
                             _pivot2 = (pivot2 + 1) % len(self.uncontroversial2)
-                            queue1.put((assumptions, pivot1, ranges, _pivot2, list(_splittable), percent, None))
+                            _splittable = list(_splittable)
+                            queue1.put((assumptions, pivot1, unpacked, ranges, _pivot2, _splittable, percent, None))
                         else:
                             middle = lower + (upper - lower) / 2
                             print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
@@ -302,13 +306,14 @@ class BackwardInterpreter(Interpreter):
                             right[self.uncontroversial2[pivot2]] = (middle, upper)
                             _pivot2 = (pivot2 + 1) % len(self.uncontroversial2)
                             _percent = percent / 2
-                            queue1.put((assumptions, pivot1, list(left.items()), _pivot2, splittable, _percent, None))
-                            queue1.put((assumptions, pivot1, list(right.items()), _pivot2, splittable, _percent, None))
+                            _left, _right = list(left.items()), list(right.items())
+                            queue1.put((assumptions, pivot1, unpacked, _left, _pivot2, splittable, _percent, None))
+                            queue1.put((assumptions, pivot1, unpacked, _right, _pivot2, splittable, _percent, None))
                     else:
                         with self.explored.get_lock():
                             self.explored.value += percent
                             if self.explored.value >= 100:
-                                queue1.put((None, None, None, None, None, None, None))
+                                queue1.put((None, None, None, None, None, None, None, None))
                         print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
                         progress = 'Progress for #{}: {}% of {}%'.format(id, self.feasible.value, self.explored.value)
                         print(Fore.YELLOW + progress, Style.RESET_ALL)
@@ -324,8 +329,12 @@ class BackwardInterpreter(Interpreter):
         """
         nobias = True
         biases = set()
-        for (outcome1, sensitive1), value1 in result.items():
-            for (outcome2, sensitive2), value2 in result.items():
+        b_ranges = dict()
+        items = list(result.items())
+        for i in range(len(items)):
+            (outcome1, sensitive1), value1 = items[i]
+            for j in range(i+1, len(items)):
+                (outcome2, sensitive2), value2 = items[j]
                 if outcome1 != outcome2 and sensitive1 != sensitive2:
                     for val1 in value1:
                         for val2 in value2:
@@ -344,14 +353,30 @@ class BackwardInterpreter(Interpreter):
                             if not representation.startswith('-1.0 >= 0') and not representation == '⊥':
                                 nobias = False
                                 if representation not in biases:
+                                    for uncontroversial in self.uncontroversial2:
+                                        itv: Interval = intersection.polka.bound_variable(PyVar(uncontroversial.name))
+                                        lower = eval(str(itv.interval.contents.inf.contents))
+                                        upper = eval(str(itv.interval.contents.sup.contents))
+                                        if uncontroversial in b_ranges:
+                                            inf, sup = b_ranges[uncontroversial]
+                                            b_ranges[uncontroversial] = (min(lower, inf), max(upper, sup))
+                                        else:
+                                            b_ranges[uncontroversial] = (lower, upper)
                                     biases.add(representation)
                                     found = '✘ Bias Found! in {}:\n{}'.format(chunk, representation)
                                     print(Fore.RED + found, Style.RESET_ALL)
         if nobias:
             print(Fore.GREEN + '✔︎ No Bias in {}'.format(chunk), Style.RESET_ALL)
         else:
+            total_size = 1
+            for _, (lower, upper) in ranges:
+                total_size *= upper - lower
+            biased_size = 1
+            for (lower, upper) in b_ranges.values():
+                biased_size *= upper - lower
+            _percent = percent * biased_size / total_size
             with self.biased.get_lock():
-                self.biased.value += percent
+                self.biased.value += _percent
 
     def from_node(self, node, initial, join):
         """Run the backward analysis
@@ -446,7 +471,7 @@ class BackwardInterpreter(Interpreter):
                             state = state.assume({value}, manager=manager)
                             check[(chosen, case)].add(state)
             # check for bias
-            for assumptions, ranges, percent in pack:
+            for assumptions, unpacked, ranges, percent in pack:
                 r_assumptions = '1-Hot: {}'.format(
                     ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
                 ) if assumptions else ''
@@ -454,14 +479,24 @@ class BackwardInterpreter(Interpreter):
                     ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
                 )
                 r_partition = '{} | {}'.format(r_assumptions, r_ranges) if r_assumptions else '{}'.format(r_ranges)
-                partition = deepcopy(check)
-                for states in partition.values():
-                    for state in states:
-                        for (_, assumption) in assumptions:
-                            state.assume({assumption}, manager=manager)
-                        # forget the sensitive variables
-                        state.forget(self.sensitive)
-                self.bias_check(r_partition, partition, ranges, percent)
+                if unpacked:
+                    _percent = percent / len(unpacked)
+                    for item in unpacked:
+                        partition = deepcopy(check)
+                        for states in partition.values():
+                            for state in states:
+                                for (_, assumption) in item:
+                                    state.assume({assumption}, manager=manager)
+                                # forget the sensitive variables
+                                state.forget(self.sensitive)
+                        self.bias_check(r_partition, partition, ranges, _percent)
+                else:
+                    partition = deepcopy(check)
+                    for states in partition.values():
+                        for state in states:
+                            # forget the sensitive variables
+                            state.forget(self.sensitive)
+                    self.bias_check(r_partition, partition, ranges, percent)
             with self.analyzed.get_lock():
                 self.analyzed.value += len(pack)
             analyzed = self.analyzed.value
@@ -560,7 +595,7 @@ class BackwardInterpreter(Interpreter):
         print('||==============||\n', Style.RESET_ALL)
         # prepare the queue
         queue1 = Manager().Queue()
-        queue1.put((list(), 0, list(ranges.items()), 0, list(self.uncontroversial2), 100, None))
+        queue1.put((list(), 0, list(), list(ranges.items()), 0, list(self.uncontroversial2), 100, None))
         # run the pre-analysis
         start1 = time.time()
         processes = list()
