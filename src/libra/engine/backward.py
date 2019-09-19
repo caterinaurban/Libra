@@ -309,6 +309,16 @@ class BackwardInterpreter(Interpreter):
                             _left, _right = list(left.items()), list(right.items())
                             queue1.put((assumptions, pivot1, unpacked, _left, _pivot2, splittable, _percent, None))
                             queue1.put((assumptions, pivot1, unpacked, _right, _pivot2, splittable, _percent, None))
+                    elif len(unpacked) > 1:     # last resort: unpack the one-hot combinations
+                        _percent = percent / len(unpacked)
+                        print("Unpacking {}".format(r_assumptions))
+                        for item in unpacked:
+                            _assumptions = list()
+                            for var, case in item:
+                                _assumptions.append((frozenset({var}), case))
+                            _unpacked = frozenset({item})
+                            _assumptions = frozenset(_assumptions)
+                            queue1.put((_assumptions, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
                     else:
                         with self.explored.get_lock():
                             self.explored.value += percent

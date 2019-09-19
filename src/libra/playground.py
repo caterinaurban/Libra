@@ -43,7 +43,7 @@ from libra.engine.bias_analysis import BiasAnalysis
 # BiasAnalysis('playground.txt', symbolic2=True, difference=0.125, widening=4).main("tests/model-10-5-0.97.py")
 
 # # 100.0 (73.6328125% biased) 1.3627080917358398s 5.73189115524292s 7.26416277885437s
-BiasAnalysis('playground.txt', difference=0, widening=2).main("tests/model-10-5-0.97.py")   # reference
+BiasAnalysis('playground.txt', difference=0, widening=2).main("tests/model-10-5-0.97.py")
 # # 100.0 (74.21875% biased) 1.022963047027588s 7.4370551109313965s 8.591149091720581s
 # BiasAnalysis('playground.txt', difference=0, widening=3).main("tests/model-10-5-0.97.py")
 # # 100.0 (74.21875% biased) 0.7698900699615479s 8.733776092529297s 9.602909326553345s
@@ -54,11 +54,11 @@ BiasAnalysis('playground.txt', difference=0, widening=2).main("tests/model-10-5-
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=3).main("tests/model-10-5-0.97.py")
 # # 100.0 (75.0% biased) 5.4372148513793945s 3.6349539756774902s 9.142781019210815s
 # BiasAnalysis('playground.txt', symbolic1=True, difference=0, widening=4).main("tests/model-10-5-0.97.py")
-# # 100.0 (75.0% biased) 1.504511833190918s 3.1173629760742188s 4.713061094284058s
+# # 100.0 (75.0% biased) 1.504511833190918s 3.1173629760742188s 4.713061094284058s <===
 # BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=2).main("tests/model-10-5-0.97.py")
 # # 100.0 (75.0% biased) 1.173940896987915s 3.3100898265838623s 4.566112995147705s
 # BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=3).main("tests/model-10-5-0.97.py")
-# # 100.0 (75.0% biased) 0.8827242851257324s 3.5295209884643555s 4.481604099273682s <===
+# # 100.0 (75.0% biased) 0.8827242851257324s 3.5295209884643555s 4.481604099273682s
 # BiasAnalysis('playground.txt', symbolic2=True, difference=0, widening=4).main("tests/model-10-5-0.97.py")
 
 # BiasAnalysis('playground.txt', symbolic2=True, difference=0.25, widening=4).main("tests/model-10-6-1.00.py")
