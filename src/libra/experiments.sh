@@ -1,0 +1,2 @@
+./census.sh
+./japanese.sh
