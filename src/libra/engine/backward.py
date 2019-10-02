@@ -93,6 +93,7 @@ class BackwardInterpreter(Interpreter):
         self.packs = Manager().dict()                                   # packing of 1-hot splits
         self.count = 0                                                  # 1-hot split count
         self.patterns = Manager().dict()                                # packing of abstract activation patterns
+        self.discarded = Value('i', 0)
         self.partitions = Value('i', 0)
 
         self.difference = difference                                    # minimum range (default: 0.25)
@@ -122,17 +123,22 @@ class BackwardInterpreter(Interpreter):
         feasible = True
         patterns: List[Tuple[OneHot1, FrozenSet[Node], FrozenSet[Node]]] = list()
         disjunctions = len(self.activations)
+        outcomes = set()
         for idx, value in enumerate(self.values):
             result = deepcopy(state).assume({value[1]}, manager=manager)
             f_active = key[idx][0] if key else None
             f_inactive = key[idx][1] if key else None
-            active, inactive = self.precursory.analyze(result, forced_active=f_active, forced_inactive=f_inactive)
+            active, inactive, outcome = self.precursory.analyze(result, forced_active=f_active, forced_inactive=f_inactive, outputs=self.outputs)
+            outcomes.add(outcome)
             disjunctions = len(self.activations) - len(active) - len(inactive)
             if disjunctions > self.widening:
                 feasible = False
                 if not do:
                     break
             patterns.append((value, frozenset(active), frozenset(inactive)))
+        if len(outcomes) <= 1 and None not in outcomes:
+            print('No Backward Analysis!')
+            return True, list(), len(self.activations)
         return feasible, patterns, disjunctions
 
     def producer(self, queue3):
@@ -163,7 +169,7 @@ class BackwardInterpreter(Interpreter):
             key = list()
             for value in self.values:
                 result2 = deepcopy(result1).assume({value[1]}, manager=manager)
-                active, inactive = self.precursory.analyze(result2, earlystop=False)
+                active, inactive, _ = self.precursory.analyze(result2, earlystop=False, outputs=self.outputs)
                 key.append((frozenset(active), frozenset(inactive)))
             _key = tuple(key)
             lock.acquire()
@@ -248,16 +254,20 @@ class BackwardInterpreter(Interpreter):
                     if self.explored.value >= 100:
                         queue1.put((None, None, None, None, None, None, None, None))
                 patterns: List[Tuple[OneHot1, Set[Node], Set[Node]]] = feasibility[1]
-                key = list()
-                for _, active, inactive in patterns:
-                    key.append((frozenset(active), frozenset(inactive)))
-                _key = tuple(key)
-                value = (frozenset(assumptions), frozenset(unpacked), frozenset(ranges), percent)
-                lock.acquire()
-                curr = self.patterns.get(_key, set())
-                curr.add(value)
-                self.patterns[_key] = curr
-                lock.release()
+                if patterns:
+                    key = list()
+                    for _, active, inactive in patterns:
+                        key.append((frozenset(active), frozenset(inactive)))
+                    _key = tuple(key)
+                    value = (frozenset(assumptions), frozenset(unpacked), frozenset(ranges), percent)
+                    lock.acquire()
+                    curr = self.patterns.get(_key, set())
+                    curr.add(value)
+                    self.patterns[_key] = curr
+                    lock.release()
+                else:
+                    with self.discarded.get_lock():
+                        self.discarded.value += 1
                 progress = 'Progress for #{}: {}% of {}%'.format(id, self.feasible.value, self.explored.value)
                 print(Fore.YELLOW + progress, Style.RESET_ALL)
             else:  # too many disjunctions, we need to split further
@@ -510,9 +520,11 @@ class BackwardInterpreter(Interpreter):
             with self.analyzed.get_lock():
                 self.analyzed.value += len(pack)
             analyzed = self.analyzed.value
+            discarded = self.discarded.value
             partitions = self.partitions.value
+            considered = partitions - discarded
             biased = self.biased.value
-            progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, partitions, biased)
+            progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, considered, biased)
             print(Fore.YELLOW + progress, Style.RESET_ALL)
 
     def analyze(self, initial, inputs=None, outputs=None, activations=None):
@@ -618,7 +630,11 @@ class BackwardInterpreter(Interpreter):
             process.join()
         end1 = time.time()
         #
-        print(Fore.BLUE + '\nFound: {} patterns for {} partitions'.format(len(self.patterns), self.partitions.value))
+        patterns = len(self.patterns)
+        discarded = self.discarded.value
+        partitions = self.partitions.value
+        considered = partitions - discarded
+        print(Fore.BLUE + '\nFound: {} patterns for {}[{}] partitions'.format(patterns, considered, partitions))
         prioritized = sorted(self.patterns.items(), key=lambda v: len(v[1]), reverse=True)
         for key, pack in prioritized:
             sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))

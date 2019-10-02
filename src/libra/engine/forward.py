@@ -4,6 +4,7 @@ Forward Analysis Engine
 
 :Author: Caterina Urban
 """
+import sys
 from copy import deepcopy
 from queue import Queue
 from typing import Dict, Tuple
@@ -18,6 +19,7 @@ from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 
 from libra.abstract_domains.numerical.interval_domain import BoxState
+from libra.core.expressions import BinaryComparisonOperation, BinaryBooleanOperation
 from libra.engine.interpreter import Interpreter
 from libra.semantics.forward import DefaultForwardSemantics
 
@@ -130,7 +132,7 @@ class ForwardInterpreter(Interpreter):
         self.symbolic1 = symbolic1
         self.symbolic2 = symbolic2
 
-    def analyze(self, initial: BoxState, earlystop=True, forced_active=None, forced_inactive=None):
+    def analyze(self, initial: BoxState, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
         """Forward analysis extracting abstract activation patterns.
 
         :param initial: initial state of the analysis
@@ -222,7 +224,26 @@ class ForwardInterpreter(Interpreter):
             # update worklist
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
-        return activated, deactivated
+
+        found = None
+        for chosen in outputs:
+            outcome = state.bound_variable(PyVar(chosen.name))
+            inf = str(outcome.interval.contents.inf.contents)
+            lower = eval(inf) if inf != '-1/0' else -sys.maxsize
+            unique = True
+            remaining = outputs - {chosen}
+            for discarded in remaining:
+                alternative = state.bound_variable(PyVar(discarded.name))
+                sup = str(alternative.interval.contents.sup.contents)
+                upper = eval(sup) if sup != '1/0' else sys.maxsize
+                if lower <= upper:
+                    unique = False
+                    break
+            if unique:
+                found = chosen
+                break
+
+        return activated, deactivated, found
 
 
 class ActivationPatternForwardSemantics(DefaultForwardSemantics):
