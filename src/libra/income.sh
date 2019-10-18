@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 gtimeout 3600 python3 incomeX.py False False 0.5 2 | tee income-nosym-0.5-2.log
 gtimeout 3600 python3 incomeX.py False False 0.5 4 | tee income-nosym-0.5-4.log
 gtimeout 3600 python3 incomeX.py False False 0.5 6 | tee income-nosym-0.5-6.log
