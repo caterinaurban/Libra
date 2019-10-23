@@ -454,10 +454,15 @@ class BackwardInterpreter(Interpreter):
                         else:
                             yield from self.from_node(predecessor, state2, join)
         else:
-            if self.cfg.predecessors(node):
-                yield from self.from_node(self.cfg.nodes[self.cfg.predecessors(node).pop()], state, join)
+            for stmt in reversed(node.stmts):
+                state = self.semantics.assume_call_semantics(stmt, state, self.manager)
+            if state.is_bottom():
+                yield None
             else:
-                yield state
+                if self.cfg.predecessors(node):
+                    yield from self.from_node(self.cfg.nodes[self.cfg.predecessors(node).pop()], state, join)
+                else:
+                    yield state
 
     def worker2(self, id, color, queue2, manager, total):
         """Run the analysis for an abstract activation pattern and check the corresponding chunks for algorithmic bias
@@ -707,6 +712,12 @@ class BackwardInterpreter(Interpreter):
 
 
 class BiasBackwardSemantics(DefaultBackwardSemantics):
+
+    def assume_call_semantics(self, stmt, state, manager: PyManager = None) -> State:
+        argument = self.semantics(stmt.arguments[0], state).result
+        state.assume(argument, manager=manager)
+        state.result = set()
+        return state
 
     def list_semantics(self, stmt, state) -> State:
         state.polka = state.polka.substitute(stmt[0], stmt[1])

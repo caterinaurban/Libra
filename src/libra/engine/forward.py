@@ -20,6 +20,7 @@ from apronpy.var import PyVar
 
 from libra.abstract_domains.numerical.interval_domain import BoxState
 from libra.core.expressions import BinaryComparisonOperation, BinaryBooleanOperation
+from libra.core.statements import Call
 from libra.engine.interpreter import Interpreter
 from libra.semantics.forward import DefaultForwardSemantics
 
@@ -221,6 +222,9 @@ class ForwardInterpreter(Interpreter):
                         if self.symbolic1 or self.symbolic2:
                             del symbols[str(current.stmts)]
                     state = state1.join(state2)
+            else:
+                for stmt in reversed(current.stmts):
+                    state = self.semantics.assume_call_semantics(stmt, state, self.manager)
             # update worklist
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
@@ -247,6 +251,12 @@ class ForwardInterpreter(Interpreter):
 
 
 class ActivationPatternForwardSemantics(DefaultForwardSemantics):
+
+    def assume_call_semantics(self, stmt: Call, state: State, manager: PyManager = None) -> State:
+        argument = self.semantics(stmt.arguments[0], state).result
+        state.assume(argument, manager=manager)
+        state.result = set()
+        return state
 
     def list_semantics(self, stmt, state) -> State:
         state.state = state.state.assign(stmt[0], stmt[1])
