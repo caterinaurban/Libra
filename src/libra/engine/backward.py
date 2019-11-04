@@ -297,7 +297,18 @@ class BackwardInterpreter(Interpreter):
                         _percent = percent * len(pack) / self.count
                         queue1.put((_assumptions, _pivot1, _unpacked, ranges, pivot2, splittable, _percent, key))
                 else:  # we can split the rest
-                    if self.uncontroversial2 and splittable:
+                    if self.difference == 0 and len(unpacked) > 1:  # unpack one-hots first if difference = 0
+                        _percent = percent / len(unpacked)
+                        print("Unpacking {}".format(r_assumptions))
+                        for item in unpacked:
+                            _assumptions = list()
+                            for var, case in item:
+                                _assumptions.append((frozenset({var}), case))
+                            _unpacked = frozenset({item})
+                            _assumptions = frozenset(_assumptions)
+                            queue1.put(
+                                (_assumptions, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
+                    elif self.uncontroversial2 and splittable:
                         rangesdict = dict(ranges)
                         (lower, upper) = rangesdict[self.uncontroversial2[pivot2]]
                         if upper - lower <= self.difference:
@@ -383,10 +394,27 @@ class BackwardInterpreter(Interpreter):
                                         else:
                                             b_ranges[uncontroversial] = (lower, upper)
                                     biases.add(representation)
-                                    found = '✘ Bias Found! in {}:\n{}'.format(chunk, representation)
+                                    pair = '{}->{} vs {}->{}'.format(sensitive1, outcome1, sensitive2, outcome2)
+                                    found = '✘ Bias Found ({})! in {}:\n{}'.format(pair, chunk, representation)
                                     print(Fore.RED + found, Style.RESET_ALL)
         if nobias:
-            print(Fore.GREEN + '✔︎ No Bias in {}'.format(chunk), Style.RESET_ALL)
+            outcomes = set()
+            for i in range(len(items)):
+                (outcome, sensitive), value = items[i]
+                for val in value:
+                    for encoding in self.uncontroversial1:
+                        val = val.forget(encoding)
+                    for feature, (lower, upper) in ranges:
+                        lte = BinaryComparisonOperation.Operator.LtE
+                        left = BinaryComparisonOperation(Literal(str(lower)), lte, feature)
+                        right = BinaryComparisonOperation(feature, lte, Literal(str(upper)))
+                        conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
+                        val = val.assume({conj}, manager=self.manager)
+                        representation = repr(val.polka)
+                        if not representation.startswith('-1.0 >= 0') and not representation == '⊥':
+                            outcomes.add(outcome)
+            classes = ', '.join(str(outcome) for outcome in outcomes)
+            print(Fore.GREEN + '✔︎ No Bias ({}) in {}'.format(classes, chunk), Style.RESET_ALL)
         else:
             total_size = 1
             for _, (lower, upper) in ranges:
