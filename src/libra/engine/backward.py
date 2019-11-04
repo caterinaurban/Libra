@@ -583,7 +583,23 @@ class BackwardInterpreter(Interpreter):
             self.sensitive = list()
             for i in range(arity):
                 self.sensitive.append(VariableIdentifier(specification.readline().strip()))
-            self.values: List[OneHot1] = list(one_hots(self.sensitive))
+            if arity > 1:   # the sensitive feature is one-hot encoded
+                self.values: List[OneHot1] = list(one_hots(self.sensitive))
+            else:           # the sensitive feature is continuous
+                zero = Literal('0')
+                pivot = Literal(specification.readline().strip())
+                one = Literal('1')
+                self.values = list()
+                variable1 = VariableIdentifier('{}[<{}]'.format(self.sensitive[0], pivot))
+                lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
+                upper = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.Lt, pivot)
+                value1 = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+                self.values.append((variable1, value1))
+                variable2 = VariableIdentifier('{}[>={}]'.format(self.sensitive[0], pivot))
+                lower = BinaryComparisonOperation(pivot, BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
+                upper = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.LtE, one)
+                value2 = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
+                self.values.append((variable2, value2))
             # bound the sensitive feature between 0 and 1
             zero = Literal('0')
             one = Literal('1')
