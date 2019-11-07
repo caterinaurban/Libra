@@ -6,6 +6,7 @@ Bias Analysis
 """
 import ast
 import ctypes
+import os
 import time
 from queue import Queue
 from typing import Set, Dict
@@ -25,6 +26,7 @@ from libra.engine.backward import BackwardInterpreter, BiasBackwardSemantics
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
+from libra.visualization.graph_renderer import CFGRenderer
 
 
 class BiasAnalysis(Runner):
