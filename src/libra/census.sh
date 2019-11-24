@@ -1,336 +1,300 @@
 #!/usr/bin/env bash
+###########
+# experiment 3: different model structures
+###########
 
-###########
-# experiment 1: differently biased networks
-###########
+#=========#
+# p=1
+#=========#
+
+#---------#
+# 10
+#---------#
+
+timeout 46800 python3 censusX.py False False 1 4 tests/census/10.py | tee census-10-nosym-1-4.log
+timeout 46800 python3 censusX.py False False 1 6 tests/census/10.py | tee census-10-nosym-1-6.log
+timeout 46800 python3 censusX.py False False 1 8 tests/census/10.py | tee census-10-nosym-1-8.log
+timeout 46800 python3 censusX.py False False 1 10 tests/census/10.py | tee census-10-nosym-1-10.log
+#
+timeout 46800 python3 censusX.py False True 1 4 tests/census/10.py | tee census-10-sym2-1-4.log
+timeout 46800 python3 censusX.py False True 1 6 tests/census/10.py | tee census-10-sym2-1-6.log
+timeout 46800 python3 censusX.py False True 1 8 tests/census/10.py | tee census-10-sym2-1-8.log
+timeout 46800 python3 censusX.py False True 1 10 tests/census/10.py | tee census-10-sym2-1-10.log
+
+#---------#
+# 12
+#---------#
+
+timeout 46800 python3 censusX.py False False 1 4 tests/census/12.py | tee census-12-nosym-1-4.log
+timeout 46800 python3 censusX.py False False 1 6 tests/census/12.py | tee census-12-nosym-1-6.log
+timeout 46800 python3 censusX.py False False 1 8 tests/census/12.py | tee census-12-nosym-1-8.log
+timeout 46800 python3 censusX.py False False 1 10 tests/census/12.py | tee census-12-nosym-1-10.log
+#
+timeout 46800 python3 censusX.py False True 1 4 tests/census/12.py | tee census-12-sym2-1-4.log
+timeout 46800 python3 censusX.py False True 1 6 tests/census/12.py | tee census-12-sym2-1-6.log
+timeout 46800 python3 censusX.py False True 1 8 tests/census/12.py | tee census-12-sym2-1-8.log
+timeout 46800 python3 censusX.py False True 1 10 tests/census/12.py | tee census-12-sym2-1-10.log
+
+#---------#
+# 20
+#---------#
+
+timeout 46800 python3 censusX.py False False 1 4 tests/census/20.py | tee census-20-nosym-1-4.log
+timeout 46800 python3 censusX.py False False 1 6 tests/census/20.py | tee census-20-nosym-1-6.log
+timeout 46800 python3 censusX.py False False 1 8 tests/census/20.py | tee census-20-nosym-1-8.log
+timeout 46800 python3 censusX.py False False 1 10 tests/census/20.py | tee census-20-nosym-1-10.log
+#
+timeout 46800 python3 censusX.py False True 1 4 tests/census/20.py | tee census-20-sym2-1-4.log
+timeout 46800 python3 censusX.py False True 1 6 tests/census/20.py | tee census-20-sym2-1-6.log
+timeout 46800 python3 censusX.py False True 1 8 tests/census/20.py | tee census-20-sym2-1-8.log
+timeout 46800 python3 censusX.py False True 1 10 tests/census/20.py | tee census-20-sym2-1-10.log
+
+#---------#
+# 40
+#---------#
+
+timeout 46800 python3 censusX.py False False 1 4 tests/census/40.py | tee census-40-nosym-1-4.log
+timeout 46800 python3 censusX.py False False 1 6 tests/census/40.py | tee census-40-nosym-1-6.log
+timeout 46800 python3 censusX.py False False 1 8 tests/census/40.py | tee census-40-nosym-1-8.log
+timeout 46800 python3 censusX.py False False 1 10 tests/census/40.py | tee census-40-nosym-1-10.log
+#
+timeout 46800 python3 censusX.py False True 1 4 tests/census/40.py | tee census-40-sym2-1-4.log
+timeout 46800 python3 censusX.py False True 1 6 tests/census/40.py | tee census-40-sym2-1-6.log
+timeout 46800 python3 censusX.py False True 1 8 tests/census/40.py | tee census-40-sym2-1-8.log
+timeout 46800 python3 censusX.py False True 1 10 tests/census/40.py | tee census-40-sym2-1-10.log
+
+#---------#
+# 45
+#---------#
+
+timeout 46800 python3 censusX.py False False 1 4 tests/census/45.py | tee census-45-nosym-1-4.log
+timeout 46800 python3 censusX.py False False 1 6 tests/census/45.py | tee census-45-nosym-1-6.log
+timeout 46800 python3 censusX.py False False 1 8 tests/census/45.py | tee census-45-nosym-1-8.log
+timeout 46800 python3 censusX.py False False 1 10 tests/census/45.py | tee census-45-nosym-1-10.log
+#
+timeout 46800 python3 censusX.py False True 1 4 tests/census/45.py | tee census-45-sym2-1-4.log
+timeout 46800 python3 censusX.py False True 1 6 tests/census/45.py | tee census-45-sym2-1-6.log
+timeout 46800 python3 censusX.py False True 1 8 tests/census/45.py | tee census-45-sym2-1-8.log
+timeout 46800 python3 censusX.py False True 1 10 tests/census/45.py | tee census-45-sym2-1-10.log
 
 #=========#
 # p=0.5
 #=========#
 
 #---------#
-# no-bias
+# 10
 #---------#
 
-#gtimeout 7200 python3 censusX.py False False 0.5 4 tests/census/small-no-bias.py | tee census-no-bias-nosym-0.5-4.log
-#gtimeout 7200 python3 censusX.py False False 0.5 6 tests/census/small-no-bias.py | tee census-no-bias-nosym-0.5-6.log
-#gtimeout 7200 python3 censusX.py False False 0.5 8 tests/census/small-no-bias.py | tee census-no-bias-nosym-0.5-8.log
-#gtimeout 7200 python3 censusX.py False False 0.5 10 tests/census/small-no-bias.py | tee census-no-bias-nosym-0.5-10.log
+timeout 46800 python3 censusX.py False False 0.5 4 tests/census/10.py | tee census-10-nosym-0.5-4.log
+timeout 46800 python3 censusX.py False False 0.5 6 tests/census/10.py | tee census-10-nosym-0.5-6.log
+timeout 46800 python3 censusX.py False False 0.5 8 tests/census/10.py | tee census-10-nosym-0.5-8.log
+timeout 46800 python3 censusX.py False False 0.5 10 tests/census/10.py | tee census-10-nosym-0.5-10.log
 #
-#gtimeout 7200 python3 censusX.py True False 0.5 4 tests/census/small-no-bias.py | tee census-no-bias-sym1-0.5-4.log
-#gtimeout 7200 python3 censusX.py True False 0.5 6 tests/census/small-no-bias.py | tee census-no-bias-sym1-0.5-6.log
-#gtimeout 7200 python3 censusX.py True False 0.5 8 tests/census/small-no-bias.py | tee census-no-bias-sym1-0.5-8.log
-#gtimeout 7200 python3 censusX.py True False 0.5 10 tests/census/small-no-bias.py | tee census-no-bias-sym1-0.5-10.log
+timeout 46800 python3 censusX.py False True 0.5 4 tests/census/10.py | tee census-10-sym2-0.5-4.log
+timeout 46800 python3 censusX.py False True 0.5 6 tests/census/10.py | tee census-10-sym2-0.5-6.log
+timeout 46800 python3 censusX.py False True 0.5 8 tests/census/10.py | tee census-10-sym2-0.5-8.log
+timeout 46800 python3 censusX.py False True 0.5 10 tests/census/10.py | tee census-10-sym2-0.5-10.log
+
+#---------#
+# 12
+#---------#
+
+timeout 46800 python3 censusX.py False False 0.5 4 tests/census/12.py | tee census-12-nosym-0.5-4.log
+timeout 46800 python3 censusX.py False False 0.5 6 tests/census/12.py | tee census-12-nosym-0.5-6.log
+timeout 46800 python3 censusX.py False False 0.5 8 tests/census/12.py | tee census-12-nosym-0.5-8.log
+timeout 46800 python3 censusX.py False False 0.5 10 tests/census/12.py | tee census-12-nosym-0.5-10.log
 #
-#gtimeout 7200 python3 censusX.py False True 0.5 4 tests/census/small-no-bias.py | tee census-no-bias-sym2-0.5-4.log
-#gtimeout 7200 python3 censusX.py False True 0.5 6 tests/census/small-no-bias.py | tee census-no-bias-sym2-0.5-6.log
-#gtimeout 7200 python3 censusX.py False True 0.5 8 tests/census/small-no-bias.py | tee census-no-bias-sym2-0.5-8.log
-#gtimeout 7200 python3 censusX.py False True 0.5 10 tests/census/small-no-bias.py | tee census-no-bias-sym2-0.5-10.log
+timeout 46800 python3 censusX.py False True 0.5 4 tests/census/12.py | tee census-12-sym2-0.5-4.log
+timeout 46800 python3 censusX.py False True 0.5 6 tests/census/12.py | tee census-12-sym2-0.5-6.log
+timeout 46800 python3 censusX.py False True 0.5 8 tests/census/12.py | tee census-12-sym2-0.5-8.log
+timeout 46800 python3 censusX.py False True 0.5 10 tests/census/12.py | tee census-12-sym2-0.5-10.log
 
 #---------#
-# 0.05-bias
+# 20
 #---------#
 
-#gtimeout 7200 python3 censusX.py False False 0.5 4 tests/census/small-0.05-bias.py | tee census-0.05-bias-nosym-0.5-4.log
-#gtimeout 7200 python3 censusX.py False False 0.5 6 tests/census/small-0.05-bias.py | tee census-0.05-bias-nosym-0.5-6.log
-#gtimeout 7200 python3 censusX.py False False 0.5 8 tests/census/small-0.05-bias.py | tee census-0.05-bias-nosym-0.5-8.log
-#gtimeout 7200 python3 censusX.py False False 0.5 10 tests/census/small-0.05-bias.py | tee census-0.05-bias-nosym-0.5-10.log
+timeout 46800 python3 censusX.py False False 0.5 4 tests/census/20.py | tee census-20-nosym-0.5-4.log
+timeout 46800 python3 censusX.py False False 0.5 6 tests/census/20.py | tee census-20-nosym-0.5-6.log
+timeout 46800 python3 censusX.py False False 0.5 8 tests/census/20.py | tee census-20-nosym-0.5-8.log
+timeout 46800 python3 censusX.py False False 0.5 10 tests/census/20.py | tee census-20-nosym-0.5-10.log
 #
-#gtimeout 7200 python3 censusX.py True False 0.5 4 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym1-0.5-4.log
-#gtimeout 7200 python3 censusX.py True False 0.5 6 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym1-0.5-6.log
-#gtimeout 7200 python3 censusX.py True False 0.5 8 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym1-0.5-8.log
-#gtimeout 7200 python3 censusX.py True False 0.5 10 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym1-0.5-10.log
+timeout 46800 python3 censusX.py False True 0.5 4 tests/census/20.py | tee census-20-sym2-0.5-4.log
+timeout 46800 python3 censusX.py False True 0.5 6 tests/census/20.py | tee census-20-sym2-0.5-6.log
+timeout 46800 python3 censusX.py False True 0.5 8 tests/census/20.py | tee census-20-sym2-0.5-8.log
+timeout 46800 python3 censusX.py False True 0.5 10 tests/census/20.py | tee census-20-sym2-0.5-10.log
+
+#---------#
+# 40
+#---------#
+
+timeout 46800 python3 censusX.py False False 0.5 4 tests/census/40.py | tee census-40-nosym-0.5-4.log
+timeout 46800 python3 censusX.py False False 0.5 6 tests/census/40.py | tee census-40-nosym-0.5-6.log
+timeout 46800 python3 censusX.py False False 0.5 8 tests/census/40.py | tee census-40-nosym-0.5-8.log
+timeout 46800 python3 censusX.py False False 0.5 10 tests/census/40.py | tee census-40-nosym-0.5-10.log
 #
-#gtimeout 7200 python3 censusX.py False True 0.5 4 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym2-0.5-4.log
-#gtimeout 7200 python3 censusX.py False True 0.5 6 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym2-0.5-6.log
-#gtimeout 7200 python3 censusX.py False True 0.5 8 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym2-0.5-8.log
-#gtimeout 7200 python3 censusX.py False True 0.5 10 tests/census/small-0.05-bias.py | tee census-0.05-bias-sym2-0.5-10.log
+timeout 46800 python3 censusX.py False True 0.5 4 tests/census/40.py | tee census-40-sym2-0.5-4.log
+timeout 46800 python3 censusX.py False True 0.5 6 tests/census/40.py | tee census-40-sym2-0.5-6.log
+timeout 46800 python3 censusX.py False True 0.5 8 tests/census/40.py | tee census-40-sym2-0.5-8.log
+timeout 46800 python3 censusX.py False True 0.5 10 tests/census/40.py | tee census-40-sym2-0.5-10.log
 
 #---------#
-# 0.20-bias
+# 45
 #---------#
 
-#gtimeout 7200 python3 censusX.py False False 0.5 4 tests/census/small-0.20-bias.py | tee census-0.20-bias-nosym-0.5-4.log
-#gtimeout 7200 python3 censusX.py False False 0.5 6 tests/census/small-0.20-bias.py | tee census-0.20-bias-nosym-0.5-6.log
-#gtimeout 7200 python3 censusX.py False False 0.5 8 tests/census/small-0.20-bias.py | tee census-0.20-bias-nosym-0.5-8.log
-#gtimeout 7200 python3 censusX.py False False 0.5 10 tests/census/small-0.20-bias.py | tee census-0.20-bias-nosym-0.5-10.log
+timeout 46800 python3 censusX.py False False 0.5 4 tests/census/45.py | tee census-45-nosym-0.5-4.log
+timeout 46800 python3 censusX.py False False 0.5 6 tests/census/45.py | tee census-45-nosym-0.5-6.log
+timeout 46800 python3 censusX.py False False 0.5 8 tests/census/45.py | tee census-45-nosym-0.5-8.log
+timeout 46800 python3 censusX.py False False 0.5 10 tests/census/45.py | tee census-45-nosym-0.5-10.log
 #
-#gtimeout 7200 python3 censusX.py True False 0.5 4 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym1-0.5-4.log
-#gtimeout 7200 python3 censusX.py True False 0.5 6 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym1-0.5-6.log
-#gtimeout 7200 python3 censusX.py True False 0.5 8 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym1-0.5-8.log
-#gtimeout 7200 python3 censusX.py True False 0.5 10 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym1-0.5-10.log
-#
-#gtimeout 7200 python3 censusX.py False True 0.5 4 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym2-0.5-4.log
-#gtimeout 7200 python3 censusX.py False True 0.5 6 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym2-0.5-6.log
-#gtimeout 7200 python3 censusX.py False True 0.5 8 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym2-0.5-8.log
-#gtimeout 7200 python3 censusX.py False True 0.5 10 tests/census/small-0.20-bias.py | tee census-0.20-bias-sym2-0.5-10.log
-
-#=========#
-# p=0.25
-#=========#
-
-#=========#
-# p=0.125
-#=========#
-
-###########
-# experiment 2: differently sized networks
-###########
-
-#=========#
-# p=0.5
-#=========#
-
-#---------#
-# tiny-layers
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.5 4 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.5-4.log
-gtimeout 46800 python3 censusX.py False False 0.5 6 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.5-6.log
-gtimeout 46800 python3 censusX.py False False 0.5 8 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.5-8.log
-gtimeout 46800 python3 censusX.py False False 0.5 10 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.5-10.log
-#
-#gtimeout 46800 python3 censusX.py True False 0.5 4 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.5-4.log
-#gtimeout 46800 python3 censusX.py True False 0.5 6 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.5-6.log
-#gtimeout 46800 python3 censusX.py True False 0.5 8 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.5-8.log
-#gtimeout 46800 python3 censusX.py True False 0.5 10 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.5-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.5 4 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.5-4.log
-gtimeout 46800 python3 censusX.py False True 0.5 6 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.5-6.log
-gtimeout 46800 python3 censusX.py False True 0.5 8 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.5-8.log
-gtimeout 46800 python3 censusX.py False True 0.5 10 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.5-10.log
-
-#---------#
-# tiny-neurons
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.5 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.5-4.log
-gtimeout 46800 python3 censusX.py False False 0.5 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.5-6.log
-gtimeout 46800 python3 censusX.py False False 0.5 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.5-8.log
-gtimeout 46800 python3 censusX.py False False 0.5 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.5-10.log
-#
-#gtimeout 46800 python3 censusX.py True False 0.5 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.5-4.log
-#gtimeout 46800 python3 censusX.py True False 0.5 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.5-6.log
-#gtimeout 46800 python3 censusX.py True False 0.5 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.5-8.log
-#gtimeout 46800 python3 censusX.py True False 0.5 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.5-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.5 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.5-4.log
-gtimeout 46800 python3 censusX.py False True 0.5 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.5-6.log
-gtimeout 46800 python3 censusX.py False True 0.5 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.5-8.log
-gtimeout 46800 python3 censusX.py False True 0.5 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.5-10.log
-
-#---------#
-# small-no-bias
-#---------#
-
-# done in experiment #1
-
-#---------#
-# large-neurons
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.5 4 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.5-4.log
-gtimeout 46800 python3 censusX.py False False 0.5 6 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.5-6.log
-gtimeout 46800 python3 censusX.py False False 0.5 8 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.5-8.log
-gtimeout 46800 python3 censusX.py False False 0.5 10 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.5-10.log
-#
-#gtimeout 46800 python3 censusX.py True False 0.5 4 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.5-4.log
-#gtimeout 46800 python3 censusX.py True False 0.5 6 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.5-6.log
-#gtimeout 46800 python3 censusX.py True False 0.5 8 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.5-8.log
-#gtimeout 46800 python3 censusX.py True False 0.5 10 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.5-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.5 4 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.5-4.log
-gtimeout 46800 python3 censusX.py False True 0.5 6 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.5-6.log
-gtimeout 46800 python3 censusX.py False True 0.5 8 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.5-8.log
-gtimeout 46800 python3 censusX.py False True 0.5 10 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.5-10.log
-
-#---------#
-# large-layers
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.5 4 tests/census/large-layers.py | tee census-large-layers-nosym-0.5-4.log
-gtimeout 46800 python3 censusX.py False False 0.5 6 tests/census/large-layers.py | tee census-large-layers-nosym-0.5-6.log
-gtimeout 46800 python3 censusX.py False False 0.5 8 tests/census/large-layers.py | tee census-large-layers-nosym-0.5-8.log
-gtimeout 46800 python3 censusX.py False False 0.5 10 tests/census/large-layers.py | tee census-large-layers-nosym-0.5-10.log
-#
-#gtimeout 46800 python3 censusX.py True False 0.5 4 tests/census/large-layers.py | tee census-large-layers-sym1-0.5-4.log
-#gtimeout 46800 python3 censusX.py True False 0.5 6 tests/census/large-layers.py | tee census-large-layers-sym1-0.5-6.log
-#gtimeout 46800 python3 censusX.py True False 0.5 8 tests/census/large-layers.py | tee census-large-layers-sym1-0.5-8.log
-#gtimeout 46800 python3 censusX.py True False 0.5 10 tests/census/large-layers.py | tee census-large-layers-sym1-0.5-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.5 4 tests/census/large-layers.py | tee census-large-layers-sym2-0.5-4.log
-gtimeout 46800 python3 censusX.py False True 0.5 6 tests/census/large-layers.py | tee census-large-layers-sym2-0.5-6.log
-gtimeout 46800 python3 censusX.py False True 0.5 8 tests/census/large-layers.py | tee census-large-layers-sym2-0.5-8.log
-gtimeout 46800 python3 censusX.py False True 0.5 10 tests/census/large-layers.py | tee census-large-layers-sym2-0.5-10.log
+timeout 46800 python3 censusX.py False True 0.5 4 tests/census/45.py | tee census-45-sym2-0.5-4.log
+timeout 46800 python3 censusX.py False True 0.5 6 tests/census/45.py | tee census-45-sym2-0.5-6.log
+timeout 46800 python3 censusX.py False True 0.5 8 tests/census/45.py | tee census-45-sym2-0.5-8.log
+timeout 46800 python3 censusX.py False True 0.5 10 tests/census/45.py | tee census-45-sym2-0.5-10.log
 
 #=========#
 # p=0.25
 #=========#
 
 #---------#
-# tiny-layers
+# 10
 #---------#
 
-gtimeout 46800 python3 censusX.py False False 0.25 4 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.25-4.log
-gtimeout 46800 python3 censusX.py False False 0.25 6 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.25-6.log
-gtimeout 46800 python3 censusX.py False False 0.25 8 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.25-8.log
-gtimeout 46800 python3 censusX.py False False 0.25 10 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.25-10.log
+timeout 46800 python3 censusX.py False False 0.25 4 tests/census/10.py | tee census-10-nosym-0.25-4.log
+timeout 46800 python3 censusX.py False False 0.25 6 tests/census/10.py | tee census-10-nosym-0.25-6.log
+timeout 46800 python3 censusX.py False False 0.25 8 tests/census/10.py | tee census-10-nosym-0.25-8.log
+timeout 46800 python3 censusX.py False False 0.25 10 tests/census/10.py | tee census-10-nosym-0.25-10.log
 #
-#gtimeout 46800 python3 censusX.py True False 0.25 4 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.25-4.log
-#gtimeout 46800 python3 censusX.py True False 0.25 6 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.25-6.log
-#gtimeout 46800 python3 censusX.py True False 0.25 8 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.25-8.log
-#gtimeout 46800 python3 censusX.py True False 0.25 10 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.25-10.log
+timeout 46800 python3 censusX.py False True 0.25 4 tests/census/10.py | tee census-10-sym2-0.25-4.log
+timeout 46800 python3 censusX.py False True 0.25 6 tests/census/10.py | tee census-10-sym2-0.25-6.log
+timeout 46800 python3 censusX.py False True 0.25 8 tests/census/10.py | tee census-10-sym2-0.25-8.log
+timeout 46800 python3 censusX.py False True 0.25 10 tests/census/10.py | tee census-10-sym2-0.25-10.log
+
+#---------#
+# 12
+#---------#
+
+timeout 46800 python3 censusX.py False False 0.25 4 tests/census/12.py | tee census-12-nosym-0.25-4.log
+timeout 46800 python3 censusX.py False False 0.25 6 tests/census/12.py | tee census-12-nosym-0.25-6.log
+timeout 46800 python3 censusX.py False False 0.25 8 tests/census/12.py | tee census-12-nosym-0.25-8.log
+timeout 46800 python3 censusX.py False False 0.25 10 tests/census/12.py | tee census-12-nosym-0.25-10.log
 #
-gtimeout 46800 python3 censusX.py False True 0.25 4 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.25-4.log
-gtimeout 46800 python3 censusX.py False True 0.25 6 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.25-6.log
-gtimeout 46800 python3 censusX.py False True 0.25 8 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.25-8.log
-gtimeout 46800 python3 censusX.py False True 0.25 10 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.25-10.log
+timeout 46800 python3 censusX.py False True 0.25 4 tests/census/12.py | tee census-12-sym2-0.25-4.log
+timeout 46800 python3 censusX.py False True 0.25 6 tests/census/12.py | tee census-12-sym2-0.25-6.log
+timeout 46800 python3 censusX.py False True 0.25 8 tests/census/12.py | tee census-12-sym2-0.25-8.log
+timeout 46800 python3 censusX.py False True 0.25 10 tests/census/12.py | tee census-12-sym2-0.25-10.log
 
 #---------#
-# tiny-neurons
+# 20
 #---------#
 
-gtimeout 46800 python3 censusX.py False False 0.25 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.25-4.log
-gtimeout 46800 python3 censusX.py False False 0.25 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.25-6.log
-gtimeout 46800 python3 censusX.py False False 0.25 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.25-8.log
-gtimeout 46800 python3 censusX.py False False 0.25 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.25-10.log
+timeout 46800 python3 censusX.py False False 0.25 4 tests/census/20.py | tee census-20-nosym-0.25-4.log
+timeout 46800 python3 censusX.py False False 0.25 6 tests/census/20.py | tee census-20-nosym-0.25-6.log
+timeout 46800 python3 censusX.py False False 0.25 8 tests/census/20.py | tee census-20-nosym-0.25-8.log
+timeout 46800 python3 censusX.py False False 0.25 10 tests/census/20.py | tee census-20-nosym-0.25-10.log
 #
-#gtimeout 46800 python3 censusX.py True False 0.25 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.25-4.log
-#gtimeout 46800 python3 censusX.py True False 0.25 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.25-6.log
-#gtimeout 46800 python3 censusX.py True False 0.25 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.25-8.log
-#gtimeout 46800 python3 censusX.py True False 0.25 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.25-10.log
+timeout 46800 python3 censusX.py False True 0.25 4 tests/census/20.py | tee census-20-sym2-0.25-4.log
+timeout 46800 python3 censusX.py False True 0.25 6 tests/census/20.py | tee census-20-sym2-0.25-6.log
+timeout 46800 python3 censusX.py False True 0.25 8 tests/census/20.py | tee census-20-sym2-0.25-8.log
+timeout 46800 python3 censusX.py False True 0.25 10 tests/census/20.py | tee census-20-sym2-0.25-10.log
+
+#---------#
+# 40
+#---------#
+
+timeout 46800 python3 censusX.py False False 0.25 4 tests/census/40.py | tee census-40-nosym-0.25-4.log
+timeout 46800 python3 censusX.py False False 0.25 6 tests/census/40.py | tee census-40-nosym-0.25-6.log
+timeout 46800 python3 censusX.py False False 0.25 8 tests/census/40.py | tee census-40-nosym-0.25-8.log
+timeout 46800 python3 censusX.py False False 0.25 10 tests/census/40.py | tee census-40-nosym-0.25-10.log
 #
-gtimeout 46800 python3 censusX.py False True 0.25 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.25-4.log
-gtimeout 46800 python3 censusX.py False True 0.25 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.25-6.log
-gtimeout 46800 python3 censusX.py False True 0.25 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.25-8.log
-gtimeout 46800 python3 censusX.py False True 0.25 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.25-10.log
+timeout 46800 python3 censusX.py False True 0.25 4 tests/census/40.py | tee census-40-sym2-0.25-4.log
+timeout 46800 python3 censusX.py False True 0.25 6 tests/census/40.py | tee census-40-sym2-0.25-6.log
+timeout 46800 python3 censusX.py False True 0.25 8 tests/census/40.py | tee census-40-sym2-0.25-8.log
+timeout 46800 python3 censusX.py False True 0.25 10 tests/census/40.py | tee census-40-sym2-0.25-10.log
 
 #---------#
-# small-no-bias
+# 45
 #---------#
 
-# done in experiment #1
-
-#---------#
-# large-neurons
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.25 4 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.25-4.log
-gtimeout 46800 python3 censusX.py False False 0.25 6 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.25-6.log
-gtimeout 46800 python3 censusX.py False False 0.25 8 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.25-8.log
-gtimeout 46800 python3 censusX.py False False 0.25 10 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.25-10.log
+timeout 46800 python3 censusX.py False False 0.25 4 tests/census/45.py | tee census-45-nosym-0.25-4.log
+timeout 46800 python3 censusX.py False False 0.25 6 tests/census/45.py | tee census-45-nosym-0.25-6.log
+timeout 46800 python3 censusX.py False False 0.25 8 tests/census/45.py | tee census-45-nosym-0.25-8.log
+timeout 46800 python3 censusX.py False False 0.25 10 tests/census/45.py | tee census-45-nosym-0.25-10.log
 #
-#gtimeout 46800 python3 censusX.py True False 0.25 4 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.25-4.log
-#gtimeout 46800 python3 censusX.py True False 0.25 6 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.25-6.log
-#gtimeout 46800 python3 censusX.py True False 0.25 8 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.25-8.log
-#gtimeout 46800 python3 censusX.py True False 0.25 10 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.25-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.25 4 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.25-4.log
-gtimeout 46800 python3 censusX.py False True 0.25 6 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.25-6.log
-gtimeout 46800 python3 censusX.py False True 0.25 8 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.25-8.log
-gtimeout 46800 python3 censusX.py False True 0.25 10 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.25-10.log
-
-#---------#
-# large-layers
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.25 4 tests/census/large-layers.py | tee census-large-layers-nosym-0.25-4.log
-gtimeout 46800 python3 censusX.py False False 0.25 6 tests/census/large-layers.py | tee census-large-layers-nosym-0.25-6.log
-gtimeout 46800 python3 censusX.py False False 0.25 8 tests/census/large-layers.py | tee census-large-layers-nosym-0.25-8.log
-gtimeout 46800 python3 censusX.py False False 0.25 10 tests/census/large-layers.py | tee census-large-layers-nosym-0.25-10.log
-#
-#gtimeout 46800 python3 censusX.py True False 0.25 4 tests/census/large-layers.py | tee census-large-layers-sym1-0.25-4.log
-#gtimeout 46800 python3 censusX.py True False 0.25 6 tests/census/large-layers.py | tee census-large-layers-sym1-0.25-6.log
-#gtimeout 46800 python3 censusX.py True False 0.25 8 tests/census/large-layers.py | tee census-large-layers-sym1-0.25-8.log
-#gtimeout 46800 python3 censusX.py True False 0.25 10 tests/census/large-layers.py | tee census-large-layers-sym1-0.25-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.25 4 tests/census/large-layers.py | tee census-large-layers-sym2-0.25-4.log
-gtimeout 46800 python3 censusX.py False True 0.25 6 tests/census/large-layers.py | tee census-large-layers-sym2-0.25-6.log
-gtimeout 46800 python3 censusX.py False True 0.25 8 tests/census/large-layers.py | tee census-large-layers-sym2-0.25-8.log
-gtimeout 46800 python3 censusX.py False True 0.25 10 tests/census/large-layers.py | tee census-large-layers-sym2-0.25-10.log
+timeout 46800 python3 censusX.py False True 0.25 4 tests/census/45.py | tee census-45-sym2-0.25-4.log
+timeout 46800 python3 censusX.py False True 0.25 6 tests/census/45.py | tee census-45-sym2-0.25-6.log
+timeout 46800 python3 censusX.py False True 0.25 8 tests/census/45.py | tee census-45-sym2-0.25-8.log
+timeout 46800 python3 censusX.py False True 0.25 10 tests/census/45.py | tee census-45-sym2-0.25-10.log
 
 #=========#
 # p=0.125
 #=========#
 
 #---------#
-# tiny-layers
+# 10
 #---------#
 
-gtimeout 46800 python3 censusX.py False False 0.125 4 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.125-4.log
-gtimeout 46800 python3 censusX.py False False 0.125 6 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.125-6.log
-gtimeout 46800 python3 censusX.py False False 0.125 8 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.125-8.log
-gtimeout 46800 python3 censusX.py False False 0.125 10 tests/census/tiny-layers.py | tee census-tiny-layers-nosym-0.125-10.log
+timeout 46800 python3 censusX.py False False 0.125 4 tests/census/10.py | tee census-10-nosym-0.125-4.log
+timeout 46800 python3 censusX.py False False 0.125 6 tests/census/10.py | tee census-10-nosym-0.125-6.log
+timeout 46800 python3 censusX.py False False 0.125 8 tests/census/10.py | tee census-10-nosym-0.125-8.log
+timeout 46800 python3 censusX.py False False 0.125 10 tests/census/10.py | tee census-10-nosym-0.125-10.log
 #
-#gtimeout 46800 python3 censusX.py True False 0.125 4 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.125-4.log
-#gtimeout 46800 python3 censusX.py True False 0.125 6 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.125-6.log
-#gtimeout 46800 python3 censusX.py True False 0.125 8 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.125-8.log
-#gtimeout 46800 python3 censusX.py True False 0.125 10 tests/census/tiny-layers.py | tee census-tiny-layers-sym1-0.125-10.log
+timeout 46800 python3 censusX.py False True 0.125 4 tests/census/10.py | tee census-10-sym2-0.125-4.log
+timeout 46800 python3 censusX.py False True 0.125 6 tests/census/10.py | tee census-10-sym2-0.125-6.log
+timeout 46800 python3 censusX.py False True 0.125 8 tests/census/10.py | tee census-10-sym2-0.125-8.log
+timeout 46800 python3 censusX.py False True 0.125 10 tests/census/10.py | tee census-10-sym2-0.125-10.log
+
+#---------#
+# 12
+#---------#
+
+timeout 46800 python3 censusX.py False False 0.125 4 tests/census/12.py | tee census-12-nosym-0.125-4.log
+timeout 46800 python3 censusX.py False False 0.125 6 tests/census/12.py | tee census-12-nosym-0.125-6.log
+timeout 46800 python3 censusX.py False False 0.125 8 tests/census/12.py | tee census-12-nosym-0.125-8.log
+timeout 46800 python3 censusX.py False False 0.125 10 tests/census/12.py | tee census-12-nosym-0.125-10.log
 #
-gtimeout 46800 python3 censusX.py False True 0.125 4 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.125-4.log
-gtimeout 46800 python3 censusX.py False True 0.125 6 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.125-6.log
-gtimeout 46800 python3 censusX.py False True 0.125 8 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.125-8.log
-gtimeout 46800 python3 censusX.py False True 0.125 10 tests/census/tiny-layers.py | tee census-tiny-layers-sym2-0.125-10.log
+timeout 46800 python3 censusX.py False True 0.125 4 tests/census/12.py | tee census-12-sym2-0.125-4.log
+timeout 46800 python3 censusX.py False True 0.125 6 tests/census/12.py | tee census-12-sym2-0.125-6.log
+timeout 46800 python3 censusX.py False True 0.125 8 tests/census/12.py | tee census-12-sym2-0.125-8.log
+timeout 46800 python3 censusX.py False True 0.125 10 tests/census/12.py | tee census-12-sym2-0.125-10.log
 
 #---------#
-# tiny-neurons
+# 20
 #---------#
 
-gtimeout 46800 python3 censusX.py False False 0.125 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.125-4.log
-gtimeout 46800 python3 censusX.py False False 0.125 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.125-6.log
-gtimeout 46800 python3 censusX.py False False 0.125 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.125-8.log
-gtimeout 46800 python3 censusX.py False False 0.125 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-nosym-0.125-10.log
+timeout 46800 python3 censusX.py False False 0.125 4 tests/census/20.py | tee census-20-nosym-0.125-4.log
+timeout 46800 python3 censusX.py False False 0.125 6 tests/census/20.py | tee census-20-nosym-0.125-6.log
+timeout 46800 python3 censusX.py False False 0.125 8 tests/census/20.py | tee census-20-nosym-0.125-8.log
+timeout 46800 python3 censusX.py False False 0.125 10 tests/census/20.py | tee census-20-nosym-0.125-10.log
 #
-#gtimeout 46800 python3 censusX.py True False 0.125 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.125-4.log
-#gtimeout 46800 python3 censusX.py True False 0.125 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.125-6.log
-#gtimeout 46800 python3 censusX.py True False 0.125 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.125-8.log
-#gtimeout 46800 python3 censusX.py True False 0.125 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym1-0.125-10.log
+timeout 46800 python3 censusX.py False True 0.125 4 tests/census/20.py | tee census-20-sym2-0.125-4.log
+timeout 46800 python3 censusX.py False True 0.125 6 tests/census/20.py | tee census-20-sym2-0.125-6.log
+timeout 46800 python3 censusX.py False True 0.125 8 tests/census/20.py | tee census-20-sym2-0.125-8.log
+timeout 46800 python3 censusX.py False True 0.125 10 tests/census/20.py | tee census-20-sym2-0.125-10.log
+
+#---------#
+# 40
+#---------#
+
+timeout 46800 python3 censusX.py False False 0.125 4 tests/census/40.py | tee census-40-nosym-0.125-4.log
+timeout 46800 python3 censusX.py False False 0.125 6 tests/census/40.py | tee census-40-nosym-0.125-6.log
+timeout 46800 python3 censusX.py False False 0.125 8 tests/census/40.py | tee census-40-nosym-0.125-8.log
+timeout 46800 python3 censusX.py False False 0.125 10 tests/census/40.py | tee census-40-nosym-0.125-10.log
 #
-gtimeout 46800 python3 censusX.py False True 0.125 4 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.125-4.log
-gtimeout 46800 python3 censusX.py False True 0.125 6 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.125-6.log
-gtimeout 46800 python3 censusX.py False True 0.125 8 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.125-8.log
-gtimeout 46800 python3 censusX.py False True 0.125 10 tests/census/tiny-neurons.py | tee census-tiny-neurons-sym2-0.125-10.log
+timeout 46800 python3 censusX.py False True 0.125 4 tests/census/40.py | tee census-40-sym2-0.125-4.log
+timeout 46800 python3 censusX.py False True 0.125 6 tests/census/40.py | tee census-40-sym2-0.125-6.log
+timeout 46800 python3 censusX.py False True 0.125 8 tests/census/40.py | tee census-40-sym2-0.125-8.log
+timeout 46800 python3 censusX.py False True 0.125 10 tests/census/40.py | tee census-40-sym2-0.125-10.log
 
 #---------#
-# small-no-bias
+# 45
 #---------#
 
-# done in experiment #1
-
-#---------#
-# large-neurons
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.125 4 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.125-4.log
-gtimeout 46800 python3 censusX.py False False 0.125 6 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.125-6.log
-gtimeout 46800 python3 censusX.py False False 0.125 8 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.125-8.log
-gtimeout 46800 python3 censusX.py False False 0.125 10 tests/census/large-neurons.py | tee census-large-neurons-nosym-0.125-10.log
+timeout 46800 python3 censusX.py False False 0.125 4 tests/census/45.py | tee census-45-nosym-0.125-4.log
+timeout 46800 python3 censusX.py False False 0.125 6 tests/census/45.py | tee census-45-nosym-0.125-6.log
+timeout 46800 python3 censusX.py False False 0.125 8 tests/census/45.py | tee census-45-nosym-0.125-8.log
+timeout 46800 python3 censusX.py False False 0.125 10 tests/census/45.py | tee census-45-nosym-0.125-10.log
 #
-#gtimeout 46800 python3 censusX.py True False 0.125 4 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.125-4.log
-#gtimeout 46800 python3 censusX.py True False 0.125 6 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.125-6.log
-#gtimeout 46800 python3 censusX.py True False 0.125 8 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.125-8.log
-#gtimeout 46800 python3 censusX.py True False 0.125 10 tests/census/large-neurons.py | tee census-large-neurons-sym1-0.125-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.125 4 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.125-4.log
-gtimeout 46800 python3 censusX.py False True 0.125 6 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.125-6.log
-gtimeout 46800 python3 censusX.py False True 0.125 8 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.125-8.log
-gtimeout 46800 python3 censusX.py False True 0.125 10 tests/census/large-neurons.py | tee census-large-neurons-sym2-0.125-10.log
-
-#---------#
-# large-layers
-#---------#
-
-gtimeout 46800 python3 censusX.py False False 0.125 4 tests/census/large-layers.py | tee census-large-layers-nosym-0.125-4.log
-gtimeout 46800 python3 censusX.py False False 0.125 6 tests/census/large-layers.py | tee census-large-layers-nosym-0.125-6.log
-gtimeout 46800 python3 censusX.py False False 0.125 8 tests/census/large-layers.py | tee census-large-layers-nosym-0.125-8.log
-gtimeout 46800 python3 censusX.py False False 0.125 10 tests/census/large-layers.py | tee census-large-layers-nosym-0.125-10.log
-#
-#gtimeout 46800 python3 censusX.py True False 0.125 4 tests/census/large-layers.py | tee census-large-layers-sym1-0.125-4.log
-#gtimeout 46800 python3 censusX.py True False 0.125 6 tests/census/large-layers.py | tee census-large-layers-sym1-0.125-6.log
-#gtimeout 46800 python3 censusX.py True False 0.125 8 tests/census/large-layers.py | tee census-large-layers-sym1-0.125-8.log
-#gtimeout 46800 python3 censusX.py True False 0.125 10 tests/census/large-layers.py | tee census-large-layers-sym1-0.125-10.log
-#
-gtimeout 46800 python3 censusX.py False True 0.125 4 tests/census/large-layers.py | tee census-large-layers-sym2-0.125-4.log
-gtimeout 46800 python3 censusX.py False True 0.125 6 tests/census/large-layers.py | tee census-large-layers-sym2-0.125-6.log
-gtimeout 46800 python3 censusX.py False True 0.125 8 tests/census/large-layers.py | tee census-large-layers-sym2-0.125-8.log
-gtimeout 46800 python3 censusX.py False True 0.125 10 tests/census/large-layers.py | tee census-large-layers-sym2-0.125-10.log
+timeout 46800 python3 censusX.py False True 0.125 4 tests/census/45.py | tee census-45-sym2-0.125-4.log
+timeout 46800 python3 censusX.py False True 0.125 6 tests/census/45.py | tee census-45-sym2-0.125-6.log
+timeout 46800 python3 censusX.py False True 0.125 8 tests/census/45.py | tee census-45-sym2-0.125-8.log
+timeout 46800 python3 censusX.py False True 0.125 10 tests/census/45.py | tee census-45-sym2-0.125-10.log

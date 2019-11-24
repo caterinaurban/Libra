@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 python3 playgroundX.py False False 0 2 | tee playground-nosym-0-2.log
 python3 playgroundX.py False False 0 3 | tee playground-nosym-0-3.log
 python3 playgroundX.py False False 0 4 | tee playground-nosym-0-4.log

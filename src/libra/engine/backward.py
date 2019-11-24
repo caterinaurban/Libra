@@ -711,7 +711,11 @@ class BackwardInterpreter(Interpreter):
                     break
             if unmerged:
                 compressed[key1] = pack1
-        prioritized = sorted(compressed.items(), key=lambda v: len(v[1]), reverse=True)
+        def max_disj(key):
+            a1, i1 = key[0]
+            a2, i2 = key[1]
+            return max(len(self.activations) - len(a1) - len(i1), len(self.activations) - len(a2) - len(i2))
+        prioritized = sorted(compressed.items(), key=lambda v: max_disj(v[0]) + len(v[1]), reverse=True)
         if len(compressed) < len(self.patterns):
             print('Compressed to: {} patterns'.format(len(compressed)))
             for key, pack in prioritized:

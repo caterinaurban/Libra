@@ -9,4 +9,5 @@ s1 = argv[1] == "True"
 s2 = argv[2] == "True"
 d = float(argv[3])
 w = int(argv[4])
-BiasAnalysis('playground.txt', symbolic1=s1, symbolic2=s2, difference=d, widening=w).main("tests/example.py")
+p = argv[5]
+BiasAnalysis('race.txt', symbolic1=s1, symbolic2=s2, difference=d, widening=w).main(p)
