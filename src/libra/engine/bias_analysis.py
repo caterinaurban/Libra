@@ -18,6 +18,7 @@ from apronpy.var import PyVar
 from pip._vendor.colorama import Style
 
 from libra.abstract_domains.bias.bias_domain import BiasState
+from libra.abstract_domains.bias.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.numerical.interval_domain import BoxState
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import VariableIdentifier
@@ -59,7 +60,8 @@ class BiasAnalysis(Runner):
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
-        precursory = BoxState(self.man1, variables)
+        # precursory = BoxState(self.man1, variables)
+        precursory = DeepPolyState(self.inputs)
         # precursory = OctagonState(variables)
         # precursory = PolyhedraState(variables)
         # precursory = Taylor1pMPQState(variables)

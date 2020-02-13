@@ -18,7 +18,6 @@ from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir, TexprDiscr
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 
-from libra.abstract_domains.bias.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.numerical.interval_domain import BoxState
 from libra.core.expressions import BinaryComparisonOperation, BinaryBooleanOperation
 from libra.core.statements import Call
@@ -134,7 +133,7 @@ class ForwardInterpreter(Interpreter):
         self.symbolic1 = symbolic1
         self.symbolic2 = symbolic2
 
-    def analyze(self, initial: DeepPolyState, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
+    def analyze(self, initial: BoxState, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
         """Forward analysis extracting abstract activation patterns.
 
         :param initial: initial state of the analysis
@@ -151,26 +150,78 @@ class ForwardInterpreter(Interpreter):
             current: Node = worklist.get()  # retrieve the current node
             # execute block
             if isinstance(current, Function):
-                # print(state)
-                state = state.affine(current.stmts[0], current.stmts[1])
-                # print(state)
+                if self.symbolic1:
+                    array = list()
+                    assignments = dict()
+                    for lhs, expr in zip(*current.stmts):
+                        rhs = expr
+                        for sym, val in symbols.values():
+                            rhs = rhs.substitute(sym, val)
+                        assignments[str(lhs)] = (lhs, rhs)
+                        var = PyTexpr1.var(state.environment, lhs)
+                        binop = PyTexpr1.binop(TexprOp.AP_TEXPR_SUB, var, rhs, rtype, rdir)
+                        cond = PyTcons1.make(binop, ConsTyp.AP_CONS_EQ)
+                        array.append(cond)
+                    symbols = assignments
+                    state.state = state.state.meet(PyTcons1Array(array))
+                elif self.symbolic2:
+                    array = list()
+                    assignments = dict()
+                    for lhs, expr in zip(*current.stmts):
+                        rhs = texpr_to_dict(expr)
+                        for sym, val in symbols.values():
+                            rhs = substitute_in_dict(rhs, sym, val)
+                        assignments[str(lhs)] = (lhs, rhs)
+                        rhs = dict_to_texpr(rhs, state.environment)
+                        var = PyTexpr1.var(state.environment, lhs)
+                        binop = PyTexpr1.binop(TexprOp.AP_TEXPR_SUB, var, rhs, rtype, rdir)
+                        cond = PyTcons1.make(binop, ConsTyp.AP_CONS_EQ)
+                        array.append(cond)
+                    symbols = assignments
+                    state.state = state.state.meet(PyTcons1Array(array))
+                else:
+                    state = self.semantics.list_semantics(current.stmts, state)
             elif isinstance(current, Activation):
                 if forced_active and current in forced_active:
-                    state = state.relu(current.stmts, active=True)
+                    active = deepcopy(state)
+                    state = self.semantics.ReLU_call_semantics(current.stmts, active, self.manager, True)
+                    activated.add(current)
                 elif forced_inactive and current in forced_inactive:
-                    state = state.relu(current.stmts, inactive=True)
+                    if self.symbolic1:
+                        zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
+                        symbols[str(current.stmts)] = (current.stmts, zero)
+                    elif self.symbolic2:
+                        zero = dict()
+                        zero['_'] = 0.0
+                        symbols[str(current.stmts)] = (current.stmts, zero)
+                    inactive = deepcopy(state)
+                    state = self.semantics.ReLU_call_semantics(current.stmts, inactive, self.manager, False)
+                    deactivated.add(current)
                 else:
-                    state = state.relu(current.stmts)
-                    if state.flag:
-                        if state.flag > 0:
-                            activated.add(current)
-                        else:
-                            deactivated.add(current)
+                    active, inactive = deepcopy(state), deepcopy(state)
+                    # active path
+                    state1 = self.semantics.ReLU_call_semantics(current.stmts, active, self.manager, True)
+                    # inactive path
+                    state2 = self.semantics.ReLU_call_semantics(current.stmts, inactive, self.manager, False)
+                    if state1.is_bottom():
+                        if self.symbolic1:
+                            zero = PyTexpr1.cst(state.environment, PyMPQScalarCoeff(0.0))
+                            symbols[str(current.stmts)] = (current.stmts, zero)
+                        elif self.symbolic2:
+                            zero = dict()
+                            zero['_'] = 0.0
+                            symbols[str(current.stmts)] = (current.stmts, zero)
+                        deactivated.add(current)
+                    elif state2.is_bottom():
+                        activated.add(current)
                     else:
                         unknowns = unknowns + 1
                         if earlystop and unknowns > self.widening:
                             print('Early Stop')
                             break
+                        if self.symbolic1 or self.symbolic2:
+                            del symbols[str(current.stmts)]
+                    state = state1.join(state2)
             else:
                 for stmt in reversed(current.stmts):
                     state = self.semantics.assume_call_semantics(stmt, state, self.manager)
@@ -179,23 +230,22 @@ class ForwardInterpreter(Interpreter):
                 worklist.put(self.cfg.nodes[node.identifier])
 
         found = None
-        try:
-            for chosen in outputs:
-                outcome = state.bounds[chosen.name]
-                lower = outcome.lower
-                unique = True
-                remaining = outputs - {chosen}
-                for discarded in remaining:
-                    alternative = state.bounds[discarded.name]
-                    upper = alternative.upper
-                    if lower <= upper:
-                        unique = False
-                        break
-                if unique:
-                    found = chosen
+        for chosen in outputs:
+            outcome = state.bound_variable(PyVar(chosen.name))
+            inf = str(outcome.interval.contents.inf.contents)
+            lower = eval(inf) if inf != '-1/0' else -sys.maxsize
+            unique = True
+            remaining = outputs - {chosen}
+            for discarded in remaining:
+                alternative = state.bound_variable(PyVar(discarded.name))
+                sup = str(alternative.interval.contents.sup.contents)
+                upper = eval(sup) if sup != '1/0' else sys.maxsize
+                if lower <= upper:
+                    unique = False
                     break
-        except:
-            pass
+            if unique:
+                found = chosen
+                break
 
         return activated, deactivated, found
 
@@ -204,7 +254,7 @@ class ActivationPatternForwardSemantics(DefaultForwardSemantics):
 
     def assume_call_semantics(self, stmt: Call, state: State, manager: PyManager = None) -> State:
         argument = self.semantics(stmt.arguments[0], state).result
-        state.assume(argument)
+        state.assume(argument, manager=manager)
         state.result = set()
         return state
 

@@ -49,13 +49,11 @@ def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
     values: Set[OneHot1] = set()
     arity = len(variables)
     for i in range(arity):
-        _value = dict()
         # the current variable has value one
         one = Literal('1')
         lower = BinaryComparisonOperation(one, BinaryComparisonOperation.Operator.LtE, variables[i])
         upper = BinaryComparisonOperation(variables[i], BinaryComparisonOperation.Operator.LtE, one)
         value = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
-        _value[variables[i]] = (1, 1)
         # everything else has value zero
         zero = Literal('0')
         for j in range(0, i):
@@ -63,14 +61,12 @@ def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
             upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
             conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
             value = BinaryBooleanOperation(conj, BinaryBooleanOperation.Operator.And, value)
-            _value[variables[j]] = (0, 0)
         for j in range(i + 1, arity):
             lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, variables[j])
             upper = BinaryComparisonOperation(variables[j], BinaryComparisonOperation.Operator.LtE, zero)
             conj = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
             value = BinaryBooleanOperation(value, BinaryBooleanOperation.Operator.And, conj)
-            _value[variables[j]] = (0, 0)
-        values.add((variables[i], value, tuple(_value.items())))
+        values.add((variables[i], value))
     return values
 
 
@@ -129,7 +125,7 @@ class BackwardInterpreter(Interpreter):
         disjunctions = len(self.activations)
         outcomes = set()
         for idx, value in enumerate(self.values):
-            result = deepcopy(state).assume(list(value[2]))#.assume({value[1]}, manager=manager)
+            result = deepcopy(state).assume({value[1]}, manager=manager)
             f_active = key[idx][0] if key else None
             f_inactive = key[idx][1] if key else None
             active, inactive, outcome = self.precursory.analyze(result, forced_active=f_active, forced_inactive=f_inactive, outputs=self.outputs)
@@ -169,10 +165,10 @@ class BackwardInterpreter(Interpreter):
                 break
             result1 = deepcopy(entry)
             for item in one_hot:
-                result1 = result1.assume(list(item[2]))#.assume({item[1]}, manager=manager)
+                result1 = result1.assume({item[1]}, manager=manager)
             key = list()
             for value in self.values:
-                result2 = deepcopy(result1).assume(list(value[2]))#.assume({value[1]}, manager=manager)
+                result2 = deepcopy(result1).assume({value[1]}, manager=manager)
                 active, inactive, _ = self.precursory.analyze(result2, earlystop=False, outputs=self.outputs)
                 key.append((frozenset(active), frozenset(inactive)))
             _key = tuple(key)
@@ -226,7 +222,7 @@ class BackwardInterpreter(Interpreter):
                 queue1.put((None, None, None, None, None, None, None, None))
                 break
             r_assumptions = '1-Hot: {}'.format(
-                ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
+                ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
             ) if assumptions else ''
             r_ranges = 'Ranges: {}'.format(
                 ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
@@ -240,10 +236,10 @@ class BackwardInterpreter(Interpreter):
                 right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
                 conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
                 bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
-            entry = self.initial.precursory.assume(ranges)#assume({bounds}, manager=manager)
+            entry = self.initial.precursory.assume({bounds}, manager=manager)
             # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
-            for (_, assumption, _assumption) in assumptions:
-                entry = entry.assume(_assumption)#.assume({assumption}, manager=manager)
+            for (_, assumption) in assumptions:
+                entry = entry.assume({assumption}, manager=manager)
             # determine chunk feasibility for each possible value of the sensitive feature
             feasibility = self.feasibility(entry, manager, key=key)
             feasible: bool = feasibility[0]
@@ -289,14 +285,13 @@ class BackwardInterpreter(Interpreter):
                         items: List[OneHotN] = list(pack)  # multiple one-hot values for n features
                         for i in range(len(items[0])):  # for each feature...
                             variables: Set[VariableIdentifier] = set()
-                            var, case, _case = items[0][i]
+                            var, case = items[0][i]
                             variables.add(var)
                             for item in items[1:]:
-                                var, nxt, _nxt = item[i]
+                                var, nxt = item[i]
                                 variables.add(var)
                                 case = BinaryBooleanOperation(case, BinaryBooleanOperation.Operator.Or, nxt)
-                                _case = BinaryBooleanOperation(_case, BinaryBooleanOperation.Operator.Or, _nxt)
-                            _assumptions.append((frozenset(variables), case, _case))
+                            _assumptions.append((frozenset(variables), case))
                         _unpacked = frozenset(frozenset(item) for item in pack)
                         _pivot1 = len(self.uncontroversial1)
                         _percent = percent * len(pack) / self.count
@@ -307,8 +302,8 @@ class BackwardInterpreter(Interpreter):
                         print("Unpacking {}".format(r_assumptions))
                         for item in unpacked:
                             _assumptions = list()
-                            for var, case, _case in item:
-                                _assumptions.append((frozenset({var}), case, _case))
+                            for var, case in item:
+                                _assumptions.append((frozenset({var}), case))
                             _unpacked = frozenset({item})
                             _assumptions = frozenset(_assumptions)
                             queue1.put(
@@ -340,8 +335,8 @@ class BackwardInterpreter(Interpreter):
                         print("Unpacking {}".format(r_assumptions))
                         for item in unpacked:
                             _assumptions = list()
-                            for var, case, _case in item:
-                                _assumptions.append((frozenset({var}), case, _case))
+                            for var, case in item:
+                                _assumptions.append((frozenset({var}), case))
                             _unpacked = frozenset({item})
                             _assumptions = frozenset(_assumptions)
                             queue1.put((_assumptions, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
@@ -513,7 +508,7 @@ class BackwardInterpreter(Interpreter):
                 break
             print(color + 'Pattern #{} of {} [{}]'.format(idx, total, len(pack)), Style.RESET_ALL)
             check: Dict[Tuple[VariableIdentifier, VariableIdentifier], Set[BiasState]] = dict()
-            for idx, (case, value, _) in enumerate(self.values):
+            for idx, (case, value) in enumerate(self.values):
                 self.active, self.inactive = key[idx]
                 for chosen in self.outputs:
                     remaining = self.outputs - {chosen}
@@ -531,7 +526,7 @@ class BackwardInterpreter(Interpreter):
             # check for bias
             for assumptions, unpacked, ranges, percent in pack:
                 r_assumptions = '1-Hot: {}'.format(
-                    ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
+                    ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _) in assumptions)
                 ) if assumptions else ''
                 r_ranges = 'Ranges: {}'.format(
                     ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
@@ -543,7 +538,7 @@ class BackwardInterpreter(Interpreter):
                         partition = deepcopy(check)
                         for states in partition.values():
                             for state in states:
-                                for (_, assumption, _) in item:
+                                for (_, assumption) in item:
                                     state.assume({assumption}, manager=manager)
                                 # forget the sensitive variables
                                 state.forget(self.sensitive)
@@ -592,24 +587,19 @@ class BackwardInterpreter(Interpreter):
                 self.values: List[OneHot1] = list(one_hots(self.sensitive))
             else:           # the sensitive feature is continuous
                 zero = Literal('0')
-                pivot = specification.readline().strip()
-                literal = Literal(pivot)
+                pivot = Literal(specification.readline().strip())
                 one = Literal('1')
                 self.values = list()
-                _value1 = dict()
-                variable1 = VariableIdentifier('{}[<{}]'.format(self.sensitive[0], literal))
+                variable1 = VariableIdentifier('{}[<{}]'.format(self.sensitive[0], pivot))
                 lower = BinaryComparisonOperation(zero, BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
-                upper = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.Lt, literal)
+                upper = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.Lt, pivot)
                 value1 = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
-                _value1[self.sensitive[0]] = (0, eval(pivot))
-                self.values.append((variable1, value1, tuple(_value1.items())))
-                _value2 = dict()
-                variable2 = VariableIdentifier('{}[>={}]'.format(self.sensitive[0], literal))
-                lower = BinaryComparisonOperation(literal, BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
+                self.values.append((variable1, value1))
+                variable2 = VariableIdentifier('{}[>={}]'.format(self.sensitive[0], pivot))
+                lower = BinaryComparisonOperation(pivot, BinaryComparisonOperation.Operator.LtE, self.sensitive[0])
                 upper = BinaryComparisonOperation(self.sensitive[0], BinaryComparisonOperation.Operator.LtE, one)
                 value2 = BinaryBooleanOperation(lower, BinaryBooleanOperation.Operator.And, upper)
-                _value2[self.sensitive[0]] = (eval(pivot), 1)
-                self.values.append((variable2, value2, tuple(_value2.items())))
+                self.values.append((variable2, value2))
             # bound the sensitive feature between 0 and 1
             zero = Literal('0')
             one = Literal('1')
