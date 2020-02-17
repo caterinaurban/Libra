@@ -85,4 +85,4 @@ timeout 46800 python3 compasXpriors.py True False 0 15 tests/compas/Cno-bias7.py
 timeout 46800 python3 compasXpriors.py True False 0 17 tests/compas/C0.20-bias7.py | tee compas-C0.20-bias7-sym-0-10.log    # 19
 
 timeout 46800 python3 compasXpriors.py True False 0 15 tests/compas/Cno-bias8.py | tee compas-Cno-bias8-sym-0-10.log
-timeout 46800 python3 compasXpriors.py True False 0 17 tests/compas/C0.20-bias8.py | tee compas-C0.20-bias8-sym-0-10.log    # 19
+timeout 46800 python3 compasXpriors.py True False 0 17 tests/compas/C0.20-bias8.py | tee compas-C0.20-bias8-sym-0-10.log

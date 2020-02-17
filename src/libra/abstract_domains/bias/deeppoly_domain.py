@@ -384,6 +384,31 @@ class DeepPolyState(State):
                 sup['_'] = upper
                 self.poly[condition.right.left.name] = (inf, sup)
                 return self
+        elif isinstance(condition, BinaryComparisonOperation):
+            if condition.operator == BinaryComparisonOperation.Operator.Gt:
+                assert isinstance(condition.left, VariableIdentifier)
+                assert isinstance(condition.right, Literal)
+                lower = eval(condition.right.val)
+                upper = 1
+                self.bounds[condition.left.name] = IntervalLattice(lower, upper)
+                inf: Dict[str, float] = dict()
+                inf['_'] = lower
+                sup: Dict[str, float] = dict()
+                sup['_'] = 1.0
+                self.poly[condition.left.name] = (inf, sup)
+                return self
+            elif condition.operator == BinaryComparisonOperation.Operator.LtE:
+                assert isinstance(condition.left, VariableIdentifier)
+                assert isinstance(condition.right, Literal)
+                lower = 0
+                upper = eval(condition.right.val)
+                self.bounds[condition.left.name] = IntervalLattice(lower, upper)
+                inf: Dict[str, float] = dict()
+                inf['_'] = 0.0
+                sup: Dict[str, float] = dict()
+                sup['_'] = upper
+                self.poly[condition.left.name] = (inf, sup)
+                return self
         # elif isinstance(condition, PyTcons1):
         #     abstract1 = self.domain(manager, self.environment, array=PyTcons1Array([condition]))
         #     self.state = self.state.meet(abstract1)
