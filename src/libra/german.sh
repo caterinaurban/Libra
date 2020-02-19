@@ -42,7 +42,7 @@ timeout 46800 python3 germanX.py True False 0 15 tests/german/Gtno-bias2.py | te
 timeout 46800 python3 germanX.py True False 0 12 tests/german/Gt0.20-bias2.py | tee german-Gt0.20-bias2-nosym-0-12.log
 
 timeout 46800 python3 germanX.py True False 0 12 tests/german/Gtno-bias3.py | tee german-Gtno-bias3-nosym-0-12.log
-timeout 46800 python3 germanX.py True False 0 15 tests/german/Gt0.20-bias3.py | tee german-Gt0.20-bias3-nosym-0-15.log
+timeout 46800 python3 germanX.py True False 0 16 tests/german/Gt0.20-bias3.py | tee german-Gt0.20-bias3-nosym-0-16.log
 
 timeout 46800 python3 germanX.py True False 0 12 tests/german/Gtno-bias10.py | tee german-Gtno-bias10-nosym-0-12.log
 timeout 46800 python3 germanX.py True False 0 12 tests/german/Gt0.20-bias10.py | tee german-Gt0.20-bias10-nosym-0-12.log
