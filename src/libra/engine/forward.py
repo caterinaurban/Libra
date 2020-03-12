@@ -168,9 +168,9 @@ class ForwardInterpreter(Interpreter):
                             deactivated.add(current)
                     else:
                         unknowns = unknowns + 1
-                        if earlystop and unknowns > self.widening:
-                            print('Early Stop')
-                            break
+                        # if earlystop and unknowns > self.widening:
+                        #     print('Early Stop')
+                        #     # break
             else:
                 for stmt in reversed(current.stmts):
                     state = self.semantics.assume_call_semantics(stmt, state, self.manager)

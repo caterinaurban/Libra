@@ -32,13 +32,14 @@ from libra.visualization.graph_renderer import CFGRenderer
 
 class BiasAnalysis(Runner):
 
-    def __init__(self, spec, symbolic1=False, symbolic2=False, difference=0.25, widening=2):
+    def __init__(self, spec, symbolic1=False, symbolic2=False, difference=0.25, widening=2, analysis=True):
         super().__init__()
         self.spec = spec
         self.symbolic1 = symbolic1
         self.symbolic2 = symbolic2
         self.difference = difference
         self.widening = widening
+        self.analysis = analysis
 
         self.inputs: Set[VariableIdentifier] = None                             # input variables
         self.outputs: Set[VariableIdentifier] = None                            # output variables
@@ -147,7 +148,7 @@ class BiasAnalysis(Runner):
 
     def run(self):
         start = time.time()
-        log = self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations)
+        log = self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations, analysis=self.analysis)
         end = time.time()
         print('Total: {}s'.format(end - start), Style.RESET_ALL)
         print('{} {}s'.format(log, end - start))

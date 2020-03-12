@@ -102,6 +102,7 @@ class BackwardInterpreter(Interpreter):
 
         self.difference = difference                                    # minimum range (default: 0.25)
 
+        self.fair = Value('d', 0.0)                                     # percentage that is proven fair by the pre-analysis
         self.biased = Value('d', 0.0)                                   # percentage that is biased
         self.feasible = Value('d', 0.0)                                 # percentage that could be analyzed
         self.explored = Value('d', 0.0)                                 # percentage that was explored
@@ -115,7 +116,7 @@ class BackwardInterpreter(Interpreter):
         """
         return deepcopy(self._initial)
 
-    def feasibility(self, state, manager, key=None, do=False):
+    def feasibility(self, state, manager, key=None, do=False, chunk=None):
         """Determine feasibility (and activation patterns) for a partition of the input space
 
         :param state: state representing the partition of the input space
@@ -137,11 +138,12 @@ class BackwardInterpreter(Interpreter):
             disjunctions = len(self.activations) - len(active) - len(inactive)
             if disjunctions > self.widening:
                 feasible = False
-                if not do:
-                    break
+                # if not do:
+                #     break
             patterns.append((value, frozenset(active), frozenset(inactive)))
         if len(outcomes) <= 1 and None not in outcomes:
-            print('No Backward Analysis!')
+            classes = ', '.join(str(outcome) for outcome in outcomes)
+            print(Fore.GREEN + '✔︎ No Bias ({}) in {}'.format(classes, chunk), Style.RESET_ALL)
             return True, list(), len(self.activations)
         return feasible, patterns, disjunctions
 
@@ -245,7 +247,7 @@ class BackwardInterpreter(Interpreter):
             for (_, assumption, _assumption) in assumptions:
                 entry = entry.assume(_assumption)#.assume({assumption}, manager=manager)
             # determine chunk feasibility for each possible value of the sensitive feature
-            feasibility = self.feasibility(entry, manager, key=key)
+            feasibility = self.feasibility(entry, manager, key=key, chunk=r_partition)
             feasible: bool = feasibility[0]
             # pack the chunk, if feasible, or partition the space of values of all the uncontroversial features
             if feasible:    # the analysis is feasible
@@ -272,7 +274,9 @@ class BackwardInterpreter(Interpreter):
                 else:
                     with self.discarded.get_lock():
                         self.discarded.value += 1
-                progress = 'Progress for #{}: {}% of {}%'.format(id, self.feasible.value, self.explored.value)
+                    with self.fair.get_lock():
+                        self.fair.value += percent
+                progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
                 print(Fore.YELLOW + progress, Style.RESET_ALL)
             else:  # too many disjunctions, we need to split further
                 print('Too many disjunctions ({})!'.format(feasibility[2]))
@@ -351,7 +355,7 @@ class BackwardInterpreter(Interpreter):
                             if self.explored.value >= 100:
                                 queue1.put((None, None, None, None, None, None, None, None))
                         print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
-                        progress = 'Progress for #{}: {}% of {}%'.format(id, self.feasible.value, self.explored.value)
+                        progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
                         print(Fore.YELLOW + progress, Style.RESET_ALL)
                         # self.pick(assumptions, pivot1, ranges, pivot2, splittable, percent, do=True)
 
@@ -565,7 +569,7 @@ class BackwardInterpreter(Interpreter):
             progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, considered, biased)
             print(Fore.YELLOW + progress, Style.RESET_ALL)
 
-    def analyze(self, initial, inputs=None, outputs=None, activations=None):
+    def analyze(self, initial, inputs=None, outputs=None, activations=None, analysis=True):
         """Backward analysis checking for algorithmic bias
 
         :param initial: (BiasState) state from which to start the analysis
@@ -733,38 +737,43 @@ class BackwardInterpreter(Interpreter):
                 skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
                 print(skey, '->', len(pack))
         #
+        result = '\nPre-Analysis Result: {}% fair ({}% feasible)'.format(self.fair.value, self.feasible.value)
+        print(Fore.BLUE + result)
         print('Pre-Analysis Time: {}s'.format(end1 - start1), Style.RESET_ALL)
 
         """
         do the analysis
         """
-        print(Fore.BLUE + '\n||==========||')
-        print('|| Analysis ||')
-        print('||==========||\n', Style.RESET_ALL)
-        # prepare the queue
-        queue2 = Queue()
-        for idx, (key, pack) in enumerate(prioritized):
-            queue2.put((idx+1, (key, pack)))
-        queue2.put((None, (None, None)))
-        # run the analysis
-        start2 = time.time()
-        processes = list()
-        for i in range(cpu):
-            color = colors[i % len(colors)]
-            man = PyPolkaMPQstrictManager()
-            process = Process(target=self.worker2, args=(i, color, queue2, man, len(compressed)))
-            processes.append(process)
-            process.start()
-        for process in processes:
-            process.join()
-        end2 = time.time()
-        #
-        result = '\nResult: {}% of {}% ({}% biased)'.format(self.feasible.value, self.explored.value, self.biased.value)
-        print(Fore.BLUE + result)
-        print('Pre-Analysis Time: {}s'.format(end1 - start1))
-        print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
+        if analysis:
+            print(Fore.BLUE + '\n||==========||')
+            print('|| Analysis ||')
+            print('||==========||\n', Style.RESET_ALL)
+            # prepare the queue
+            queue2 = Queue()
+            for idx, (key, pack) in enumerate(prioritized):
+                queue2.put((idx+1, (key, pack)))
+            queue2.put((None, (None, None)))
+            # run the analysis
+            start2 = time.time()
+            processes = list()
+            for i in range(cpu):
+                color = colors[i % len(colors)]
+                man = PyPolkaMPQstrictManager()
+                process = Process(target=self.worker2, args=(i, color, queue2, man, len(compressed)))
+                processes.append(process)
+                process.start()
+            for process in processes:
+                process.join()
+            end2 = time.time()
+            #
+            result = '\nResult: {}% of {}% ({}% biased)'.format(self.feasible.value, self.explored.value, self.biased.value)
+            print(Fore.BLUE + result)
+            print('Pre-Analysis Time: {}s'.format(end1 - start1))
+            print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
 
-        log = '{} ({}% biased) {}s {}s'.format(self.feasible.value, self.biased.value, end1 - start1, end2 - start2)
+            log = '{} ({}% biased) {}s {}s'.format(self.feasible.value, self.biased.value, end1 - start1, end2 - start2)
+        else:
+            log = '{} ({}% biased) {}s'.format(self.fair.value, self.biased.value, end1 - start1)
         print('\nDone!')
         return log
 

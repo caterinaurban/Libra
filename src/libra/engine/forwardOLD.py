@@ -216,9 +216,9 @@ class ForwardInterpreter(Interpreter):
                         activated.add(current)
                     else:
                         unknowns = unknowns + 1
-                        if earlystop and unknowns > self.widening:
-                            print('Early Stop')
-                            break
+                        # if earlystop and unknowns > self.widening:
+                        #     print('Early Stop')
+                        #     break
                         if self.symbolic1 or self.symbolic2:
                             del symbols[str(current.stmts)]
                     state = state1.join(state2)
