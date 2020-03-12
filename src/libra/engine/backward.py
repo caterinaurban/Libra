@@ -271,6 +271,8 @@ class BackwardInterpreter(Interpreter):
                     curr.add(value)
                     self.patterns[_key] = curr
                     lock.release()
+                    found = '‼ Possible Bias in {}'.format(r_partition)
+                    print(Fore.LIGHTYELLOW_EX + found, Style.RESET_ALL)
                 else:
                     with self.discarded.get_lock():
                         self.discarded.value += 1
@@ -354,7 +356,8 @@ class BackwardInterpreter(Interpreter):
                             self.explored.value += percent
                             if self.explored.value >= 100:
                                 queue1.put((None, None, None, None, None, None, None, None))
-                        print(Fore.LIGHTRED_EX + 'Stopping here!', Style.RESET_ALL)
+                        found = '‼ Unchecked Bias in {}'.format(r_partition)
+                        print(Fore.RED + found, Style.RESET_ALL)
                         progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
                         print(Fore.YELLOW + progress, Style.RESET_ALL)
                         # self.pick(assumptions, pivot1, ranges, pivot2, splittable, percent, do=True)
