@@ -727,6 +727,8 @@ class BackwardInterpreter(Interpreter):
                 skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
                 print(skey, '->', len(pack))
         #
+        result = '\nPre-Analysis Result: {}% fair ({}% feasible)'.format(self.fair.value, self.feasible.value)
+        print(Fore.BLUE + result)
         print('Pre-Analysis Time: {}s'.format(end1 - start1), Style.RESET_ALL)
 
         """
