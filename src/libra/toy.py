@@ -1,6 +1,6 @@
 
 import faulthandler
 faulthandler.enable()
-from libra.engine.bias_analysis import BiasAnalysis
+from libra.engine.functional_analysis import FunctionalAnalysis
 
-BiasAnalysis('toy.txt', symbolic1=True, difference=0.25, widening=2).main("tests/toy.py")
+FunctionalAnalysis('toy.txt', symbolic1=True, difference=0.25, widening=2).main("tests/toy.py")

@@ -6,7 +6,6 @@ Bias Analysis
 """
 import ast
 import ctypes
-import os
 import time
 from queue import Queue
 from typing import Set, Dict
@@ -17,9 +16,8 @@ from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 from pip._vendor.colorama import Style
 
-from libra.abstract_domains.bias.bias_domain import BiasState
-from libra.abstract_domains.bias.deeppoly_domain import DeepPolyState
-from libra.abstract_domains.numerical.interval_domain import BoxState
+from libra.abstract_domains.bias_domain import BiasState
+from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import VariableIdentifier
 from libra.core.statements import Assignment, Lyra2APRON
@@ -27,10 +25,9 @@ from libra.engine.backward import BackwardInterpreter, BiasBackwardSemantics
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
-from libra.visualization.graph_renderer import CFGRenderer
 
 
-class BiasAnalysis(Runner):
+class FunctionalAnalysis(Runner):
 
     def __init__(self, spec, symbolic1=False, symbolic2=False, difference=0.25, widening=2, analysis=True):
         super().__init__()

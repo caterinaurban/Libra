@@ -24,7 +24,7 @@ from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 from pip._vendor.colorama import Fore, Style, Back
 
-from libra.abstract_domains.bias.bias_domain import BiasState
+from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation

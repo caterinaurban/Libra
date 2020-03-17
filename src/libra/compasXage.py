@@ -1,6 +1,6 @@
 
 from sys import argv
-from libra.engine.bias_analysis import BiasAnalysis
+from libra.engine.functional_analysis import FunctionalAnalysis
 import faulthandler
 faulthandler.enable()
 
@@ -10,4 +10,4 @@ s2 = argv[2] == "True"
 d = float(argv[3])
 w = int(argv[4])
 p = argv[5]
-BiasAnalysis('age.txt', symbolic1=s1, symbolic2=s2, difference=d, widening=w).main(p)
+FunctionalAnalysis('age.txt', symbolic1=s1, symbolic2=s2, difference=d, widening=w).main(p)
