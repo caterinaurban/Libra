@@ -161,16 +161,13 @@ class ForwardInterpreter(Interpreter):
                     state = state.relu(current.stmts, inactive=True)
                 else:
                     state = state.relu(current.stmts)
+                    if state.is_bottom():
+                        deactivated.add(current)
                     if state.flag:
                         if state.flag > 0:
                             activated.add(current)
                         else:
                             deactivated.add(current)
-                    else:
-                        unknowns = unknowns + 1
-                        # if earlystop and unknowns > self.widening:
-                        #     print('Early Stop')
-                        #     # break
             else:
                 for stmt in reversed(current.stmts):
                     state = self.semantics.assume_call_semantics(stmt, state, self.manager)
