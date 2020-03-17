@@ -407,7 +407,6 @@ class DeepPolyState(State):
                 self.poly[condition.left.name] = (inf, sup)
                 return self
             elif condition.operator == BinaryComparisonOperation.Operator.LtE:
-                print(condition)
                 assert isinstance(condition.left, VariableIdentifier)
                 assert isinstance(condition.right, Literal)
                 lower = 0

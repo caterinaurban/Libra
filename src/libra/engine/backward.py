@@ -129,6 +129,7 @@ class BackwardInterpreter(Interpreter):
         patterns: List[Tuple[OneHot1, FrozenSet[Node], FrozenSet[Node]]] = list()
         disjunctions = len(self.activations)
         outcomes = set()
+        _disjunctions = None
         for idx, value in enumerate(self.values):
             result = deepcopy(state).assume(list(value[2]))#.assume({value[1]}, manager=manager)
             f_active = key[idx][0] if key else None
@@ -137,6 +138,7 @@ class BackwardInterpreter(Interpreter):
             outcomes.add(outcome)
             disjunctions = len(self.activations) - len(active) - len(inactive)
             if disjunctions > self.widening:
+                _disjunctions = disjunctions
                 feasible = False
                 # if not do:
                 #     break
@@ -145,7 +147,7 @@ class BackwardInterpreter(Interpreter):
             classes = ', '.join(str(outcome) for outcome in outcomes)
             print(Fore.GREEN + '✔︎ No Bias ({}) in {}'.format(classes, chunk), Style.RESET_ALL)
             return True, list(), len(self.activations)
-        return feasible, patterns, disjunctions
+        return feasible, patterns, _disjunctions
 
     def producer(self, queue3):
         """Produce all possible combinations of one-hots for the one-hot encoded uncontroversial features
