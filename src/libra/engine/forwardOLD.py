@@ -18,7 +18,8 @@ from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir, TexprDiscr
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 
-from libra.abstract_domains.interval_domain import BoxState
+from libra.abstract_domains.numerical.interval_domain import BoxState
+from libra.core.expressions import BinaryComparisonOperation, BinaryBooleanOperation
 from libra.core.statements import Call
 from libra.engine.interpreter import Interpreter
 from libra.semantics.forward import DefaultForwardSemantics

@@ -13,7 +13,7 @@ from typing import Set
 from apronpy.manager import PyManager
 from apronpy.box import PyBox
 
-from libra.abstract_domains.apron_domain import APRONState
+from libra.abstract_domains.numerical.apron_domain import APRONState
 from libra.abstract_domains.state import State
 from libra.core.expressions import VariableIdentifier
 

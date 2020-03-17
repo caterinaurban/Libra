@@ -4,6 +4,7 @@ Forward Analysis Engine
 
 :Author: Caterina Urban
 """
+import sys
 from copy import deepcopy
 from queue import Queue
 from typing import Dict, Tuple
@@ -17,7 +18,9 @@ from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir, TexprDiscr
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 
-from libra.abstract_domains.deeppoly_domain import DeepPolyState
+from libra.abstract_domains.bias.deeppoly_domain import DeepPolyState
+from libra.abstract_domains.numerical.interval_domain import BoxState
+from libra.core.expressions import BinaryComparisonOperation, BinaryBooleanOperation
 from libra.core.statements import Call
 from libra.engine.interpreter import Interpreter
 from libra.semantics.forward import DefaultForwardSemantics
@@ -30,89 +33,89 @@ rtype = TexprRtype.AP_RTYPE_REAL
 rdir = TexprRdir.AP_RDIR_RND
 
 
-# def texpr_to_dict(texpr):
-#
-#     def do(texpr0, env):
-#         if texpr0.discr == TexprDiscr.AP_TEXPR_CST:
-#             result = dict()
-#             t0 = '{}'.format(texpr0.val.cst)
-#             t1 = eval(t0)
-#             t2 = str(t1)
-#             t3 = float(t2)
-#             result['_'] = t3
-#             return result
-#         elif texpr0.discr == TexprDiscr.AP_TEXPR_DIM:
-#             result = dict()
-#             result['{}'.format(env.var_of_dim[texpr0.val.dim.value].decode('utf-8'))] = 1.0
-#             return result
-#         else:
-#             assert texpr0.discr == TexprDiscr.AP_TEXPR_NODE
-#             left = do(texpr0.val.node.contents.exprA.contents, env)
-#             op = texpr0.val.node.contents.op
-#             if texpr0.val.node.contents.exprB:
-#                 right = do(texpr0.val.node.contents.exprB.contents, env)
-#             if op == TexprOp.AP_TEXPR_ADD:
-#                 result = deepcopy(left)
-#                 for var, val in right.items():
-#                     if var in result:
-#                         result[var] += val
-#                     else:
-#                         result[var] = val
-#                 return result
-#             elif op == TexprOp.AP_TEXPR_SUB:
-#                 result = deepcopy(left)
-#                 for var, val in right.items():
-#                     if var in result:
-#                         result[var] -= val
-#                     else:
-#                         result[var] = -val
-#                 return result
-#             elif op == TexprOp.AP_TEXPR_MUL:
-#                 # print('multiplying')
-#                 # print('left: ', left)
-#                 # print('right: ', right)
-#                 result = dict()
-#                 if '_' in left and len(left) == 1:
-#                     for var, val in right.items():
-#                         result[var] = left['_'] * right[var]
-#                 elif '_' in right and len(right) == 1:
-#                     for var, val in left.items():
-#                         result[var] = right['_'] * left[var]
-#                 else:
-#                     assert False
-#                 # print('result: ', result)
-#             elif op == TexprOp.AP_TEXPR_NEG:
-#                 result = deepcopy(left)
-#                 for var, val in result.items():
-#                     result[var] = -val
-#         return result
-#
-#     texpr1 = texpr.texpr1.contents
-#     return do(texpr1.texpr0.contents, texpr1.env.contents)
-#
-#
-# def substitute_in_dict(todict, var, rhs):
-#     result = todict
-#     key = str(var)
-#     coeff = result[key]
-#     del result[key]
-#     for var, val in rhs.items():
-#         if var in result:
-#             result[var] += coeff * val
-#         else:
-#             result[var] = coeff * val
-#     return result
-#
-#
-# def dict_to_texpr(todict, env):
-#     texpr = PyTexpr1.cst(env, PyMPQScalarCoeff(PyMPQScalar(todict['_'])))
-#     for var, val in reversed(list(todict.items())):
-#         if var != '_':
-#             coeff = PyTexpr1.cst(env, PyMPQScalarCoeff(PyMPQScalar(val)))
-#             dim = PyTexpr1.var(env, PyVar(var))
-#             term = PyTexpr1.binop(TexprOp.AP_TEXPR_MUL, coeff, dim, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
-#             texpr = PyTexpr1.binop(TexprOp.AP_TEXPR_ADD, term, texpr, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
-#     return texpr
+def texpr_to_dict(texpr):
+
+    def do(texpr0, env):
+        if texpr0.discr == TexprDiscr.AP_TEXPR_CST:
+            result = dict()
+            t0 = '{}'.format(texpr0.val.cst)
+            t1 = eval(t0)
+            t2 = str(t1)
+            t3 = float(t2)
+            result['_'] = t3
+            return result
+        elif texpr0.discr == TexprDiscr.AP_TEXPR_DIM:
+            result = dict()
+            result['{}'.format(env.var_of_dim[texpr0.val.dim.value].decode('utf-8'))] = 1.0
+            return result
+        else:
+            assert texpr0.discr == TexprDiscr.AP_TEXPR_NODE
+            left = do(texpr0.val.node.contents.exprA.contents, env)
+            op = texpr0.val.node.contents.op
+            if texpr0.val.node.contents.exprB:
+                right = do(texpr0.val.node.contents.exprB.contents, env)
+            if op == TexprOp.AP_TEXPR_ADD:
+                result = deepcopy(left)
+                for var, val in right.items():
+                    if var in result:
+                        result[var] += val
+                    else:
+                        result[var] = val
+                return result
+            elif op == TexprOp.AP_TEXPR_SUB:
+                result = deepcopy(left)
+                for var, val in right.items():
+                    if var in result:
+                        result[var] -= val
+                    else:
+                        result[var] = -val
+                return result
+            elif op == TexprOp.AP_TEXPR_MUL:
+                # print('multiplying')
+                # print('left: ', left)
+                # print('right: ', right)
+                result = dict()
+                if '_' in left and len(left) == 1:
+                    for var, val in right.items():
+                        result[var] = left['_'] * right[var]
+                elif '_' in right and len(right) == 1:
+                    for var, val in left.items():
+                        result[var] = right['_'] * left[var]
+                else:
+                    assert False
+                # print('result: ', result)
+            elif op == TexprOp.AP_TEXPR_NEG:
+                result = deepcopy(left)
+                for var, val in result.items():
+                    result[var] = -val
+        return result
+
+    texpr1 = texpr.texpr1.contents
+    return do(texpr1.texpr0.contents, texpr1.env.contents)
+
+
+def substitute_in_dict(todict, var, rhs):
+    result = todict
+    key = str(var)
+    coeff = result[key]
+    del result[key]
+    for var, val in rhs.items():
+        if var in result:
+            result[var] += coeff * val
+        else:
+            result[var] = coeff * val
+    return result
+
+
+def dict_to_texpr(todict, env):
+    texpr = PyTexpr1.cst(env, PyMPQScalarCoeff(PyMPQScalar(todict['_'])))
+    for var, val in reversed(list(todict.items())):
+        if var != '_':
+            coeff = PyTexpr1.cst(env, PyMPQScalarCoeff(PyMPQScalar(val)))
+            dim = PyTexpr1.var(env, PyVar(var))
+            term = PyTexpr1.binop(TexprOp.AP_TEXPR_MUL, coeff, dim, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
+            texpr = PyTexpr1.binop(TexprOp.AP_TEXPR_ADD, term, texpr, TexprRtype.AP_RTYPE_REAL, TexprRdir.AP_RDIR_RND)
+    return texpr
 
 
 class ForwardInterpreter(Interpreter):
@@ -203,7 +206,7 @@ class ActivationPatternForwardSemantics(DefaultForwardSemantics):
         return state
 
     def list_semantics(self, stmt, state) -> State:
-        state = state.affine(stmt[0], stmt[1])
+        state.state = state.state.assign(stmt[0], stmt[1])
         return state
 
     def ReLU_call_semantics(self, stmt, state, manager: PyManager = None, active: bool = True) -> State:
