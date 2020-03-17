@@ -113,6 +113,20 @@ class IntervalLattice:
             return self._replace(type(self)(lower, upper))
         return self.bottom()
 
+    def meet(self, other: 'IntervalLattice') -> 'IntervalLattice':
+        """Greatest lower bound between lattice elements.
+
+        :param other: other lattice element
+        :return: current lattice element modified to be the greatest lower bound
+
+        """
+        if self.is_top() or other.is_bottom():
+            return self._replace(other)
+        elif other.is_top() or self.is_bottom():
+            return self
+        else:
+            return self._meet(other)
+
     # arithmetic operations
 
     def _neg(self) -> 'IntervalLattice':
@@ -317,7 +331,15 @@ class DeepPolyState(State):
 
     @copy_docstring(State._meet)
     def _meet(self, other: 'DeepPolyState') -> 'DeepPolyState':
-        raise NotImplementedError(f"Call to _is_less_equal is unexpected!")
+        for var in self.bounds:
+            self.bounds[var].meet(other.bounds[var])
+            bounds = self.bounds[var]
+            inf: Dict[str, float] = dict()
+            inf['_'] = bounds.lower
+            sup: Dict[str, float] = dict()
+            sup['_'] = bounds.upper
+            self.poly[var] = (inf, sup)
+        return self
 
     @copy_docstring(State._widening)
     def _widening(self, other: 'DeepPolyState') -> 'DeepPolyState':
@@ -327,39 +349,24 @@ class DeepPolyState(State):
     def _assign(self, left: Expression, right: Expression) -> 'DeepPolyState':
         raise NotImplementedError(f"Call to _assign is unexpected!")
 
-    # @copy_docstring(State._assume)
-    # def _assume(self, condition: Expression, bwd: bool = False) -> 'DeepPolyState':
-    #     raise NotImplementedError(f"Call to _assume is unexpected!")
-
     @copy_docstring(State._assume)
     def _assume(self, condition: Expression, bwd: bool = False) -> 'DeepPolyState':
-        print(condition)
-        # normal = self._negation_free.visit(condition)
-        # if isinstance(normal, BinaryBooleanOperation):
-        #     if normal.operator == BinaryBooleanOperation.Operator.And:
-        #         right = deepcopy(self)._assume(normal.right, bwd=bwd)
-        #         return self._assume(normal.left, bwd=bwd).meet(right)
-        #     if normal.operator == BinaryBooleanOperation.Operator.Or:
-        #         right = deepcopy(self)._assume(normal.right, bwd=bwd)
-        #         return self._assume(normal.left, bwd=bwd).join(right)
-        # elif isinstance(normal, BinaryComparisonOperation):
-        #     cond = self._lyra2apron.visit(normal, self.environment)
-        #     abstract1 = self.domain(manager, self.environment, array=PyTcons1Array([cond]))
-        #     self.state = self.state.meet(abstract1)
-        #     return self
-        raise NotImplementedError(f"Assumption of {normal.__class__.__name__} is unsupported!")
+        raise NotImplementedError(f"Call to _assume is unexpected!")
 
     def assume(self, condition, bwd: bool = False) -> 'DeepPolyState':
+        if self.is_bottom():
+            return self
         if isinstance(condition, tuple):
             condition = list(condition)
         if isinstance(condition, list):
             for feature, (lower, upper) in condition:
-                self.bounds[feature.name] = IntervalLattice(lower, upper)
+                self.bounds[feature.name].meet(IntervalLattice(lower, upper))
+                bounds = self.bounds[feature.name]
                 inf: Dict[str, float] = dict()
-                inf['_'] = lower
+                inf['_'] = bounds.lower
                 sup: Dict[str, float] = dict()
-                sup['_'] = upper
-                self.poly[feature.name] = (lower, upper)
+                sup['_'] = bounds.upper
+                self.poly[feature.name] = (inf, sup)
             return self
         elif isinstance(condition, BinaryBooleanOperation):
             if condition.operator == BinaryBooleanOperation.Operator.Or:
@@ -377,11 +384,12 @@ class DeepPolyState(State):
                 lower = eval(condition.left.left.val)
                 upper = eval(condition.right.right.val)
                 assert condition.left.right.name == condition.right.left.name
-                self.bounds[condition.left.right.name] = IntervalLattice(lower, upper)
+                self.bounds[condition.left.right.name].meet(IntervalLattice(lower, upper))
+                bounds = self.bounds[condition.left.right.name]
                 inf: Dict[str, float] = dict()
-                inf['_'] = lower
+                inf['_'] = bounds.lower
                 sup: Dict[str, float] = dict()
-                sup['_'] = upper
+                sup['_'] = bounds.upper
                 self.poly[condition.right.left.name] = (inf, sup)
                 return self
         elif isinstance(condition, BinaryComparisonOperation):
@@ -390,23 +398,26 @@ class DeepPolyState(State):
                 assert isinstance(condition.right, Literal)
                 lower = eval(condition.right.val)
                 upper = 1
-                self.bounds[condition.left.name] = IntervalLattice(lower, upper)
+                self.bounds[condition.left.name].meet(IntervalLattice(lower, upper))
+                bounds = self.bounds[condition.left.name]
                 inf: Dict[str, float] = dict()
-                inf['_'] = lower
+                inf['_'] = bounds.lower
                 sup: Dict[str, float] = dict()
-                sup['_'] = 1.0
+                sup['_'] = bounds.upper
                 self.poly[condition.left.name] = (inf, sup)
                 return self
             elif condition.operator == BinaryComparisonOperation.Operator.LtE:
+                print(condition)
                 assert isinstance(condition.left, VariableIdentifier)
                 assert isinstance(condition.right, Literal)
                 lower = 0
                 upper = eval(condition.right.val)
-                self.bounds[condition.left.name] = IntervalLattice(lower, upper)
+                self.bounds[condition.left.name].meet(IntervalLattice(lower, upper))
+                bounds = self.bounds[condition.left.name]
                 inf: Dict[str, float] = dict()
-                inf['_'] = 0.0
+                inf['_'] = bounds.lower
                 sup: Dict[str, float] = dict()
-                sup['_'] = upper
+                sup['_'] = bounds.upper
                 self.poly[condition.left.name] = (inf, sup)
                 return self
         # elif isinstance(condition, PyTcons1):
@@ -427,6 +438,8 @@ class DeepPolyState(State):
         raise NotImplementedError(f"Call to _forget is unexpected!")
 
     def affine(self, left: List[PyVar], right: List[PyTexpr1]) -> 'DeepPolyState':
+        if self.is_bottom():
+            return self
         for lhs, expr in zip(left, right):
             name = str(lhs)
             rhs = texpr_to_dict(expr)
@@ -472,6 +485,8 @@ class DeepPolyState(State):
         return self
 
     def relu(self, stmt: PyVar, active: bool = False, inactive: bool = False) -> 'DeepPolyState':
+        if self.is_bottom():
+            return self
         name = str(stmt)
         lattice: IntervalLattice = self.bounds[name]
         lower, upper = lattice.lower, lattice.upper

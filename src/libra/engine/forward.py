@@ -179,7 +179,9 @@ class ForwardInterpreter(Interpreter):
                 worklist.put(self.cfg.nodes[node.identifier])
 
         found = None
-        try:
+        if state.is_bottom():
+            found = '⊥'
+        else:
             for chosen in outputs:
                 outcome = state.bounds[chosen.name]
                 lower = outcome.lower
@@ -194,8 +196,6 @@ class ForwardInterpreter(Interpreter):
                 if unique:
                     found = chosen
                     break
-        except:
-            pass
 
         return activated, deactivated, found
 

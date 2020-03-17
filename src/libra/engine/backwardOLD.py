@@ -764,9 +764,9 @@ class BackwardInterpreter(Interpreter):
             print('Pre-Analysis Time: {}s'.format(end1 - start1))
             print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
 
-            log = '{} ({}% biased) {}s {}s'.format(self.feasible.value, self.biased.value, end1 - start1, end2 - start2)
+            log = '{} ({}% certified, {}% biased) {}s {}s'.format(self.feasible.value, self.fair.value, self.biased.value, end1 - start1, end2 - start2)
         else:
-            log = '{} ({}% biased) {}s'.format(self.fair.value, self.biased.value, end1 - start1)
+            log = '{} ({}% certified) {}s'.format(self.feasible.value, self.fair.value, end1 - start1)
         print('\nDone!')
         return log
 
