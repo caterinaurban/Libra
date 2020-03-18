@@ -157,8 +157,10 @@ class ForwardInterpreter(Interpreter):
             elif isinstance(current, Activation):
                 if forced_active and current in forced_active:
                     state = state.relu(current.stmts, active=True)
+                    activated.add(current)
                 elif forced_inactive and current in forced_inactive:
                     state = state.relu(current.stmts, inactive=True)
+                    deactivated.add(current)
                 else:
                     state = state.relu(current.stmts)
                     if state.is_bottom():
