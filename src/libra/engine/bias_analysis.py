@@ -63,8 +63,8 @@ class BiasAnalysis(Runner):
         self.inputs, variables, self.outputs = self.variables
         # precursory = BoxState(self.man1, variables)
         # precursory = Symbolic1State(self.man1, variables)
-        # precursory = Symbolic2State(self.man1, variables)
-        precursory = DeepPolyState(self.inputs)
+        precursory = Symbolic2State(self.man1, variables)
+        # precursory = DeepPolyState(self.inputs)
         return BiasState(self.man2, variables, precursory=precursory)
 
     @property

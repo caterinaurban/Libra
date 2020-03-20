@@ -25,6 +25,7 @@ from apronpy.var import PyVar
 from pip._vendor.colorama import Fore, Style, Back
 
 from libra.abstract_domains.bias_domain import BiasState
+from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
@@ -131,7 +132,10 @@ class BackwardInterpreter(Interpreter):
         outcomes = set()
         _disjunctions = None
         for idx, value in enumerate(self.values):
-            result = deepcopy(state).assume(list(value[2]))#.assume({value[1]}, manager=manager)
+            if isinstance(state, DeepPolyState):
+                result = deepcopy(state).assume(list(value[2]))
+            else:
+                result = deepcopy(state).assume({value[1]}, manager=manager)
             f_active = key[idx][0] if key else None
             f_inactive = key[idx][1] if key else None
             active, inactive, outcome = self.precursory.analyze(result, forced_active=f_active, forced_inactive=f_inactive, outputs=self.outputs)
@@ -173,10 +177,16 @@ class BackwardInterpreter(Interpreter):
                 break
             result1 = deepcopy(entry)
             for item in one_hot:
-                result1 = result1.assume(list(item[2]))#.assume({item[1]}, manager=manager)
+                if isinstance(entry, DeepPolyState):
+                    result1 = result1.assume(list(item[2]))
+                else:
+                    result1 = result1.assume({item[1]}, manager=manager)
             key = list()
             for value in self.values:
-                result2 = deepcopy(result1).assume(list(value[2]))#.assume({value[1]}, manager=manager)
+                if isinstance(entry, DeepPolyState):
+                    result2 = deepcopy(result1).assume(list(value[2]))
+                else:
+                    result2 = deepcopy(result1).assume({value[1]}, manager=manager)
                 active, inactive, _ = self.precursory.analyze(result2, earlystop=False, outputs=self.outputs)
                 key.append((frozenset(active), frozenset(inactive)))
             _key = tuple(key)
@@ -244,10 +254,16 @@ class BackwardInterpreter(Interpreter):
                 right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
                 conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
                 bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
-            entry = self.initial.precursory.assume(ranges)#assume({bounds}, manager=manager)
+            if isinstance(self.initial.precursory, DeepPolyState):
+                entry = self.initial.precursory.assume(ranges)
+            else:
+                entry = self.initial.precursory.assume({bounds}, manager=manager)
             # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
             for (_, assumption, _assumption) in assumptions:
-                entry = entry.assume(_assumption)#.assume({assumption}, manager=manager)
+                if isinstance(entry, DeepPolyState):
+                    entry = entry.assume(_assumption)
+                else:
+                    entry = entry.assume({assumption}, manager=manager)
             # determine chunk feasibility for each possible value of the sensitive feature
             feasibility = self.feasibility(entry, manager, key=key, chunk=r_partition)
             feasible: bool = feasibility[0]
