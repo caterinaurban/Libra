@@ -8,6 +8,7 @@ is represented by a conjunction of (more of less complex) linear constraints.
 
 :Authors: Caterina Urban
 """
+import sys
 from abc import ABCMeta
 from copy import deepcopy
 from enum import IntEnum
@@ -165,6 +166,26 @@ class APRONState(State, metaclass=ABCMeta):
             self.state = self.state.substitute(PyVar(left.name), expr)
             return self
         raise NotImplementedError(f"Substitution of {left.__class__.__name__} is unsupported!")
+
+    def outcome(self, outcomes: Set[VariableIdentifier]):
+        found = None
+        for chosen in outcomes:
+            outcome = self.bound_variable(PyVar(chosen.name))
+            inf = str(outcome.interval.contents.inf.contents)
+            lower = eval(inf) if inf != '-1/0' else -sys.maxsize
+            unique = True
+            remaining = outcomes - {chosen}
+            for discarded in remaining:
+                alternative = self.bound_variable(PyVar(discarded.name))
+                sup = str(alternative.interval.contents.sup.contents)
+                upper = eval(sup) if sup != '1/0' else sys.maxsize
+                if lower <= upper:
+                    unique = False
+                    break
+            if unique:
+                found = chosen
+                break
+        return found
 
     _negation_free = NegationFreeExpression()
     _lyra2apron = Lyra2APRON()

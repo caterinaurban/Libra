@@ -353,7 +353,7 @@ class DeepPolyState(State):
     def _assume(self, condition: Expression, bwd: bool = False) -> 'DeepPolyState':
         raise NotImplementedError(f"Call to _assume is unexpected!")
 
-    def assume(self, condition, bwd: bool = False) -> 'DeepPolyState':
+    def assume(self, condition, manager: PyManager = None, bwd: bool = False) -> 'DeepPolyState':
         if self.is_bottom():
             return self
         if isinstance(condition, tuple):
@@ -549,6 +549,27 @@ class DeepPolyState(State):
             self.poly[name] = (inf, sup)
             self.flag = None
         return self
+
+    def outcome(self, outcomes: Set[VariableIdentifier]):
+        found = None
+        if self.is_bottom():
+            found = '⊥'
+        else:
+            for chosen in outcomes:
+                outcome = self.bounds[chosen.name]
+                lower = outcome.lower
+                unique = True
+                remaining = outcomes - {chosen}
+                for discarded in remaining:
+                    alternative = self.bounds[discarded.name]
+                    upper = alternative.upper
+                    if lower <= upper:
+                        unique = False
+                        break
+                if unique:
+                    found = chosen
+                    break
+        return found
 
 
     _negation_free = NegationFreeExpression()

@@ -9,7 +9,6 @@ from queue import Queue
 
 from apronpy.manager import PyManager
 
-from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.core.statements import Call
 from libra.engine.interpreter import Interpreter
 from libra.semantics.forward import DefaultForwardSemantics
@@ -34,7 +33,7 @@ class ForwardInterpreter(Interpreter):
         self.symbolic1 = symbolic1
         self.symbolic2 = symbolic2
 
-    def analyze(self, initial: DeepPolyState, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
+    def analyze(self, initial, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
         """Forward analysis extracting abstract activation patterns.
 
         :param initial: initial state of the analysis
@@ -73,24 +72,7 @@ class ForwardInterpreter(Interpreter):
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
 
-        found = None
-        if state.is_bottom():
-            found = '⊥'
-        else:
-            for chosen in outputs:
-                outcome = state.bounds[chosen.name]
-                lower = outcome.lower
-                unique = True
-                remaining = outputs - {chosen}
-                for discarded in remaining:
-                    alternative = state.bounds[discarded.name]
-                    upper = alternative.upper
-                    if lower <= upper:
-                        unique = False
-                        break
-                if unique:
-                    found = chosen
-                    break
+        found = state.outcome(outputs)
 
         return activated, deactivated, found
 
@@ -99,6 +81,6 @@ class ActivationPatternForwardSemantics(DefaultForwardSemantics):
 
     def assume_call_semantics(self, stmt: Call, state: State, manager: PyManager = None) -> State:
         argument = self.semantics(stmt.arguments[0], state).result
-        state.assume(argument)
+        state.assume(argument, manager=manager)
         state.result = set()
         return state

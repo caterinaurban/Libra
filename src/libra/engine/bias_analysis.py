@@ -18,6 +18,9 @@ from pip._vendor.colorama import Style
 
 from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
+from libra.abstract_domains.interval_domain import BoxState
+from libra.abstract_domains.symbolic1_domain import Symbolic1State
+from libra.abstract_domains.symbolic2_domain import Symbolic2State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import VariableIdentifier
 from libra.core.statements import Assignment, Lyra2APRON
@@ -59,10 +62,9 @@ class BiasAnalysis(Runner):
     def state(self):
         self.inputs, variables, self.outputs = self.variables
         # precursory = BoxState(self.man1, variables)
+        # precursory = Symbolic1State(self.man1, variables)
+        # precursory = Symbolic2State(self.man1, variables)
         precursory = DeepPolyState(self.inputs)
-        # precursory = OctagonState(variables)
-        # precursory = PolyhedraState(variables)
-        # precursory = Taylor1pMPQState(variables)
         return BiasState(self.man2, variables, precursory=precursory)
 
     @property
