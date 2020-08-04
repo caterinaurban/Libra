@@ -20,7 +20,7 @@ from libra.core.cfg import Node, Function, Activation
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager: PyManager, semantics, widening=3, symbolic1=False, symbolic2=False):
+    def __init__(self, cfg, manager: PyManager, semantics, widening=3):
         """Forward control flow graph interpreter construction.
 
         :param cfg: control flow graph to analyze
@@ -30,8 +30,6 @@ class ForwardInterpreter(Interpreter):
         """
         super().__init__(cfg, semantics, widening)
         self.manager = manager
-        self.symbolic1 = symbolic1
-        self.symbolic2 = symbolic2
 
     def analyze(self, initial, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
         """Forward analysis extracting abstract activation patterns.

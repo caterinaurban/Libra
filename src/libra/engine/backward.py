@@ -13,11 +13,12 @@ from functools import reduce
 from multiprocessing import Value, Manager, Queue, Process, cpu_count, Lock
 from typing import Tuple, Set, Dict, List, FrozenSet
 
+from apronpy.box import PyBoxMPQManager
 from apronpy.coeff import PyMPQScalarCoeff
 from apronpy.interval import Interval
 from apronpy.lincons0 import ConsTyp
-from apronpy.manager import PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
-from apronpy.polka import PyPolka
+from apronpy.manager import PyManager
+from apronpy.polka import PyPolka, PyPolkaMPQstrictManager
 from apronpy.tcons1 import PyTcons1, PyTcons1Array
 from apronpy.texpr0 import TexprOp, TexprRtype, TexprRdir
 from apronpy.texpr1 import PyTexpr1
@@ -78,9 +79,11 @@ def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
 class BackwardInterpreter(Interpreter):
     """Backward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager, semantics, specification, widening=2, difference=0.25, precursory=None):
+    def __init__(self, cfg, manager, domain, semantics, specification, widening=2, difference=0.25, precursory=None):
         super().__init__(cfg, semantics, widening=widening, precursory=precursory)
         self.manager: PyManager = manager                               # manager to be used for the analysis
+        from libra.engine.bias_analysis import AbstractDomain
+        self.domain: AbstractDomain = domain
         self._initial: BiasState = None                                 # initial analysis state
 
         self.specification = specification                              # input specification file
@@ -599,8 +602,7 @@ class BackwardInterpreter(Interpreter):
         :param activations: (Set[Node]) CFG nodes corresponding to activation functions
         """
         print(Fore.BLUE + '\n||=================||')
-        print('|| symbolic1: {}'.format(self.precursory.symbolic1))
-        print('|| symbolic2: {}'.format(self.precursory.symbolic2))
+        print('|| domain: {}'.format(self.domain))
         print('|| difference: {}'.format(self.difference))
         print('|| widening: {}'.format(self.widening))
         print('||=================||', Style.RESET_ALL)

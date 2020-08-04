@@ -7,11 +7,14 @@ Bias Analysis
 import ast
 import ctypes
 import time
+from enum import Enum
 from queue import Queue
 from typing import Set, Dict
 
+from apronpy.box import PyBoxMPQManager
 from apronpy.environment import PyEnvironment
-from apronpy.manager import FunId, PyBoxMPQManager, PyPolkaMPQstrictManager, PyManager
+from apronpy.manager import FunId, PyManager
+from apronpy.polka import PyPolkaMPQstrictManager
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
 from pip._vendor.colorama import Style
@@ -30,13 +33,19 @@ from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
 
 
+class AbstractDomain(Enum):
+    BOXES = 0
+    SYMBOLIC1 = 1
+    SYMBOLIC2 = 2
+    DEEPPOLY = 3
+
+
 class BiasAnalysis(Runner):
 
-    def __init__(self, spec, symbolic1=False, symbolic2=False, difference=0.25, widening=2, analysis=True):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2, analysis=True):
         super().__init__()
         self.spec = spec
-        self.symbolic1 = symbolic1
-        self.symbolic2 = symbolic2
+        self.domain = domain
         self.difference = difference
         self.widening = widening
         self.analysis = analysis
@@ -56,15 +65,22 @@ class BiasAnalysis(Runner):
         self.man2.manager.contents.option.funopt[FunId.AP_FUNID_FORGET_ARRAY].algorithm = min_int
 
     def interpreter(self):
-        precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening, symbolic1=self.symbolic1, symbolic2=self.symbolic2)
-        return BackwardInterpreter(self.cfg, self.man2, BiasBackwardSemantics(), self.spec, widening=self.widening, difference=self.difference, precursory=precursory)
+        precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening)
+        return BackwardInterpreter(self.cfg, self.man2, self.domain, BiasBackwardSemantics(), self.spec, widening=self.widening, difference=self.difference, precursory=precursory)
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
-        # precursory = BoxState(self.man1, variables)
-        # precursory = Symbolic1State(self.man1, variables)
-        precursory = Symbolic2State(self.man1, variables)
-        # precursory = DeepPolyState(self.inputs)
+        if self.domain == AbstractDomain.BOXES:
+            precursory = BoxState(self.man1, variables)
+        elif self.domain == AbstractDomain.SYMBOLIC1:
+            # generally faster than SYMBOLIC2 for small neural networks
+            precursory = Symbolic1State(self.man1, variables)
+        elif self.domain == AbstractDomain.SYMBOLIC2:
+            # generally faster than SYMBOLIC1 for large neural networks
+            precursory = Symbolic2State(self.man1, variables)
+        else:
+            assert self.domain == AbstractDomain.DEEPPOLY
+            precursory = DeepPolyState(self.inputs)
         return BiasState(self.man2, variables, precursory=precursory)
 
     @property
