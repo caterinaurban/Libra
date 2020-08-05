@@ -21,3 +21,5 @@ if x31 < x32:
     print('x32')
 elif x32 < x31:
     print('x31')
+else:
+    raise ValueError

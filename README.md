@@ -17,6 +17,11 @@ is not affected by different values of the chosen features.
 When certification succeeds, Libra provides definite guarantees, 
 otherwise, it describes and quantifies the biased behavior.
 
+Libra was developed to implement and test the analysis method described in:
+
+	C. Urban, M. Christakis, V. Wüstholz, F. Zhang - Perfectly Parallel Fairness Certification of Neural Networks
+	Contidionally accepted to appear in Proceedings of the ACM on Programming Languages (OOPSLA), 2020.
+
 ## Getting Started 
 
 ### Prerequisites
@@ -72,6 +77,8 @@ otherwise, it describes and quantifies the biased behavior.
     | Linux or Mac OS X                                                        |
     | ------------------------------------------------------------------------ |
     | `./<env>/bin/pip install git+https://github.com/caterinaurban/Libra.git` | 
+
+A specific commit hash can be optionally specified by appending `@<hash>` to the command.
     
 ### Command Line Usage
 
@@ -116,11 +123,54 @@ To analyze a specific neural network  run:
 
    | Linux or Mac OS X                             |
    | --------------------------------------------- |
-   | `./<env>/bin/libra <neural-network>.py <specification>` [OPTIONS] | 
-   
+   | `./<env>/bin/libra <specification> <neural-network>.py [OPTIONS]` | 
+
 The following command line options are recognized:
 
-    TODO
+    --domain [ABSTRACT DOMAIN]
+    
+        Sets the abstract domain to be used for the forward pre-analysis.
+        Possible options for [ABSTRACT DOMAIN] are:
+        * boxes (interval abstract domain)
+        * symbolic (combination of interval abstract domain with symbolic constant propagation [Li et al. 2019])
+        * deeppoly (deeppoly abstract domain [Singh et al. 2019]]) 
+        Default: symbolic
+
+    --lower [LOWER BOUND]
+    
+        Sets the lower bound for the forward pre-analysis.
+        Default: 0.25
+        
+    --upper [UPPER BOUND]
+    
+        Sets the upper bound for the forward pre-analysis.
+        Default: 2
+    
+    --cpu [CPUs]
+    
+        Sets the number of CPUs to be used for the analysis.
+        Default: the value returned by cpu_count() 
+
+During the analysis, Libra prints on standard output 
+which regions of the input space are certified to be fair,
+which regions are found to be biased, 
+and which regions are instead excluded from the analysis due to budget constraints.
+
+The analysis of the running example from the paper can be run as follows (from within the `src/libra/` folder):
+
+     `./<env>/bin/libra tests/toy.txt tests/toy.py --domain boxes --lower 0.25 --upper 2`
+
+Another small example can be run as follows (again from within the `src/libra/` folder):
+
+     `./<env>/bin/libra tests/example.txt tests/example.py --domain boxes --lower 0.015625 --upper 4`
+
+The `tests/example.py` file represents a small neural network with three inputs representing two input features 
+(one, represented by `x`, is continuous and one, represented by `y0` and `y1`, is categorical). 
+The specification `tests/example.txt` tells the analysis to consider the categorical feature sensitive to bias.
+In this case the analysis should be able to certify 23.4375% of the input space, 
+find bias in 71.875% of the input space, and leave 4.6875% of the input space unanalyzed.
+Changing the domain to `symbolic` or `deeppoly` should analyze the entire input space finding bias in 73.44797685362308% of it.
+The input regions in which bias is found are reported on standard output. 
 
 ## Authors
 

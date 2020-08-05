@@ -79,7 +79,7 @@ def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
 class BackwardInterpreter(Interpreter):
     """Backward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager, domain, semantics, specification, widening=2, difference=0.25, precursory=None):
+    def __init__(self, cfg, manager, domain, semantics, specification, widening=2, difference=0.25, cpu=None, precursory=None):
         super().__init__(cfg, semantics, widening=widening, precursory=precursory)
         self.manager: PyManager = manager                               # manager to be used for the analysis
         from libra.engine.bias_analysis import AbstractDomain
@@ -111,6 +111,8 @@ class BackwardInterpreter(Interpreter):
         self.feasible = Value('d', 0.0)                                 # percentage that could be analyzed
         self.explored = Value('d', 0.0)                                 # percentage that was explored
         self.analyzed = Value('i', 0)                                   # analyzed patterns
+
+        self.cpu = cpu_count() if cpu is None else cpu
 
     @property
     def initial(self):
@@ -209,7 +211,7 @@ class BackwardInterpreter(Interpreter):
         processes = list()
         process = Process(target=self.producer, args=(queue3,))
         processes.append(process)
-        for _ in range(cpu_count() - 1):
+        for _ in range(self.cpu - 1):
             process = Process(target=self.consumer, args=(queue3, entry, PyBoxMPQManager()))
             processes.append(process)
         for process in processes:
@@ -601,11 +603,11 @@ class BackwardInterpreter(Interpreter):
         :param outputs: (Set[VariableIdentifier]) output variables
         :param activations: (Set[Node]) CFG nodes corresponding to activation functions
         """
-        print(Fore.BLUE + '\n||=================||')
+        print(Fore.BLUE + '\n||==================================||')
         print('|| domain: {}'.format(self.domain))
         print('|| difference: {}'.format(self.difference))
         print('|| widening: {}'.format(self.widening))
-        print('||=================||', Style.RESET_ALL)
+        print('||==================================||', Style.RESET_ALL)
         self._initial = initial
         with open(self.specification, 'r') as specification:
             """
@@ -683,7 +685,7 @@ class BackwardInterpreter(Interpreter):
             #     self.bounds = BinaryBooleanOperation(self.bounds, BinaryBooleanOperation.Operator.And, conj)
         self.outputs = outputs
         self.activations = activations
-        cpu = cpu_count()
+        cpu = self.cpu
         print('\nAvailable CPUs: {}'.format(cpu))
         colors = [
             Fore.LIGHTMAGENTA_EX,
@@ -794,9 +796,9 @@ class BackwardInterpreter(Interpreter):
             print('Pre-Analysis Time: {}s'.format(end1 - start1))
             print('Analysis Time: {}s'.format(end2 - start2), Style.RESET_ALL)
 
-            log = '{} ({}% certified, {}% biased) {}s {}s'.format(self.feasible.value, self.fair.value, self.biased.value, end1 - start1, end2 - start2)
+            log = '{} ({}% certified in the pre-analysis, {}% biased) {}s {}s'.format(self.feasible.value, self.fair.value, self.biased.value, end1 - start1, end2 - start2)
         else:
-            log = '{} ({}% certified) {}s'.format(self.feasible.value, self.fair.value, end1 - start1)
+            log = '{} ({}% certified in the pre-analysis) {}s'.format(self.feasible.value, self.fair.value, end1 - start1)
         print('\nDone!')
         return log
 

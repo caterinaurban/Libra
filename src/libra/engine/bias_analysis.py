@@ -42,13 +42,14 @@ class AbstractDomain(Enum):
 
 class BiasAnalysis(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2, analysis=True):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2, cpu=None, analysis=True):
         super().__init__()
         self.spec = spec
         self.domain = domain
         self.difference = difference
         self.widening = widening
         self.analysis = analysis
+        self.cpu = cpu
 
         self.inputs: Set[VariableIdentifier] = None                             # input variables
         self.outputs: Set[VariableIdentifier] = None                            # output variables
@@ -66,7 +67,7 @@ class BiasAnalysis(Runner):
 
     def interpreter(self):
         precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening)
-        return BackwardInterpreter(self.cfg, self.man2, self.domain, BiasBackwardSemantics(), self.spec, widening=self.widening, difference=self.difference, precursory=precursory)
+        return BackwardInterpreter(self.cfg, self.man2, self.domain, BiasBackwardSemantics(), self.spec, widening=self.widening, difference=self.difference, cpu=self.cpu, precursory=precursory)
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
@@ -165,5 +166,5 @@ class BiasAnalysis(Runner):
         start = time.time()
         log = self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations, analysis=self.analysis)
         end = time.time()
-        print('Total: {}s'.format(end - start), Style.RESET_ALL)
-        print('{} {}s'.format(log, end - start))
+        print('Total Time: {}s'.format(end - start), Style.RESET_ALL)
+        # print('{} {}s'.format(log, end - start))
