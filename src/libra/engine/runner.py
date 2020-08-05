@@ -16,7 +16,6 @@ from libra.core.expressions import VariableIdentifier
 from libra.core.statements import Assignment, VariableAccess
 from libra.engine.result import AnalysisResult
 from libra.frontend.cfg_generator import ast_to_cfg
-from libra.visualization.graph_renderer import AnalysisResultRenderer, CFGRenderer
 
 
 class Runner:
@@ -91,14 +90,6 @@ class Runner:
             self.source = source.read()
             self.tree = ast.parse(self.source)
             self.cfg = ast_to_cfg(self.tree)
-
-            renderer = CFGRenderer()
-            data = self.cfg
-            name = os.path.splitext(os.path.basename(self.path))[0]
-            label = f"CFG for {name}"
-            directory = os.path.dirname(self.path)
-            renderer.render(data, filename=name, label=label, directory=directory, view=True)
-
         return self.run()
 
     def run(self) -> AnalysisResult:
@@ -106,13 +97,5 @@ class Runner:
         result = self.interpreter().analyze(self.state())
         end = time.time()
         print('Time: {}s'.format(end - start))
-        # self.render(result)
         return result
 
-    def render(self, result):
-        renderer = AnalysisResultRenderer()
-        data = (self.cfg, result)
-        name = os.path.splitext(os.path.basename(self.path))[0]
-        label = f"CFG with Analysis Result for {name}"
-        directory = os.path.dirname(self.path)
-        renderer.render(data, filename=name, label=label, directory=directory, view=True)

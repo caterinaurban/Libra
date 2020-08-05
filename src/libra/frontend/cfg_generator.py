@@ -5,7 +5,6 @@ import sys
 from libra.core.cfg import *
 from libra.core.expressions import Literal
 from libra.core.statements import *
-from libra.visualization.graph_renderer import CFGRenderer
 
 
 class LooseControlFlowGraph:
@@ -481,31 +480,3 @@ def source_to_cfg(code: str):
     """
     root_node = ast.parse(code)
     return ast_to_cfg(root_node)
-
-
-def main(args):
-    optparser = optparse.OptionParser(usage="python3 -m frontend.cfg_generator [options] [string]")
-    optparser.add_option("-f", "--file", help="Read a code snippet from the specified file")
-    optparser.add_option("-l", "--label", help="The label for the visualization")
-
-    options, args = optparser.parse_args(args)
-    if options.file:
-        with open(options.file) as instream:
-            code = instream.read()
-        label = options.file
-    elif len(args) == 2:
-        code = args[1] + "\n"
-        label = "<code read from command line parameter>"
-    else:
-        print("Expecting Python code on stdin...")
-        code = sys.stdin.read()
-        label = "<code read from stdin>"
-    if options.label:
-        label = options.label
-
-    cfg = source_to_cfg(code)
-    CFGRenderer().render(cfg, label=label)
-
-
-if __name__ == '__main__':
-    main(sys.argv)
