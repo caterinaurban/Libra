@@ -179,6 +179,9 @@ The input regions in which bias is found are reported on standard output.
 
 ## Step-by-Step Experiment Reproducibility
 
+The experimental evaluation was conducted on 
+a 12-core Intel ® Xeon ® X5650 CPU @ 2.67GHz machine with 48GB of memory.
+
 ### RQ1: Detecting Seeded Bias
 
 The results of the experimental evaluation performed to answer RQ1 are shown in Tables 7-9 
@@ -187,9 +190,28 @@ within Libra's `src/libra/` folder. This expects the full path to Libra's execut
 
     ./german.sh <path to env>/bin/libra
 
-The script will generate... 
+The script will generate the corresponding log files in Libra's `src/libra/tests/german/logs`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.ch` in Libra's `src/libra/tests/german/logs` folder.
 
-TODO
+> Please take note of the expected execution times before launching the script. 
+On a less powerful machine than that used for our evaluation 
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it.
+
+In the `src/libra/tests/german` folder are also present the original dataset `german.csv` 
+and the artificially fair and biased datasets `german-fair.csv` and `german-bias.csv`, 
+as well as the 8 neural networks trained on each of these datasets. 
+
+### RQ2: Answering Bias Queries
+
+### RQ3: Effect of Model Structure on Scalability
+
+### RQ4: Effect of Analyzed Input Space on Scalability
+
+### RQ5: Scalability-vs-Precision Tradeoff
+
+### RQ6: Leveraging Multiple CPUs
 
 ## Authors
 
