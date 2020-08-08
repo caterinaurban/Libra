@@ -266,7 +266,32 @@ as well as the 4 trained neural networks (`20A`, `80A`, `320A`, `1280A`).
 
 ### RQ5: Scalability-vs-Precision Tradeoff
 
+The results of the experimental evaluation performed to answer RQ5 are shown in Table 5. 
+To reproduce them one can use the script `japanese.sh` 
+within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
+
+    ./japanese.sh <path to env>/bin/libra
+
+The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.ch` in Libra's `src/libra/tests/japanese/logs` folder.
+
+> Please take note of the expected execution times before launching the script. 
+On a less powerful machine than that used for our evaluation 
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it.
+
+In the `src/libra/tests/japanese` folder is also present the original dataset `japanese.csv` 
+as well as the trained neural network (`20`). 
+
 ### RQ6: Leveraging Multiple CPUs
+
+The results of the experimental evaluation perfomed to answer RQ6 are shown in Table 6 and 13.
+To reproduce them one can again use the script `japanese.sh`
+within Libra's `src/libra/` folder. This time 
+passing as input an additional argument indicating the number of CPUs to be used for the analysis:
+
+    ./japanese.sh <path to env>/bin/libra 4
 
 ## Authors
 
