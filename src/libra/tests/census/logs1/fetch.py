@@ -54,16 +54,11 @@ for logfile in sorted(logs, key=order):
 
         if result:
 
-            # _biased = float(result[4].strip('()').strip('%'))
-            # biased = '{0:.2f}%'.format(_biased)
-
             seconds = float(total[-2].strip('s'))
             hours = seconds // 3600
             minutes = (seconds % 3600) // 60
             seconds = seconds % 60
             time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
-
-            # time2 = time.strftime('|%D |%Hh |%Mm |%Ss', time.gmtime(time2)).replace('00h ', '').replace('00m ', '').replace('00s', '').replace('|0', '').replace('|', '')
 
             if compressed:
                 fetched = [logfile, space, completed, zipped, feasible, time]  # fetched

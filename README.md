@@ -205,6 +205,25 @@ as well as the 8 neural networks trained on each of these datasets.
 
 ### RQ2: Answering Bias Queries
 
+The results of the experimental evaluation performed to answer RQ2 are shown in Tables 10-12 
+and summarized in Table 2. To reproduce them one can use the script `compas.sh` 
+within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
+
+    ./compas.sh <path to env>/bin/libra
+
+The script will generate the corresponding log files in Libra's `src/libra/tests/compas/logs`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.ch` in Libra's `src/libra/tests/compas/logs` folder.
+
+> Please take note of the expected execution times before launching the script. 
+On a less powerful machine than that used for our evaluation 
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it.
+
+In the `src/libra/tests/german` folder are also present the original dataset `compas.csv` 
+and the artificially fair and biased datasets `compas-fair.csv` and `compas-bias.csv`, 
+as well as the 8 neural networks trained on each of these datasets. 
+
 ### RQ3: Effect of Model Structure on Scalability
 
 The results of the experimental evaluation performed to answer RQ3 are shown in Table 3. 

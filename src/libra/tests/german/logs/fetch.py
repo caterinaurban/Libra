@@ -60,8 +60,6 @@ for logfile in sorted(logs, key=order):
         seconds = seconds % 60
         time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
 
-        # time2 = time.strftime('|%D |%Hh |%Mm |%Ss', time.gmtime(time2)).replace('00h ', '').replace('00m ', '').replace('00s', '').replace('|0', '').replace('|', '')
-
         if compressed:
             fetched = [logfile, space, completed, biased, zipped, feasible, time]  # fetched
         else:
