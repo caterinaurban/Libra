@@ -1,0 +1,40 @@
+[34m
+||=================||
+|| symbolic1: False
+|| symbolic2: False
+|| difference: 0.5
+|| widening: 10
+||=================|| [0m
+
+Available CPUs: 24
+[34m
+||==============||
+|| Pre-Analysis ||
+||==============||
+ [0m
+[95mRanges: x022 ∈ [0, 1], x00 ∈ [0, 1], x05 ∈ [0, 1] [0m
+[93m‼ Possible Bias in Ranges: x022 ∈ [0, 1], x00 ∈ [0, 1], x05 ∈ [0, 1] [0m
+[33mProgress for #0: 100.0% of 100.0% (0.0% fair) [0m
+[34m
+Found: 1 patterns for 1[1] partitions
+{}, {} | {}, {} -> 1
+[34m
+Pre-Analysis Result: 0.0% fair (100.0% feasible)
+Pre-Analysis Time: 0.11196422576904297s [0m
+[34m
+||==========||
+|| Analysis ||
+||==========||
+ [0m
+[95mPattern #1 of 1 [1] [0m
+[31m✘ Bias Found (x021->x30 vs x020->x31)! in Ranges: x05 ∈ [0, 1], x022 ∈ [0, 1], x00 ∈ [0, 1]:
+-1·x00 + 1 >= 0 ∧ -1·x022 + 1 >= 0 ∧ -1·x05 + 1 >= 0 ∧ 1·x05 + 0 >= 0 ∧ 1·x022 + 0 >= 0 ∧ 1·x00 + 0 >= 0 [0m
+[33mProgress for #0: 1 of 1 partitions (100.0% biased) [0m
+[34m
+Result: 100.0% of 100.0% (100.0% biased)
+Pre-Analysis Time: 0.11196422576904297s
+Analysis Time: 3358.265483856201s [0m
+
+Done!
+Total: 3358.456570625305s [0m
+100.0 (0.0% certified, 100.0% biased) 0.11196422576904297s 3358.265483856201s 3358.456570625305s
