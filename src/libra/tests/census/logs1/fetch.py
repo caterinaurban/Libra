@@ -61,15 +61,15 @@ for logfile in sorted(logs, key=order):
             time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
 
             if compressed:
-                fetched = [logfile, space, completed, zipped, feasible, time]  # fetched
+                fetched = [logfile, space, completed, zipped, feasible, time]
             else:
-                fetched = [logfile, space, completed, patterns, feasible, time]  # fetched
+                fetched = [logfile, space, completed, patterns, feasible, time]
             print('\t '.join(fetched))
 
         else:
 
             if compressed:
-                fetched = [logfile, space, completed, zipped, feasible, '>13h']  # fetched
+                fetched = [logfile, space, completed, zipped, feasible, '>13h']
             else:
-                fetched = [logfile, space, completed, patterns, feasible, '>13h']  # fetched
+                fetched = [logfile, space, completed, patterns, feasible, '>13h']
             print('\t '.join(fetched))

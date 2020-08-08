@@ -1,0 +1,357 @@
+[34m
+||=================||
+|| symbolic1: False
+|| symbolic2: False
+|| difference: 0.25
+|| widening: 8
+||=================|| [0m
+
+Available CPUs: 24
+[34m
+||==============||
+|| Pre-Analysis ||
+||==============||
+ [0m
+[95mRanges: x05 ∈ [0, 1], x00 ∈ [0, 1], x022 ∈ [0, 1] [0m
+Too many disjunctions (73)!
+1-hot splitting for: x01, x02, x03, x04 | x06, x07, x08, x09, x010 | x011, x012, x013, x014, x015, x016 | x017, x018, x019
+[33m
+Found 2 Packs for 360 1-Hot Combinations:
+[33m {}, {22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108} | {}, {22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108} -> x01,x06,x013,x019 | x04,x08,x016,x017 | x03,x09,x015,x017 | x04,x08,x011,x018 | x01,x09,x015,x019 | x03,x09,x011,x018 | x02,x06,x012,x019 | x04,x09,x014,x019 | x02,x08,x013,x017 | x03,x08,x012,x019 | x03,x09,x012,x017 | x04,x08,x014,x018 | x03,x010,x014,x018 | x04,x08,x011,x017 | x04,x07,x013,x018 | x03,x09,x013,x018 | x04,x010,x012,x017 | x02,x07,x013,x019 | x03,x08,x011,x019 | x02,x09,x011,x019 | x04,x010,x013,x017 | x03,x09,x016,x019 | x03,x08,x013,x017 | x03,x09,x016,x018 | x04,x06,x015,x018 | x02,x06,x011,x018 | x01,x08,x011,x017 | x04,x09,x016,x019 | x04,x08,x016,x018 | x01,x07,x011,x018 | x02,x09,x011,x018 | x02,x010,x015,x019 | x01,x06,x016,x018 | x04,x06,x012,x017 | x03,x010,x011,x017 | x01,x06,x014,x017 | x01,x09,x012,x018 | x02,x06,x012,x018 | x03,x06,x013,x018 | x04,x09,x014,x018 | x03,x08,x012,x018 | x03,x08,x013,x019 | x02,x09,x011,x017 | x03,x010,x013,x019 | x01,x07,x015,x018 | x02,x08,x016,x017 | x02,x08,x015,x018 | x01,x09,x014,x019 | x04,x09,x016,x017 | x02,x08,x016,x018 | x01,x010,x014,x017 | x04,x010,x013,x018 | x03,x06,x013,x017 | x04,x09,x015,x017 | x01,x010,x013,x018 | x03,x06,x011,x017 | x01,x010,x016,x019 | x04,x010,x016,x017 | x03,x010,x011,x018 | x02,x07,x016,x018 | x01,x010,x016,x018 | x03,x07,x016,x017 | x01,x06,x016,x017 | x01,x09,x013,x018 | x02,x010,x013,x017 | x02,x06,x011,x017 | x02,x09,x014,x018 | x03,x08,x014,x019 | x01,x07,x016,x019 | x02,x010,x012,x017 | x04,x07,x014,x017 | x03,x010,x015,x018 | x03,x010,x011,x019 | x03,x08,x013,x018 | x01,x08,x016,x019 | x02,x09,x013,x018 | x02,x08,x012,x019 | x02,x09,x013,x017 | x02,x06,x014,x017 | x04,x09,x012,x017 | x03,x07,x013,x017 | x04,x08,x012,x017 | x03,x07,x011,x017 | x04,x06,x013,x019 | x03,x06,x011,x019 | x01,x08,x012,x019 | x03,x06,x016,x019 | x02,x010,x012,x019 | x01,x010,x014,x019 | x01,x07,x012,x019 | x04,x08,x013,x017 | x03,x07,x011,x018 | x02,x010,x016,x017 | x04,x06,x011,x018 | x04,x06,x015,x019 | x04,x010,x016,x018 | x02,x07,x012,x018 | x04,x07,x016,x019 | x03,x010,x015,x017 | x01,x07,x012,x018 | x02,x09,x012,x018 | x02,x010,x013,x019 | x02,x09,x014,x017 | x03,x06,x016,x017 | x02,x06,x014,x019 | x04,x09,x012,x019 | x03,x07,x013,x019 | x04,x06,x013,x018 | x02,x06,x015,x018 | x01,x08,x013,x018 | x01,x09,x015,x017 | x04,x010,x014,x019 | x02,x08,x012,x017 | x02,x09,x015,x019 | x02,x09,x016,x017 | x02,x06,x015,x017 | x04,x08,x014,x019 | x03,x09,x014,x018 | x04,x09,x013,x017 | x04,x010,x011,x019 | x03,x07,x012,x017 | x04,x06,x015,x017 | x04,x07,x015,x019 | x01,x07,x016,x018 | x01,x08,x016,x018 | x04,x08,x011,x019 | x04,x06,x011,x017 | x01,x09,x012,x017 | x02,x08,x011,x018 | x03,x08,x014,x018 | x01,x010,x013,x019 | x03,x08,x011,x017 | x01,x08,x014,x019 | x03,x08,x016,x018 | x01,x010,x011,x017 | x04,x08,x015,x019 | x04,x06,x012,x019 | x01,x07,x014,x019 | x02,x07,x015,x018 | x02,x09,x016,x019 | x03,x09,x012,x018 | x04,x07,x012,x018 | x01,x07,x013,x017 | x01,x08,x011,x019 | x04,x06,x016,x017 | x03,x09,x011,x017 | x02,x010,x015,x017 | x01,x07,x011,x019 | x03,x09,x013,x017 | x03,x08,x015,x017 | x02,x010,x015,x018 | x01,x09,x012,x019 | x01,x06,x014,x019 | x01,x010,x011,x019 | x04,x08,x015,x017 | x04,x09,x011,x018 | x04,x06,x016,x019 | x04,x09,x011,x019 | x03,x08,x012,x017 | x03,x07,x016,x018 | x04,x06,x014,x017 | x03,x010,x012,x017 | x03,x010,x016,x019 | x03,x08,x016,x019 | x04,x010,x012,x019 | x04,x06,x012,x018 | x02,x010,x011,x017 | x04,x07,x013,x019 | x02,x010,x011,x018 | x04,x08,x012,x019 | x02,x08,x011,x019 | x04,x09,x011,x017 | x01,x06,x015,x019 | x04,x08,x015,x018 | x02,x010,x016,x018 | x02,x010,x016,x019 | x03,x07,x015,x017 | x02,x010,x011,x019 | x04,x06,x013,x017 | x04,x06,x014,x019 | x03,x08,x015,x018 | x03,x010,x016,x017 | x02,x08,x016,x019 | x04,x07,x016,x017 | x04,x07,x011,x018 | x03,x010,x012,x019 | x03,x06,x013,x019 | x04,x07,x011,x017 | x04,x08,x013,x018 | x01,x09,x011,x017 | x04,x07,x014,x018 | x02,x06,x011,x019 | x01,x010,x012,x019 | x03,x06,x015,x019 | x02,x08,x011,x017 | x01,x06,x016,x019 | x01,x07,x013,x018 | x03,x07,x016,x019 | x01,x06,x011,x018 | x02,x06,x014,x018 | x04,x09,x012,x018 | x03,x07,x013,x018 | x01,x08,x016,x017 | x04,x010,x015,x019 | x04,x06,x011,x019 | x04,x010,x015,x018 | x02,x06,x015,x019 | x02,x07,x012,x019 | x01,x07,x016,x017 | x04,x07,x016,x018 | x02,x08,x014,x019 | x01,x010,x012,x018 | x03,x09,x015,x018 | x02,x010,x014,x018 | x03,x09,x014,x017 | x01,x07,x015,x017 | x02,x010,x014,x019 | x03,x08,x011,x018 | x02,x010,x013,x018 | x01,x06,x012,x019 | x01,x09,x011,x019 | x02,x08,x012,x018 | x03,x06,x014,x017 | x01,x010,x013,x017 | x03,x06,x014,x018 | x01,x07,x014,x017 | x02,x06,x013,x019 | x03,x07,x014,x019 | x02,x08,x014,x017 | x01,x08,x014,x017 | x02,x010,x014,x017 | x01,x08,x014,x018 | x01,x010,x012,x017 | x02,x09,x014,x019 | x01,x07,x012,x017 | x01,x07,x014,x018 | x02,x07,x012,x017 | x03,x010,x015,x019 | x02,x09,x016,x018 | x03,x09,x012,x019 | x04,x06,x014,x018 | x03,x08,x015,x019 | x01,x08,x013,x017 | x02,x07,x013,x017 | x04,x010,x013,x019 | x04,x010,x014,x017 | x03,x09,x016,x017 | x02,x06,x013,x018 | x03,x07,x014,x018 | x03,x06,x012,x019 | x02,x07,x014,x018 | x04,x08,x014,x017 | x04,x07,x012,x017 | x02,x07,x016,x019 | x02,x07,x015,x017 | x02,x08,x013,x018 | x01,x06,x013,x017 | x04,x010,x012,x018 | x02,x07,x014,x017 | x04,x010,x014,x018 | x03,x09,x015,x019 | x04,x07,x013,x017 | x01,x09,x013,x017 | x04,x06,x016,x018 | x02,x07,x016,x017 | x01,x08,x013,x019 | x01,x010,x011,x018 | x03,x08,x016,x017 | x03,x06,x012,x017 | x01,x07,x013,x019 | x04,x09,x016,x018 | x04,x08,x016,x019 | x02,x010,x012,x018 | x04,x09,x013,x018 | x03,x07,x012,x018 | x02,x06,x012,x017 | x02,x08,x014,x018 | x04,x09,x014,x017 | x03,x010,x014,x019 | x03,x08,x014,x017 | x01,x010,x016,x017 | x04,x010,x016,x019 | x01,x06,x015,x017 | x03,x06,x011,x018 | x01,x06,x014,x018 | x01,x010,x014,x018 | x03,x07,x015,x019 | x04,x07,x014,x019 | x01,x07,x011,x017 | x02,x08,x015,x017 | x03,x09,x013,x019 | x01,x08,x011,x018 | x03,x06,x012,x018 | x02,x09,x013,x019 | x03,x010,x012,x018 | x01,x06,x015,x018 | x01,x09,x016,x019 | x04,x07,x011,x019 | x01,x08,x015,x018 | x04,x07,x015,x018 | x01,x08,x015,x019 | x02,x09,x012,x017 | x03,x010,x014,x017 | x01,x09,x014,x018 | x03,x010,x013,x017 | x01,x06,x013,x018 | x01,x07,x015,x019 | x04,x010,x015,x017 | x01,x09,x016,x018 | x04,x08,x012,x018 | x01,x06,x012,x017 | x02,x06,x016,x018 | x02,x07,x011,x019 | x04,x010,x011,x018 | x01,x09,x016,x017 | x03,x06,x014,x019 | x02,x09,x015,x018 | x01,x09,x014,x017 | x03,x010,x013,x018 | x02,x08,x015,x019 | x03,x010,x016,x018 | x01,x08,x015,x017 | x03,x09,x014,x019 | x01,x09,x011,x018 | x03,x07,x015,x018 | x04,x09,x015,x019 | x02,x09,x015,x017 | x04,x010,x011,x017 | x01,x06,x012,x018 | x02,x06,x016,x017 | x02,x09,x012,x019 | x04,x09,x013,x019 | x03,x07,x012,x019 | x02,x06,x013,x017 | x03,x07,x014,x017 | x04,x07,x015,x017 | x01,x010,x015,x018 | x02,x07,x013,x018 | x02,x07,x011,x017 | x01,x010,x015,x019 | x01,x08,x012,x017 | x03,x06,x015,x018 | x03,x07,x011,x019 | x01,x06,x011,x019 | x03,x06,x015,x017 | x04,x09,x015,x018 | x02,x07,x015,x019 | x04,x08,x013,x019 | x02,x06,x016,x019 | x01,x08,x012,x018 | x02,x07,x011,x018 | x03,x06,x016,x018 | x01,x010,x015,x017 | x02,x07,x014,x019 | x02,x08,x013,x019 | x01,x09,x013,x019 | x04,x07,x012,x019 | x01,x09,x015,x018 | x03,x09,x011,x019 (score: 519) [0m
+[33m {41, 24, 28, 30, 31}, {29} | {40, 22, 24, 25, 28, 31}, {42} -> x01,x06,x011,x017 (score: 14) [0m
+[33m1-Hot Splitting Time: 144.89457035064697s
+ [0m
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1][46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (52)!
+Range split for x022 at: 0.25
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (54)!
+Cannot range split for x00 anymore!
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (49)!
+Cannot range split for x022 anymore!
+ [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0.008680555555555556%] [0m
+[33mProgress for #0: 0.14756944444444448% of 0.14756944444444448% (0.14756944444444448% fair) [0m
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (27)!
+Cannot range split for x05 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (27)!
+Cannot range split for x00 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (54)!
+Cannot range split for x00 anymore!
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.5], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (60)!
+Range split for x00 at: 0.25
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+Cannot range split for x05 anymore!
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+Cannot range split for x022 anymore!
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.5], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (58)!
+Range split for x00 at: 0.25
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (60)!
+Range split for x022 at: 0.75
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (46)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+[33mProgress for #15: 0.20833333333333354% of 0.21267361111111133% (0.20833333333333354% fair) [0m
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+Cannot range split for x022 anymore!
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.5], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (58)!
+Range split for x00 at: 0.25
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+Cannot range split for x05 anymore!
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+[33mProgress for #19: 0.20833333333333354% of 0.2256944444444447% (0.20833333333333354% fair) [0m
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0.008680555555555556%] [0m
+[33mProgress for #22: 0.17361111111111122% of 0.17361111111111122% (0.17361111111111122% fair) [0m
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (49)!
+Cannot range split for x05 anymore!
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (54)!
+Cannot range split for x022 anymore!
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.5], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (52)!
+Range split for x00 at: 0.25
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (46)!
+Cannot range split for x05 anymore!
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (47)!
+Cannot range split for x05 anymore!
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (44)!
+Cannot range split for x022 anymore!
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 1], x00 ∈ [0, 1], x022 ∈ [0, 1] [0m
+Too many disjunctions (67)!
+Range split for x00 at: 0.5
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (60)!
+Range split for x022 at: 0.25
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+Cannot range split for x022 anymore!
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (47)!
+Cannot range split for x022 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 1], x00 ∈ [0, 0.5], x022 ∈ [0, 1] [0m
+Too many disjunctions (67)!
+Range split for x022 at: 0.5
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0.008680555555555556%] [0m
+[33mProgress for #8: 0.20833333333333354% of 0.20833333333333354% (0.20833333333333354% fair) [0m
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (38)!
+Cannot range split for x022 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+Cannot range split for x022 anymore!
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.5], x00 ∈ [0, 0.5], x022 ∈ [0, 1] [0m
+Too many disjunctions (69)!
+Range split for x022 at: 0.5
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (55)!
+Range split for x022 at: 0.75
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (44)!
+Cannot range split for x00 anymore!
+[46m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (42)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+[33mProgress for #5: 0.20833333333333354% of 0.2300347222222225% (0.20833333333333354% fair) [0m
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.5], x00 ∈ [0, 0.5], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (61)!
+Range split for x05 at: 0.25
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.5], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (56)!
+Range split for x00 at: 0.25
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (58)!
+Range split for x022 at: 0.75
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (54)!
+Cannot range split for x05 anymore!
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (46)!
+Cannot range split for x022 anymore!
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.5], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (61)!
+Range split for x00 at: 0.25
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (46)!
+Cannot range split for x05 anymore!
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+Cannot range split for x00 anymore!
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (27)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+[33mProgress for #17: 0.20833333333333354% of 0.23437500000000028% (0.20833333333333354% fair) [0m
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 1], x00 ∈ [0.5, 1], x022 ∈ [0, 1] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 1], x00 ∈ [0.5, 1], x022 ∈ [0, 1] [0.06944444444444445%] [0m
+[33mProgress for #7: 0.06944444444444445% of 0.06944444444444445% (0.06944444444444445% fair) [0m
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0.008680555555555556%] [0m
+[33mProgress for #7: 0.15625000000000006% of 0.15625000000000006% (0.15625000000000006% fair) [0m
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (54)!
+Cannot range split for x05 anymore!
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (38)!
+Cannot range split for x022 anymore!
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (50)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+[33mProgress for #7: 0.20833333333333354% of 0.23871527777777807% (0.20833333333333354% fair) [0m
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.5], x00 ∈ [0.5, 1], x022 ∈ [0, 1] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.5], x00 ∈ [0.5, 1], x022 ∈ [0, 1] [0.06944444444444445%] [0m
+[33mProgress for #6: 0.1388888888888889% of 0.1388888888888889% (0.1388888888888889% fair) [0m
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (61)!
+Range split for x022 at: 0.25
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (46)!
+Cannot range split for x00 anymore!
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+[33mProgress for #6: 0.20833333333333354% of 0.24739583333333365% (0.20833333333333354% fair) [0m
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+Cannot range split for x05 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (44)!
+Cannot range split for x05 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (49)!
+Cannot range split for x00 anymore!
+[95m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (54)!
+Cannot range split for x022 anymore!
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.5], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (55)!
+Range split for x00 at: 0.25
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (38)!
+Cannot range split for x05 anymore!
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+Cannot range split for x05 anymore!
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+Cannot range split for x00 anymore!
+[102m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+[33mProgress for #14: 0.20833333333333354% of 0.24305555555555586% (0.20833333333333354% fair) [0m
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 1], x00 ∈ [0, 0.5], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (61)!
+Range split for x05 at: 0.75
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (38)!
+Cannot range split for x05 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (50)!
+Cannot range split for x00 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (49)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+[33mProgress for #10: 0.20833333333333354% of 0.25173611111111144% (0.20833333333333354% fair) [0m
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.5], x00 ∈ [0, 0.5], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (61)!
+Range split for x05 at: 0.25
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0.008680555555555556%] [0m
+[33mProgress for #12: 0.16493055555555564% of 0.16493055555555564% (0.16493055555555564% fair) [0m
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0.008680555555555556%] [0m
+[33mProgress for #12: 0.19965277777777796% of 0.19965277777777796% (0.19965277777777796% fair) [0m
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (50)!
+Cannot range split for x05 anymore!
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (38)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+[33mProgress for #12: 0.20833333333333354% of 0.21701388888888912% (0.20833333333333354% fair) [0m
+[44m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (44)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+[33mProgress for #12: 0.20833333333333354% of 0.25607638888888923% (0.20833333333333354% fair) [0m
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.5], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (60)!
+Range split for x00 at: 0.25
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0.25, 0.5], x022 ∈ [0.5, 1] [0.008680555555555556%] [0m
+[33mProgress for #18: 0.19097222222222238% of 0.19097222222222238% (0.19097222222222238% fair) [0m
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (46)!
+Cannot range split for x022 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (47)!
+Cannot range split for x00 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (54)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+[33mProgress for #18: 0.20833333333333354% of 0.260416666666667% (0.20833333333333354% fair) [0m
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.5, 1] [0m
+Too many disjunctions (56)!
+Range split for x022 at: 0.75
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (46)!
+Cannot range split for x00 anymore!
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (38)!
+Cannot range split for x00 anymore!
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (27)!
+Cannot range split for x022 anymore!
+[43m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (47)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.25], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+[33mProgress for #23: 0.20833333333333354% of 0.2734375000000004% (0.20833333333333354% fair) [0m
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 1], x00 ∈ [0, 0.5], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (65)!
+Range split for x05 at: 0.75
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (42)!
+Cannot range split for x05 anymore!
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (38)!
+Cannot range split for x00 anymore!
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (42)!
+Cannot range split for x022 anymore!
+[40m[37m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+[33mProgress for #9: 0.20833333333333354% of 0.2647569444444448% (0.20833333333333354% fair) [0m
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 0.5], x00 ∈ [0, 1], x022 ∈ [0, 1] [0m
+Too many disjunctions (69)!
+Range split for x00 at: 0.5
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0.25, 0.5], x022 ∈ [0, 0.5] [0.008680555555555556%] [0m
+[33mProgress for #3: 0.1822916666666668% of 0.1822916666666668% (0.1822916666666668% fair) [0m
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (42)!
+Cannot range split for x00 anymore!
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+Too many disjunctions (38)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0, 0.25] [0m
+[33mProgress for #3: 0.20833333333333354% of 0.2213541666666669% (0.20833333333333354% fair) [0m
+[45m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (46)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+[33mProgress for #3: 0.20833333333333354% of 0.2690972222222226% (0.20833333333333354% fair) [0m
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0, 1], x00 ∈ [0, 1], x022 ∈ [0, 1] [0m
+Too many disjunctions (73)!
+Range split for x05 at: 0.5
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0, 0.5] [0m
+Too many disjunctions (58)!
+Range split for x022 at: 0.25
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.25, 0.5], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (52)!
+Cannot range split for x00 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.5, 0.75], x00 ∈ [0, 0.25], x022 ∈ [0.25, 0.5] [0m
+Too many disjunctions (54)!
+Cannot range split for x00 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.75, 1] [0m
+Too many disjunctions (50)!
+Cannot range split for x022 anymore!
+[101m[30m1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+Too many disjunctions (54)!
+[31m‼ Unchecked Bias in 1-Hot: x01, x06, x011, x017 | Ranges: x05 ∈ [0.75, 1], x00 ∈ [0, 0.25], x022 ∈ [0.5, 0.75] [0m
+[33mProgress for #2: 0.20833333333333354% of 0.2777777777777782% (0.20833333333333354% fair) [0m
+[40m[37m1-Hot: x01|x02|x03|x04, x09|x06|x010|x08|x07, x014|x011|x013|x016|x015|x012, x018|x017|x019 | Ranges: x05 ∈ [0, 1], x00 ∈ [0, 1], x022 ∈ [0, 1] [0m
+[32m✔︎ No Bias (x91) in 1-Hot: x01|x02|x03|x04, x09|x06|x010|x08|x07, x014|x011|x013|x016|x015|x012, x018|x017|x019 | Ranges: x05 ∈ [0, 1], x00 ∈ [0, 1], x022 ∈ [0, 1] [99.72222222222223%] [0m
+[33mProgress for #1: 99.93055555555557% of 100.00000000000001% (99.93055555555557% fair) [0m
+[34m
+Found: 0 patterns for 0[11] partitions
+[34m
+Pre-Analysis Result: 99.93055555555557% fair (99.93055555555557% feasible)
+Pre-Analysis Time: 185.01984429359436s [0m
+[34m
+||==========||
+|| Analysis ||
+||==========||
+ [0m
+[34m
+Result: 99.93055555555557% of 100.00000000000001% (0.0% biased)
+Pre-Analysis Time: 185.01984429359436s
+Analysis Time: 0.044866323471069336s [0m
+
+Done!
+Total: 185.21342492103577s [0m
+99.93055555555557 (99.93055555555557% certified, 0.0% biased) 185.01984429359436s 0.044866323471069336s 185.21342492103577s

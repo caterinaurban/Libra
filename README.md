@@ -227,14 +227,14 @@ as well as the 8 neural networks trained on each of these datasets.
 ### RQ3: Effect of Model Structure on Scalability
 
 The results of the experimental evaluation performed to answer RQ3 are shown in Table 3. 
-To reproduce them one can use the script `census.sh` 
+To reproduce them one can use the script `census1.sh` 
 within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
 
-    ./census.sh <path to env>/bin/libra
+    ./census1.sh <path to env>/bin/libra
 
-The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs`.
+The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs1`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.ch` in Libra's `src/libra/tests/census/logs` folder.
+using the script `fetch.ch` in Libra's `src/libra/tests/census/logs1` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -242,9 +242,27 @@ it might be preferable to comment out the most time consuming lines
 from the script before launching it.
 
 In the `src/libra/tests/census` folder is also present the original dataset `census.csv` 
-as well as the 5 trained neural networks. 
+as well as the 5 trained neural networks (`10`, `12`, `20`, `40`, `45`). 
 
 ### RQ4: Effect of Analyzed Input Space on Scalability
+
+The results of the experimental evaluation performed to answer RQ4 are shown in Table 4. 
+To reproduce them one can use the script `census2.sh` 
+within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
+
+    ./census2.sh <path to env>/bin/libra
+
+The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs2`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.ch` in Libra's `src/libra/tests/census/logs2` folder.
+
+> Please take note of the expected execution times before launching the script. 
+On a less powerful machine than that used for our evaluation 
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it.
+
+In the `src/libra/tests/census` folder is also present the original dataset `census.csv` 
+as well as the 4 trained neural networks (`20A`, `80A`, `320A`, `1280A`). 
 
 ### RQ5: Scalability-vs-Precision Tradeoff
 
