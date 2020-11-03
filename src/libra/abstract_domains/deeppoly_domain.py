@@ -442,42 +442,43 @@ class DeepPolyState(State):
         for lhs, expr in zip(left, right):
             name = str(lhs)
             rhs = texpr_to_dict(expr)
-            #
-            inf = deepcopy(rhs)
-            for variable in self.poly:
-                if variable in inf and variable not in self.inputs:      # should be replaced
-                    coeff = inf[variable]
-                    if coeff > 0:
-                        replacement = self.poly[variable][0]
-                    elif coeff < 0:
-                        replacement = self.poly[variable][1]
-                    else:  # coeff == 0
-                        replacement = dict()
-                        replacement['_'] = 0.0
-                    del inf[variable]
-                    for var, val in replacement.items():
-                        if var in inf:
-                            inf[var] += coeff * val
-                        else:
-                            inf[var] = coeff * val
-            sup = deepcopy(rhs)
-            for variable in self.poly:
-                if variable in sup and variable not in self.inputs:      # should be replaced
-                    coeff = sup[variable]
-                    if coeff > 0:
-                        replacement = self.poly[variable][1]
-                    elif coeff < 0:
-                        replacement = self.poly[variable][0]
-                    else:  # coeff == 0
-                        replacement = dict()
-                        replacement['_'] = 0.0
-                    del sup[variable]
-                    for var, val in replacement.items():
-                        if var in sup:
-                            sup[var] += coeff * val
-                        else:
-                            sup[var] = coeff * val
-            self.poly[name] = (inf, sup)
+            _inf, inf = deepcopy(rhs), deepcopy(rhs)
+            _sup, sup = deepcopy(rhs), deepcopy(rhs)
+            self.poly[name] = (_inf, _sup)
+            while any(variable in inf and variable not in self.inputs for variable in self.poly):
+                for variable in self.poly:
+                    if variable in inf and variable not in self.inputs:  # should be replaced
+                        coeff = inf[variable]
+                        if coeff > 0:
+                            replacement = self.poly[variable][0]
+                        elif coeff < 0:
+                            replacement = self.poly[variable][1]
+                        else:  # coeff == 0
+                            replacement = dict()
+                            replacement['_'] = 0.0
+                        del inf[variable]
+                        for var, val in replacement.items():
+                            if var in inf:
+                                inf[var] += coeff * val
+                            else:
+                                inf[var] = coeff * val
+            while any(variable in sup and variable not in self.inputs for variable in self.poly):
+                for variable in self.poly:
+                    if variable in sup and variable not in self.inputs:  # should be replaced
+                        coeff = sup[variable]
+                        if coeff > 0:
+                            replacement = self.poly[variable][1]
+                        elif coeff < 0:
+                            replacement = self.poly[variable][0]
+                        else:  # coeff == 0
+                            replacement = dict()
+                            replacement['_'] = 0.0
+                        del sup[variable]
+                        for var, val in replacement.items():
+                            if var in sup:
+                                sup[var] += coeff * val
+                            else:
+                                sup[var] = coeff * val
             lower = evaluate(inf, self.bounds)
             upper = evaluate(sup, self.bounds)
             self.bounds[name] = IntervalLattice(lower.lower, upper.upper)
