@@ -21,6 +21,7 @@ from pip._vendor.colorama import Style
 
 from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
+from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.interval_domain import BoxState
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
@@ -32,12 +33,14 @@ from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSem
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
 
+SYMB_DOMAINS_TUPLE = (DeepPolyState, NeurifyState)
 
 class AbstractDomain(Enum):
     BOXES = 0
     SYMBOLIC1 = 1
     SYMBOLIC2 = 2
     DEEPPOLY = 3
+    NEURIFY = 5
 
 
 class BiasAnalysis(Runner):
@@ -79,9 +82,11 @@ class BiasAnalysis(Runner):
         elif self.domain == AbstractDomain.SYMBOLIC2:
             # generally faster than SYMBOLIC1 for large neural networks
             precursory = Symbolic2State(self.man1, variables)
-        else:
-            assert self.domain == AbstractDomain.DEEPPOLY
+        elif self.domain == AbstractDomain.DEEPPOLY:
             precursory = DeepPolyState(self.inputs)
+        else:
+            assert self.domain == AbstractDomain.NEURIFY
+            precursory = NeurifyState(self.inputs)
         return BiasState(self.man2, variables, precursory=precursory)
 
     @property
