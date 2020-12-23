@@ -6,7 +6,6 @@ Forward Analysis Engine
 """
 from copy import deepcopy
 from queue import Queue
-from pip._vendor.colorama import Fore, Style
 
 from apronpy.manager import PyManager
 
@@ -31,30 +30,6 @@ class ForwardInterpreter(Interpreter):
         """
         super().__init__(cfg, semantics, widening)
         self.manager = manager
-
-    def _state_log(self, state, outputs):
-        """log of the input/output bounds of the state after a forward analysis step
-
-        :param state: state of the analsis after a forward application
-        :param outputs: set of outputs name
-        """
-        input_color = Fore.YELLOW
-        output_color = Fore.MAGENTA
-
-        print("Forward Analysis (", Style.RESET_ALL, end='', sep='')
-        print(input_color + "Input", Style.RESET_ALL, end='', sep='')
-        print("|", Style.RESET_ALL, end='', sep='')
-        print(output_color + "Output", Style.RESET_ALL, end='', sep='')
-        print("): {", Style.RESET_ALL)
-
-        spaces = ' ' * 9
-        newline = "\n"
-        inputs = [f"  {k} -> lower: {state.bounds[k][0]}{newline}{spaces}upper: {state.bounds[k][1]}" for k in state.inputs]
-        print(input_color + "\n".join(inputs), Style.RESET_ALL)
-        outputs = [f"  {k} -> lower: {state.bounds[k.name][0]}{newline}{spaces}upper: {state.bounds[k.name][1]}" for k in outputs]
-        print(output_color + "\n".join(outputs), Style.RESET_ALL)
-
-        print("}", Style.RESET_ALL)
 
     def analyze(self, initial, earlystop=True, forced_active=None, forced_inactive=None, outputs=None):
         """Forward analysis extracting abstract activation patterns.
@@ -94,8 +69,6 @@ class ForwardInterpreter(Interpreter):
             # update worklist
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
-
-        self._state_log(state, outputs)
 
         found = state.outcome(outputs)
 
