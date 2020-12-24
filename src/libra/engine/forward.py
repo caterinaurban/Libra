@@ -9,13 +9,12 @@ from queue import Queue
 from pip._vendor.colorama import Fore, Style
 
 from apronpy.manager import PyManager
-
+ 
 from libra.core.statements import Call
 from libra.engine.interpreter import Interpreter
 from libra.semantics.forward import DefaultForwardSemantics
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
-
 
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
@@ -32,27 +31,37 @@ class ForwardInterpreter(Interpreter):
         self.manager = manager
         self._avoid_state_log = False
 
-    def _state_log(self, state, outputs):
-        """log of the input/output bounds of the state after a forward analysis step
+    def _state_log(self, state, outputs, full=False):
+        """log of the state bounds (usually only Input/Output) of the state after a forward analysis step
 
         :param state: state of the analsis after a forward application
         :param outputs: set of outputs name
+        :param full: True for full print or False for just Input/Output (Default False)
         """
         if not self._avoid_state_log:
             input_color = Fore.YELLOW
             output_color = Fore.MAGENTA
+            mid_color = Fore.LIGHTBLACK_EX
             error_color = Fore.RED
+            outputs = {k.name for k in outputs}
 
             print("Forward Analysis (", Style.RESET_ALL, end='', sep='')
             print(input_color + "Input", Style.RESET_ALL, end='', sep='')
             print("|", Style.RESET_ALL, end='', sep='')
+            if full:
+                print(mid_color + "Hidden", Style.RESET_ALL, end='', sep='')
+                print("|", Style.RESET_ALL, end='', sep='')
+
             print(output_color + "Output", Style.RESET_ALL, end='', sep='')
             print("): {", Style.RESET_ALL)
 
             if hasattr(state, "bounds") and isinstance(state.bounds, dict):
                 inputs = [f"  {k} -> {state.bounds[k]}" for k in state.inputs]
                 print(input_color + "\n".join(inputs), Style.RESET_ALL)
-                outputs = [f"  {k} -> {state.bounds[k.name]}" for k in outputs]
+                if full:
+                    mid_states = [f"  {k} -> {state.bounds[k]}" for k in state.bounds.keys() - state.inputs - outputs]
+                    print(mid_color + "\n".join(mid_states), Style.RESET_ALL)
+                outputs = [f"  {k} -> {state.bounds[k]}" for k in outputs]
                 print(output_color + "\n".join(outputs), Style.RESET_ALL)
             else:
                 print(error_color + "Unable to show bounds on the param 'state'" +
