@@ -238,11 +238,9 @@ class NeurifyState(State):
                 self.poly[name] = ({'_': 0.0}, self.poly[name][UP])
         else:
             m = low_upper / (low_upper - low_lower)
-            sup = self.poly[name][LOW]
+            sup = self.poly[name][LOW] # sup does side effects over self.poly[name][UP]
             for var, val in sup.items():
                 sup[var] = m * val
-            sup['_'] = sup['_'] * m
-            self.poly[name] = (sup, self.poly[name][UP])
             self.bounds[name] = (IntervalLattice(up_lower*m, up_upper*m), self.bounds[name][UP])
 
         if up_upper <= 0 or inactive:
@@ -255,11 +253,10 @@ class NeurifyState(State):
         else:
             m = up_upper / (up_upper - up_lower)
             q = up_upper * (-up_lower) / (up_upper - up_lower)
-            sup = self.poly[name][UP]
+            sup = self.poly[name][UP] # sup does side effects over self.poly[name][UP]
             for var, val in sup.items():
                 sup[var] = m * val
-            sup['_'] = sup['_'] * m + q
-            self.poly[name] = (self.poly[name][LOW], sup)
+            sup['_'] += q
             self.bounds[name] = (self.bounds[name][LOW], IntervalLattice(up_lower*m+q, up_upper*m+q))
         return self
 
