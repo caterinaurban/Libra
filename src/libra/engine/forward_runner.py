@@ -17,7 +17,6 @@ from libra.engine.runner import Runner
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.interval_domain import BoxState
-from libra.abstract_domains.product_domain import ProductState
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
 from libra.core.statements import Assignment, Lyra2APRON
@@ -51,8 +50,6 @@ class ForwardRunner(Runner):
             state = Symbolic2State(self.man1, variables)
         elif self.domain == AbstractDomain.DEEPPOLY:
             state = DeepPolyState(inputs)
-        elif self.domain == AbstractDomain.PRODUCT:
-            state = ProductState(inputs)
         else:
             assert self.domain == AbstractDomain.NEURIFY
             state = NeurifyState(inputs)
