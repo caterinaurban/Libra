@@ -1,4 +1,3 @@
-
 import ast
 from queue import Queue
 from pip._vendor.colorama import Style
@@ -122,7 +121,4 @@ class ForwardRunner(Runner):
         self.run()
 
     def run(self):
-        start = time.time()
         self.interpreter().analyze(self.state(), outputs=self.outputs)
-        end = time.time()
-        print('Total Time: {}s'.format(end - start), Style.RESET_ALL)
