@@ -27,7 +27,6 @@ from pip._vendor.colorama import Fore, Style, Back
 
 from libra.abstract_domains.bias_domain import BiasState
 import libra.engine.bias_analysis
-from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
