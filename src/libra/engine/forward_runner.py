@@ -19,24 +19,23 @@ from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.interval_domain import BoxState
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
+from libra.abstract_domains.product_deeppoly_neurify_domain import ProductDeepPolyNeurifyState
 from libra.core.statements import Assignment, Lyra2APRON
 from libra.frontend.cfg_generator import ast_to_cfg
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
 
 class ForwardRunner(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2):
         super().__init__()
         self.spec = spec
         self.domain = domain
-        self.difference = difference
-        self.widening = widening
 
-        self.outputs: Set[VariableIdentifier] = None                            # output variables
+        self.outputs: Set[VariableIdentifier] = None
         self.man1: PyManager = PyBoxMPQManager() # legacy, for symbolic domain
 
     def interpreter(self):
-        return ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening)
+        return ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics())
 
     def state(self):
         inputs, variables, self.outputs = self.variables
@@ -50,9 +49,11 @@ class ForwardRunner(Runner):
             state = Symbolic2State(self.man1, variables)
         elif self.domain == AbstractDomain.DEEPPOLY:
             state = DeepPolyState(inputs)
+        elif self.domain == AbstractDomain.NEURIFY:
+            state = NeurifyState(self.inputs)
         else:
-            assert self.domain == AbstractDomain.NEURIFY
-            state = NeurifyState(inputs)
+            assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
+            state = ProductDeepPolyNeurifyState(self.inputs)
         return state
 
     @property
