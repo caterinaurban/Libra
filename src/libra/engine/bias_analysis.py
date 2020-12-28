@@ -22,7 +22,7 @@ from pip._vendor.colorama import Style
 from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.neurify_domain import NeurifyState
-from libra.abstract_domains.product_deeppoly_neurify_domain import ProductDeepPolyNeurifyState
+from libra.abstract_domains.product_domain import ProductState
 from libra.abstract_domains.interval_domain import BoxState
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
@@ -34,7 +34,7 @@ from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSem
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
 
-SYMB_DOMAINS_TUPLE = (DeepPolyState, NeurifyState, ProductDeepPolyNeurifyState)
+SYMB_DOMAINS_TUPLE = (DeepPolyState, NeurifyState, ProductState)
 
 class AbstractDomain(Enum):
     BOXES = 0
@@ -90,7 +90,7 @@ class BiasAnalysis(Runner):
             precursory = NeurifyState(self.inputs)
         else:
             assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
-            precursory = ProductDeepPolyNeurifyState(self.inputs)
+            precursory = ProductState(self.inputs, DeepPolyState(self.inputs), NeurifyState(self.inputs))
         return BiasState(self.man2, variables, precursory=precursory)
 
     @property
