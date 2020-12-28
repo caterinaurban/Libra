@@ -1,16 +1,31 @@
 """
-Neurify test
-
-forward runner instantiated to Neurify example
+forward runner to toy example
 """
+import sys
+import os
+
 from libra.engine.forward_runner import ForwardRunner
 from libra.engine.bias_analysis import AbstractDomain
 
-spec = 'tests/toy.txt'
-nn = 'tests/toy.py'
-domain = AbstractDomain.NEURIFY
+spec = 'tests/deeppoly_custom.txt'
+nn = 'tests/deeppoly_custom.py'
+if len(sys.argv) > 1:
+    if sys.argv[1] == "neurify":
+        domain = AbstractDomain.NEURIFY
+    elif sys.argv[1] == "deeppoly":
+        domain = AbstractDomain.DEEPPOLY
+    elif sys.argv[1] == "product_deeppoly_neurify":
+        domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
+    else:
+        domain = AbstractDomain.SYMBOLIC2
+else:
+    domain = AbstractDomain.NEURIFY
+print(f"> Domain chosen: '{domain}'")
 b = ForwardRunner(spec, domain=domain)
-b.main(nn)
+try:
+    b.main(nn)
+except NotImplementedError as e:
+    print(f"> NotImplementedError: '{e}'")
 
 """
 By-hand (exact, using rational numbers) analysis using Neurify in the same neural network:
