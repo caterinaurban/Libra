@@ -2,7 +2,6 @@
 forward runner to toy example
 """
 import sys
-import os
 
 from libra.engine.forward_runner import ForwardRunner
 from libra.engine.bias_analysis import AbstractDomain
