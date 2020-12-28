@@ -17,11 +17,12 @@ from libra.core.expressions import Lyra2APRON, NegationFreeExpression, VariableI
     BinaryComparisonOperation, BinaryBooleanOperation, Literal
 from libra.abstract_domains.deeppoly_domain import IntervalLattice, texpr_to_dict, evaluate
 from libra.core.utils import copy_docstring
+from libra.abstract_domains.bounds_domain import BoundsDomain
 
 LOW = 0
 UP = 1
 
-class NeurifyState(State):
+class NeurifyState(State, BoundsDomain):
 
     """Neurify [Wang et al.] state.
 
@@ -241,7 +242,7 @@ class NeurifyState(State):
             sup = self.poly[name][LOW] # sup does side effects over self.poly[name][UP]
             for var, val in sup.items():
                 sup[var] = m * val
-            self.bounds[name] = (IntervalLattice(up_lower*m, up_upper*m), self.bounds[name][UP])
+            self.bounds[name] = (IntervalLattice(low_lower*m, low_upper*m), self.bounds[name][UP])
 
         if up_upper <= 0 or inactive:
             self.bounds[name] = (self.bounds[name][LOW], IntervalLattice(0, 0))
@@ -284,3 +285,13 @@ class NeurifyState(State):
 
     _negation_free = NegationFreeExpression()
     _lyra2apron = Lyra2APRON()
+
+    def get_bounds(self, var_name):
+        low, up = self.bounds[var_name]
+        return IntervalLattice(low.lower, up.upper)
+
+    def resize_bounds(self, var_name, new_bounds):
+        self.bounds[var_name] = (
+            IntervalLattice(new_bounds.lower, self.bounds[var_name][LOW].upper),
+            IntervalLattice(self.bounds[var_name][UP].lower, new_bounds.upper)
+            )
