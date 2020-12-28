@@ -57,11 +57,14 @@ class ForwardInterpreter(Interpreter):
 
             if hasattr(state, "bounds") and isinstance(state.bounds, dict):
                 inputs = [f"  {k} -> {state.bounds[k]}" for k in state.inputs]
+                inputs.sort()
                 print(input_color + "\n".join(inputs), Style.RESET_ALL)
                 if full:
                     mid_states = [f"  {k} -> {state.bounds[k]}" for k in state.bounds.keys() - state.inputs - outputs]
+                    mid_states.sort()
                     print(mid_color + "\n".join(mid_states), Style.RESET_ALL)
                 outputs = [f"  {k} -> {state.bounds[k]}" for k in outputs]
+                outputs.sort()
                 print(output_color + "\n".join(outputs), Style.RESET_ALL)
             else:
                 print(error_color + "Unable to show bounds on the param 'state'" +
@@ -109,8 +112,9 @@ class ForwardInterpreter(Interpreter):
             # update worklist
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
+            continue
 
-        # self._state_log(state, outputs)
+        self._state_log(state, outputs, full=True)
         found = state.outcome(outputs)
 
         return activated, deactivated, found
