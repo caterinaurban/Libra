@@ -132,7 +132,25 @@ class ProductState(State):
         return self
 
     def outcome(self, outcomes: Set[VariableIdentifier]):
-        raise NotImplementedError(f"outcome has not implemented yet")
+        found = None
+        if self.is_bottom():
+            found = '⊥'
+        else:
+            for chosen in outcomes:
+                outcome = self.bounds[chosen.name]
+                lower = outcome.lower
+                unique = True
+                remaining = outcomes - {chosen}
+                for discarded in remaining:
+                    alternative = self.bounds[discarded.name]
+                    upper = alternative.upper
+                    if lower <= upper:
+                        unique = False
+                        break
+                if unique:
+                    found = chosen
+                    break
+        return found
 
     _negation_free = NegationFreeExpression()
     _lyra2apron = Lyra2APRON()
