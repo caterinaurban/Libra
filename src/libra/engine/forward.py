@@ -112,9 +112,8 @@ class ForwardInterpreter(Interpreter):
             # update worklist
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
-            continue
 
-        self._state_log(state, outputs, full=True)
+        # self._state_log(state, outputs, full=True)
         found = state.outcome(outputs)
 
         return activated, deactivated, found
