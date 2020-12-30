@@ -26,9 +26,8 @@ from apronpy.var import PyVar
 from pip._vendor.colorama import Fore, Style, Back
 
 from libra.abstract_domains.bias_domain import BiasState
-from libra.engine.bias_analysis import NON_APRON_DOMAINS
-from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.state import State
+from libra.abstract_domains.constants import NON_APRON_DOMAINS
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
 from libra.engine.interpreter import Interpreter

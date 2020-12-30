@@ -33,15 +33,12 @@ from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSem
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
 
-NON_APRON_DOMAINS = (DeepPolyState, NeurifyState)
-
 class AbstractDomain(Enum):
     BOXES = 0
     SYMBOLIC1 = 1
     SYMBOLIC2 = 2
     DEEPPOLY = 3
     NEURIFY = 5
-
 
 class BiasAnalysis(Runner):
 
