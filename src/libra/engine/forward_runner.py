@@ -1,7 +1,7 @@
 import ast
 from queue import Queue
 from pip._vendor.colorama import Style
-from typing import Set, Dict 
+from typing import Set, Dict
 import time
 
 from apronpy.manager import PyManager
@@ -9,7 +9,7 @@ from apronpy.box import PyBoxMPQManager
 from apronpy.texpr1 import PyTexpr1
 from apronpy.environment import PyEnvironment
 from apronpy.var import PyVar
- 
+
 from libra.core.cfg import Node, Function, Activation
 from libra.engine.bias_analysis import AbstractDomain
 from libra.core.expressions import VariableIdentifier
@@ -23,7 +23,7 @@ from libra.core.statements import Assignment, Lyra2APRON
 from libra.frontend.cfg_generator import ast_to_cfg
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
 
-class ForwardRunner(Runner):
+class ForwardAnalysis(Runner):
 
     def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2):
         super().__init__()
