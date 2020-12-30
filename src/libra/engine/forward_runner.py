@@ -19,6 +19,7 @@ from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.interval_domain import BoxState
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
+from libra.abstract_domains.symbolic3_domain import Symbolic3State
 from libra.abstract_domains.product_domain import ProductState
 from libra.core.statements import Assignment, Lyra2APRON
 from libra.frontend.cfg_generator import ast_to_cfg
@@ -47,6 +48,9 @@ class ForwardAnalysis(Runner):
         elif self.domain == AbstractDomain.SYMBOLIC2:
             # generally faster than SYMBOLIC1 for large neural networks
             state = Symbolic2State(self.man1, variables)
+        elif self.domain == AbstractDomain.SYMBOLIC3:
+            # without using APRON
+            state = Symbolic3State(inputs)
         elif self.domain == AbstractDomain.DEEPPOLY:
             state = DeepPolyState(inputs)
         elif self.domain == AbstractDomain.NEURIFY:

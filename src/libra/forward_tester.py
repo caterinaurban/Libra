@@ -3,7 +3,7 @@ forward runner to toy example
 """
 import sys
 
-from libra.engine.forward_runner import ForwardRunner
+from libra.engine.forward_runner import ForwardAnalysis
 from libra.engine.bias_analysis import AbstractDomain
 
 spec = 'tests/deeppoly_custom.txt'
@@ -20,7 +20,7 @@ if len(sys.argv) > 1:
 else:
     domain = AbstractDomain.NEURIFY
 print(f"> Domain chosen: '{domain}'")
-b = ForwardRunner(spec, domain=domain)
+b = ForwardAnalysis(spec, domain=domain)
 try:
     b.main(nn)
 except NotImplementedError as e:
