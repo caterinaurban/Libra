@@ -51,6 +51,8 @@ def main():
         BiasAnalysis(args.specification, domain=AbstractDomain.SYMBOLIC2, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
     if args.domain == 'deeppoly':
         BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'neurify':
+        BiasAnalysis(args.specification, domain=AbstractDomain.NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
 
 
 if __name__ == '__main__':

@@ -94,3 +94,7 @@ ENV/
 
 # generated docs
 /docs/_build/
+
+# vscode settings
+.vscode/settings.json
+.vscode/launch.json
