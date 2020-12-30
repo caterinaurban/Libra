@@ -28,6 +28,7 @@ from pip._vendor.colorama import Fore, Style, Back
 from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.state import State
+from libra.abstract_domains.symbolic3_domain import Symbolic3State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
 from libra.engine.interpreter import Interpreter
@@ -137,7 +138,7 @@ class BackwardInterpreter(Interpreter):
         outcomes = set()
         _disjunctions = None
         for idx, value in enumerate(self.values):
-            if isinstance(state, DeepPolyState):
+            if isinstance(state, (DeepPolyState, Symbolic3State)):
                 result = deepcopy(state).assume(list(value[2]))
             else:
                 result = deepcopy(state).assume({value[1]}, manager=manager)
@@ -182,13 +183,13 @@ class BackwardInterpreter(Interpreter):
                 break
             result1 = deepcopy(entry)
             for item in one_hot:
-                if isinstance(entry, DeepPolyState):
+                if isinstance(entry, (DeepPolyState, Symbolic3State)):
                     result1 = result1.assume(list(item[2]))
                 else:
                     result1 = result1.assume({item[1]}, manager=manager)
             key = list()
             for value in self.values:
-                if isinstance(entry, DeepPolyState):
+                if isinstance(entry, (DeepPolyState, Symbolic3State)):
                     result2 = deepcopy(result1).assume(list(value[2]))
                 else:
                     result2 = deepcopy(result1).assume({value[1]}, manager=manager)
@@ -259,13 +260,13 @@ class BackwardInterpreter(Interpreter):
                 right = BinaryComparisonOperation(feature, BinaryComparisonOperation.Operator.LtE, Literal(str(upper)))
                 conj = BinaryBooleanOperation(left, BinaryBooleanOperation.Operator.And, right)
                 bounds = BinaryBooleanOperation(bounds, BinaryBooleanOperation.Operator.And, conj)
-            if isinstance(self.initial.precursory, DeepPolyState):
+            if isinstance(self.initial.precursory, (DeepPolyState, Symbolic3State)):
                 entry = self.initial.precursory.assume(ranges)
             else:
                 entry = self.initial.precursory.assume({bounds}, manager=manager)
             # take into account the accumulated assumptions on the one-hot encoded uncontroversial features
             for (_, assumption, _assumption) in assumptions:
-                if isinstance(entry, DeepPolyState):
+                if isinstance(entry, (DeepPolyState, Symbolic3State)):
                     entry = entry.assume(_assumption)
                 else:
                     entry = entry.assume({assumption}, manager=manager)
