@@ -29,7 +29,7 @@ class ForwardInterpreter(Interpreter):
         """
         super().__init__(cfg, semantics, widening)
         self.manager = manager
-        self._avoid_state_log = False
+        self._log = False
 
     def _state_log(self, state, outputs, full=False):
         """log of the state bounds (usually only Input/Output) of the state after a forward analysis step
@@ -38,7 +38,7 @@ class ForwardInterpreter(Interpreter):
         :param outputs: set of outputs name
         :param full: True for full print or False for just Input/Output (Default False)
         """
-        if not self._avoid_state_log:
+        if not self._log:
             input_color = Fore.YELLOW
             output_color = Fore.MAGENTA
             mid_color = Fore.LIGHTBLACK_EX
@@ -70,7 +70,7 @@ class ForwardInterpreter(Interpreter):
                 print(error_color + "Unable to show bounds on the param 'state'" +
                     "\n  > missing attribute 'state.bounds', or 'state.bounds' is not a dictionary" +
                     "\n  > next state logs will be hidden", Style.RESET_ALL)
-                self._avoid_state_log = True
+                self._log = True
 
             print("}", Style.RESET_ALL)
 
