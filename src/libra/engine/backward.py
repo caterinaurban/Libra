@@ -28,6 +28,7 @@ from pip._vendor.colorama import Fore, Style, Back
 from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.state import State
 from libra.abstract_domains.constants import NON_APRON_DOMAINS
+from libra.abstract_domains.symbolic3_domain import Symbolic3State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
 from libra.engine.interpreter import Interpreter

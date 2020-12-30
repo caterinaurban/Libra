@@ -25,6 +25,7 @@ from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.interval_domain import BoxState
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
+from libra.abstract_domains.symbolic3_domain import Symbolic3State
 from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import VariableIdentifier
 from libra.core.statements import Assignment, Lyra2APRON
@@ -37,7 +38,8 @@ class AbstractDomain(Enum):
     BOXES = 0
     SYMBOLIC1 = 1
     SYMBOLIC2 = 2
-    DEEPPOLY = 3
+    SYMBOLIC3 = 3
+    DEEPPOLY = 4
     NEURIFY = 5
 
 class BiasAnalysis(Runner):
@@ -79,6 +81,9 @@ class BiasAnalysis(Runner):
         elif self.domain == AbstractDomain.SYMBOLIC2:
             # generally faster than SYMBOLIC1 for large neural networks
             precursory = Symbolic2State(self.man1, variables)
+        elif self.domain == AbstractDomain.SYMBOLIC3:
+            # without using APRON
+            precursory = Symbolic3State(self.inputs)
         elif self.domain == AbstractDomain.DEEPPOLY:
             precursory = DeepPolyState(self.inputs)
         else:
