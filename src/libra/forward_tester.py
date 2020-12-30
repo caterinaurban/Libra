@@ -15,12 +15,16 @@ if len(sys.argv) > 1:
         domain = AbstractDomain.DEEPPOLY
     elif sys.argv[1] == "product_deeppoly_neurify":
         domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
+    elif sys.argv[1] == "product_deeppoly_symbolic":
+        domain = AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3
+    elif sys.argv[1] == "product_neurify_symbolic":
+        domain = AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3
     else:
-        domain = AbstractDomain.SYMBOLIC2
+        domain = AbstractDomain.SYMBOLIC3
 else:
     domain = AbstractDomain.NEURIFY
 print(f"> Domain chosen: '{domain}'")
-b = ForwardAnalysis(spec, domain=domain)
+b = ForwardAnalysis(spec, domain=domain, log=True)
 try:
     b.main(nn)
 except NotImplementedError as e:

@@ -19,6 +19,7 @@ from libra.abstract_domains.state import State
 from libra.core.expressions import VariableIdentifier, Expression, BinaryBooleanOperation, \
     BinaryComparisonOperation, Literal, UnaryArithmeticOperation
 from libra.core.utils import copy_docstring
+from libra.abstract_domains.bounds_domain import BoundsDomain
 
 
 rtype = TexprRtype.AP_RTYPE_REAL
@@ -110,7 +111,7 @@ def substitute_in_dict(todict, var, rhs):
     return result
 
 
-class Symbolic3State(State):
+class Symbolic3State(State, BoundsDomain):
     """Interval+Symbolic (Variant 3)
 
     .. document private methods
@@ -325,3 +326,9 @@ class Symbolic3State(State):
                     found = chosen
                     break
         return found
+
+    def get_bounds(self, var_name):
+        return self.bounds[var_name]
+
+    def resize_bounds(self, var_name, new_bounds):
+        self.bounds[var_name] = IntervalLattice(new_bounds.lower, new_bounds.upper)

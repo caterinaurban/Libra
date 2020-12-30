@@ -43,6 +43,8 @@ class AbstractDomain(Enum):
     DEEPPOLY = 4
     NEURIFY = 5
     PRODUCT_DEEPPOLY_NEURIFY = 6
+    PRODUCT_DEEPPOLY_SYMBOLIC3 = 7
+    PRODUCT_NEURIFY_SYMBOLIC3 = 8
 
 class BiasAnalysis(Runner):
 
