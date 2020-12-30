@@ -33,7 +33,7 @@ from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSem
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
 
-SYMB_DOMAINS_TUPLE = (DeepPolyState, NeurifyState)
+NON_APRON_DOMAINS = (DeepPolyState, NeurifyState)
 
 class AbstractDomain(Enum):
     BOXES = 0
