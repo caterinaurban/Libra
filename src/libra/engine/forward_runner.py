@@ -27,7 +27,7 @@ from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSem
 
 class ForwardAnalysis(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, log=False):
         super().__init__()
         self.spec = spec
         self.domain = domain
@@ -35,8 +35,10 @@ class ForwardAnalysis(Runner):
         self.outputs: Set[VariableIdentifier] = None
         self.man1: PyManager = PyBoxMPQManager() # legacy, for symbolic domain
 
+        self.log = log
+
     def interpreter(self):
-        return ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics())
+        return ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), log=self.log)
 
     def state(self):
         inputs, variables, self.outputs = self.variables
@@ -55,6 +57,10 @@ class ForwardAnalysis(Runner):
             state = DeepPolyState(inputs)
         elif self.domain == AbstractDomain.NEURIFY:
             state = NeurifyState(inputs)
+        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3:
+            state = ProductState(inputs, DeepPolyState(inputs), Symbolic3State(inputs))
+        elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
+            state = ProductState(inputs, NeurifyState(inputs), Symbolic3State(inputs))
         else:
             assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
             state = ProductState(inputs, DeepPolyState(inputs), NeurifyState(inputs))

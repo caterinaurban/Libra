@@ -19,7 +19,7 @@ from libra.core.cfg import Node, Function, Activation
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager: PyManager, semantics, widening=3):
+    def __init__(self, cfg, manager: PyManager, semantics, widening=3, log=False):
         """Forward control flow graph interpreter construction.
 
         :param cfg: control flow graph to analyze
@@ -29,7 +29,7 @@ class ForwardInterpreter(Interpreter):
         """
         super().__init__(cfg, semantics, widening)
         self.manager = manager
-        self._log = False
+        self._log = log
 
     def _state_log(self, state, outputs, full=False):
         """log of the state bounds (usually only Input/Output) of the state after a forward analysis step
@@ -38,7 +38,7 @@ class ForwardInterpreter(Interpreter):
         :param outputs: set of outputs name
         :param full: True for full print or False for just Input/Output (Default False)
         """
-        if not self._log:
+        if self._log:
             input_color = Fore.YELLOW
             output_color = Fore.MAGENTA
             mid_color = Fore.LIGHTBLACK_EX
@@ -113,7 +113,7 @@ class ForwardInterpreter(Interpreter):
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
 
-        # self._state_log(state, outputs, full=True)
+        self._state_log(state, outputs)
         found = state.outcome(outputs)
 
         return activated, deactivated, found
