@@ -223,6 +223,14 @@ class NeurifyState(State, BoundsDomain):
                                  IntervalLattice(upper.lower, upper.upper))
         return self
 
+    def set_flag(self, lower, upper, active, inactive):
+        if upper <= 0 or inactive:
+            self.flag = -1
+        elif 0 <= lower or active:
+            self.flag = 1
+        else:
+            self.flag = None
+
     def relu(self, stmt: PyVar, active: bool = False, inactive: bool = False) -> 'NeurifyState':
         if self.is_bottom():
             return self
@@ -230,6 +238,7 @@ class NeurifyState(State, BoundsDomain):
         low_lattice, up_lattice = self.bounds[name]
         low_lower, low_upper = low_lattice.lower, low_lattice.upper
         up_lower, up_upper = up_lattice.lower, up_lattice.upper
+        self.set_flag(low_lower, up_upper, active, inactive)
         if low_upper <= 0 or inactive:
             self.bounds[name] = (IntervalLattice(0, 0), self.bounds[name][UP])
             self.poly[name] = ({'_': 0.0}, self.poly[name][UP])
