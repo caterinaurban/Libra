@@ -46,14 +46,14 @@ class AbstractDomain(Enum):
 
 class BiasAnalysis(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC3, minL=0.25, startL=0.25, startU=2, maxU=2, cpu=None, analysis=True):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC3, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, analysis=True):
         super().__init__()
         self.spec = spec
         self.domain = domain
-        self.minL = minL
+        self.minL = startL if minL is None else minL
         self.startL = startL
         self.startU = startU
-        self.maxU = maxU
+        self.maxU = startU if maxU is None else maxU
         self.analysis = analysis
         self.cpu = cpu
 

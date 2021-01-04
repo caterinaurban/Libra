@@ -83,7 +83,7 @@ def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
 class BackwardInterpreter(Interpreter):
     """Backward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager, domain, semantics, specification, minL=0.25, startL=0.25, startU=2, maxU=2, cpu=None, precursory=None):
+    def __init__(self, cfg, manager, domain, semantics, specification, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, precursory=None):
         super().__init__(cfg, semantics, precursory=precursory)
         self.manager: PyManager = manager                               # manager to be used for the analysis
         from libra.engine.bias_analysis import AbstractDomain
@@ -108,10 +108,10 @@ class BackwardInterpreter(Interpreter):
         self.discarded = Value('i', 0)
         self.partitions = Value('i', 0)
 
-        self.minL = minL                                                # minimum lower bound (default: 0.25)
+        self.minL = startL if minL is None else minL                    # minimum lower bound (default: starting lower bound)
         self.startL = startL                                            # starting lower bound (default: 0.25)
         self.startU = startU                                            # starting upper bound (default: 2)
-        self.maxU = maxU                                                # maximum upper bound (default: 2)
+        self.maxU = startU if maxU is None else maxU                    # maximum upper bound (default: maximum upper bound)
 
         self.fair = Value('d', 0.0)                                     # percentage that is proven fair by the pre-analysis
         self.biased = Value('d', 0.0)                                   # percentage that is biased
