@@ -123,7 +123,21 @@ class ProductState(State):
 
         return self
 
+    def set_flag(self, lower, upper, active, inactive):
+        if upper <= 0 or inactive:
+            self.flag = -1
+        elif 0 <= lower or active:
+            self.flag = 1
+        else:
+            self.flag = None
+
     def relu(self, stmt: PyVar, active: bool = False, inactive: bool = False) -> 'ProductState':
+        d1_lower = self._domain1.get_bounds(str(stmt)).lower
+        d1_upper = self._domain1.get_bounds(str(stmt)).upper
+        d2_lower = self._domain2.get_bounds(str(stmt)).lower
+        d2_upper = self._domain2.get_bounds(str(stmt)).upper
+        assert d1_lower == d2_lower and d1_upper == d2_upper
+        self.set_flag(d1_lower, d2_upper, active, inactive)
         self._domain1.relu(stmt, active, inactive)
         self._domain2.relu(stmt, active, inactive)
 
