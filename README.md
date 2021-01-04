@@ -192,7 +192,7 @@ within Libra's `src/libra/` folder. This expects the full path to Libra's execut
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/german/logs`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.ch` in Libra's `src/libra/tests/german/logs` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/german/logs` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -213,7 +213,7 @@ within Libra's `src/libra/` folder. This expects the full path to Libra's execut
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/compas/logs`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.ch` in Libra's `src/libra/tests/compas/logs` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/compas/logs` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -234,7 +234,7 @@ within Libra's `src/libra/` folder. This expects the full path to Libra's execut
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs1`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.ch` in Libra's `src/libra/tests/census/logs1` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/census/logs1` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -254,7 +254,7 @@ within Libra's `src/libra/` folder. This expects the full path to Libra's execut
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs2`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.ch` in Libra's `src/libra/tests/census/logs2` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/census/logs2` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -274,7 +274,7 @@ within Libra's `src/libra/` folder. This expects the full path to Libra's execut
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.ch` in Libra's `src/libra/tests/japanese/logs` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/japanese/logs` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
