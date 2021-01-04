@@ -92,6 +92,10 @@ class BiasAnalysis(Runner):
             precursory = DeepPolyState(self.inputs)
         elif self.domain == AbstractDomain.NEURIFY:
             precursory = NeurifyState(self.inputs)
+        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3:
+            precursory = ProductState(self.inputs, DeepPolyState(self.inputs), Symbolic3State(self.inputs))
+        elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
+            precursory = ProductState(self.inputs, NeurifyState(self.inputs), Symbolic3State(self.inputs))
         else:
             assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
             precursory = ProductState(self.inputs, DeepPolyState(self.inputs), NeurifyState(self.inputs))
