@@ -43,7 +43,7 @@ def main():
         '--min_lower',
         help='minimum lower bound for the forward pre-analysis',
         type=float,
-        default=0.25)
+        default=None)
     parser.add_argument(
         '--lower',
         help='lower bound for the forward pre-analysis',
@@ -59,7 +59,7 @@ def main():
         '--max_upper',
         help='upper bound for the forward pre-analysis',
         type=int,
-        default=2)
+        default=None)
 
     parser.add_argument(
         '--cpu',
@@ -71,10 +71,10 @@ def main():
 
     spec = args.specification
     domain = args.domain
-    minL = args.min_lower
+    minL = args.lower if args.min_lower is None else args.min_lower
     L = args.lower
     U = args.upper
-    maxU = args.max_upper
+    maxU = args.upper if args.max_upper is None else args.max_upper
     cpu = args.cpu
     nn = args.neural_network
 
