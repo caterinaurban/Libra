@@ -16,18 +16,18 @@ from libra.semantics.forward import DefaultForwardSemantics
 from libra.abstract_domains.state import State
 from libra.core.cfg import Node, Function, Activation
 
+
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager: PyManager, semantics, widening=3):
+    def __init__(self, cfg, manager: PyManager, semantics):
         """Forward control flow graph interpreter construction.
 
         :param cfg: control flow graph to analyze
         :param semantics: semantics of statements in the control flow graph
-        :param widening: number of iterations before widening
         :param precursory: precursory control flow graph interpreter
         """
-        super().__init__(cfg, semantics, widening)
+        super().__init__(cfg, semantics)
         self.manager = manager
         self._log = False
 
