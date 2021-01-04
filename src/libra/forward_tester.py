@@ -13,11 +13,13 @@ if len(sys.argv) > 1:
         domain = AbstractDomain.NEURIFY
     elif sys.argv[1] == "deeppoly":
         domain = AbstractDomain.DEEPPOLY
+    elif sys.argv[1] == "symbolic3":
+        domain = AbstractDomain.SYMBOLIC3
     elif sys.argv[1] == "product_deeppoly_neurify":
         domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
-    elif sys.argv[1] == "product_deeppoly_symbolic":
+    elif sys.argv[1] == "product_deeppoly_symbolic3":
         domain = AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3
-    elif sys.argv[1] == "product_neurify_symbolic":
+    elif sys.argv[1] == "product_neurify_symbolic3":
         domain = AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3
     else:
         domain = AbstractDomain.SYMBOLIC3
