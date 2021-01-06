@@ -58,12 +58,14 @@ class ForwardAnalysis(Runner):
         elif self.domain == AbstractDomain.NEURIFY:
             state = NeurifyState(inputs)
         elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3:
-            state = ProductState(inputs, DeepPolyState(inputs), Symbolic3State(inputs))
+            state = ProductState(inputs, [DeepPolyState(inputs), Symbolic3State(inputs)])
         elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
-            state = ProductState(inputs, NeurifyState(inputs), Symbolic3State(inputs))
+            state = ProductState(inputs, [NeurifyState(inputs), Symbolic3State(inputs)])
+        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY:
+            state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs)])
         else:
-            assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
-            state = ProductState(inputs, DeepPolyState(inputs), NeurifyState(inputs))
+            assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3
+            state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs), Symbolic3State(inputs)])
         return state
 
     @property

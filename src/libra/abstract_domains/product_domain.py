@@ -26,14 +26,13 @@ class ProductState(State):
     .. automethod:: DeepPolyState._output
     .. automethod:: DeepPolyState._substitute
     """
-    def __init__(self, inputs: Set[VariableIdentifier], domain1, domain2, precursory: State = None):
+    def __init__(self, inputs: Set[VariableIdentifier], domains, precursory: State = None):
         super().__init__(precursory=precursory)
 
-        assert(isinstance(domain1, BoundsDomain) and isinstance(domain1, State))
-        assert(isinstance(domain2, BoundsDomain) and isinstance(domain2, State))
+        for domain in domains:
+            assert(isinstance(domain, BoundsDomain) and isinstance(domain, State))
 
-        self._domain1 = domain1
-        self._domain2 = domain2
+        self._domains = domains
 
         self.inputs = {k.name for k in inputs}
         self.bounds = dict()
@@ -44,14 +43,14 @@ class ProductState(State):
 
     @copy_docstring(State.bottom)
     def bottom(self):
-        self._domain1.bottom()
-        self._domain2.bottom()
+        for domain in self._domains:
+            domain.bottom()
         return self
 
     @copy_docstring(State.top)
     def top(self):
-        self._domain1.top()
-        self._domain2.top()
+        for domain in self._domains:
+            domain.top()
         return self
 
     def __repr__(self):
@@ -60,11 +59,11 @@ class ProductState(State):
 
     @copy_docstring(State.is_bottom)
     def is_bottom(self) -> bool:
-        return self._domain1.is_bottom() or self._domain2.is_bottom()
+        return any([domain.is_bottom() for domain in self._domains])
 
     @copy_docstring(State.is_top)
     def is_top(self) -> bool:
-        return self._domain1.is_top() and self._domain2.is_top()
+        return all([domain.is_top() for domain in self._domains])
 
     @copy_docstring(State._less_equal)
     def _less_equal(self, other: 'ProductState') -> bool:
@@ -72,14 +71,16 @@ class ProductState(State):
 
     @copy_docstring(State._join)
     def _join(self, other: 'ProductState') -> 'ProductState':
-        self._domain1._join(other._domain1)
-        self._domain2._join(other._domain2)
+        for self_domain, other_domain in zip(self._domains, other._domains):
+            assert type(self_domain) is type(other_domain)
+            self_domain._join(other_domain)
         return self
 
     @copy_docstring(State._meet)
     def _meet(self, other: 'ProductState') -> 'ProductState':
-        self._domain1._meet(other._domain1)
-        self._domain2._meet(other._domain2)
+        for self_domain, other_domain in zip(self._domains, other._domains):
+            assert type(self_domain) is type(other_domain)
+            self_domain._meet(other_domain)
         return self
 
     @copy_docstring(State._widening)
@@ -95,8 +96,8 @@ class ProductState(State):
         raise NotImplementedError(f"Call to _assume is unexpected!")
 
     def assume(self, condition, manager: PyManager = None, bwd: bool = False) -> 'ProductState':
-        self._domain1.assume(condition, manager, bwd)
-        self._domain2.assume(condition, manager, bwd)
+        for domain in self._domains:
+            domain.assume(condition, manager, bwd)
         return self
 
     @copy_docstring(State._substitute)
@@ -107,16 +108,18 @@ class ProductState(State):
         raise NotImplementedError(f"Call to _forget is unexpected!")
 
     def _share_bounds(self, var_name):
+        max([domain.get_bounds(var_name).lower for domain in self._domains])
+        min([domain.get_bounds(var_name).upper for domain in self._domains])
         self.bounds[var_name] = IntervalLattice(
-            max(self._domain1.get_bounds(var_name).lower, self._domain2.get_bounds(var_name).lower),
-            min(self._domain1.get_bounds(var_name).upper, self._domain2.get_bounds(var_name).upper),
+            max([domain.get_bounds(var_name).lower for domain in self._domains]),
+            min([domain.get_bounds(var_name).upper for domain in self._domains])
         )
-        self._domain1.resize_bounds(var_name, self.bounds[var_name])
-        self._domain2.resize_bounds(var_name, self.bounds[var_name])
+        for domain in self._domains:
+            domain.resize_bounds(var_name, self.bounds[var_name])
 
     def affine(self, left: List[PyVar], right: List[PyTexpr1]) -> 'ProductState':
-        self._domain1.affine(left, right)
-        self._domain2.affine(left, right)
+        for domain in self._domains:
+            domain.affine(left, right)
 
         for lhs in left:
             self._share_bounds(str(lhs))
@@ -132,14 +135,14 @@ class ProductState(State):
             self.flag = None
 
     def relu(self, stmt: PyVar, active: bool = False, inactive: bool = False) -> 'ProductState':
-        d1_lower = self._domain1.get_bounds(str(stmt)).lower
-        d1_upper = self._domain1.get_bounds(str(stmt)).upper
-        d2_lower = self._domain2.get_bounds(str(stmt)).lower
-        d2_upper = self._domain2.get_bounds(str(stmt)).upper
-        assert d1_lower == d2_lower and d1_upper == d2_upper
-        self.set_flag(d1_lower, d2_upper, active, inactive)
-        self._domain1.relu(stmt, active, inactive)
-        self._domain2.relu(stmt, active, inactive)
+        d1_lower = self._domains[0].get_bounds(str(stmt)).lower
+        assert all([d1_lower == domain.get_bounds(str(stmt)).lower for domain in self._domains])
+        d1_upper = self._domains[0].get_bounds(str(stmt)).upper
+        assert all([d1_upper == domain.get_bounds(str(stmt)).upper for domain in self._domains])
+        self.set_flag(d1_lower, d1_upper, active, inactive)
+
+        for domain in self._domains:
+            domain.relu(stmt, active, inactive)
 
         self._share_bounds(str(stmt))
 
