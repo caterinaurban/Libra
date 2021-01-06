@@ -300,7 +300,17 @@ class NeurifyState(State, BoundsDomain):
         return IntervalLattice(low.lower, up.upper)
 
     def resize_bounds(self, var_name, new_bounds):
+        new_low_lower = new_bounds.lower
+        new_low_upper = self.bounds[var_name][LOW].upper
+        new_up_lower = self.bounds[var_name][UP].lower
+        new_up_upper = new_bounds.upper
+
+        if new_low_lower > new_low_upper:
+            new_low_upper = new_low_lower
+        if new_up_upper < new_up_lower:
+            new_up_lower = new_up_upper
+
         self.bounds[var_name] = (
-            IntervalLattice(new_bounds.lower, self.bounds[var_name][LOW].upper),
-            IntervalLattice(self.bounds[var_name][UP].lower, new_bounds.upper)
+            IntervalLattice(new_low_lower, new_low_upper),
+            IntervalLattice(new_up_lower, new_up_upper)
             )
