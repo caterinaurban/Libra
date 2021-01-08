@@ -1,19 +1,29 @@
 """
-Neurify test
-
-forward runner instantiated to Neurify example
+forward runner to toy example
 """
+import sys
+
 from libra.engine.forward_runner import ForwardAnalysis
 from libra.engine.bias_analysis import AbstractDomain
+from libra.main import checker
 
-spec = 'tests/toy.txt'
-nn = 'tests/toy.py'
-domain = AbstractDomain.NEURIFY
-b = ForwardAnalysis(spec, domain=domain)
-b.main(nn)
+spec = 'tests/census/census.txt'
+nn = 'tests/census/12.py'
+if len(sys.argv) > 1:
+    domain = checker(sys.argv[1])
+else:
+    domain = AbstractDomain.NEURIFY # default
+print(f"> Domain chosen: '{domain}'")
+b = ForwardAnalysis(spec, domain=domain, log=True)
+try:
+    b.main(nn)
+except NotImplementedError as e:
+    print(f"> NotImplementedError: '{e}'")
 
 """
-By-hand (exact, using rational numbers) analysis using Neurify in the same neural network:
+By-hand analysis (exact, using rational numbers) using Neurify in the 'tests/oy.py' neural network:
+
+Note that, variables endowed with a tick denote the variable state before the ReLU activation function.
 
 {eq_table_low:                          {eq_table_up:
 x01   -> 0                              x01   -> +1.0
@@ -41,4 +51,25 @@ x22': (-0.3880019536019536, 0.7886811233211233) (-0.21454153846153845, 0.9621415
 x22: (-0.260061373040027, _) (_, 0.9621415384615385)
 x31: (0.36249538295421485, 1.192934799152831) (0.478512, 1.3678827076923077)
 x32: (-0.5632237676716193, 2.8662794378635863) (-0.29428061538461536, 3.2138332307692306)
+
+By-hand analysis (exact, using rational numbers) using the product DeepPoly x Neurify in the 'tests/deeppoly_custom.py' neural network,
+a custom version of the example neural network presented in their paper, the only difference is that x01 ranges in [0, 1] instead of [-1, 1].
+
+We use a numerical workaround to obtain an equivalent neural network starting from inputs in [0, 1] (we add the implicit constraint x02 := 2*x02 - 1)
+since x02 ranges in [-1, 1] in the custom example.
+
+bounds:
+x01: (0.0, 0.0) (1.0, 1.0)
+x02: (-1.0, -1.0) (1.0, 1.0)
+x11': (-1.0, 2.0) (-1.0, 2.0)
+x11: (-0.6666666666666666, _) (_, 2.0)
+x12': (-1.0, 2.0) (-1.0, 2.0)
+x12: (-0.6666666666666666, _) (_, 2.0)
+x21': (0.0, 1.3333333333333333) (1.3333333333333333, 2.6666666666666665)
+x21: (0.0, _) (_, 2.6666666666666665)
+x22': (-2.0, 0.6666666666666666) (-0.6666666666666666, 2.0)
+x22: (-0.5, _) (_, 2.0)
+x31: (0.6666666666666667, 2.6666666666666665) (1.833333333333333, 5.166666666666666)
+x32: (-0.5, 0.16666666666666666) (0.0, 2.0)
+
 """

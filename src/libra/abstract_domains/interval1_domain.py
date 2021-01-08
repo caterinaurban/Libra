@@ -25,25 +25,25 @@ rtype = TexprRtype.AP_RTYPE_REAL
 rdir = TexprRdir.AP_RDIR_RND
 
 
-class BoxState(APRONState):
+class Box1State(APRONState):
     """Interval.
 
     .. document private methods
-    .. automethod:: BoxState._assign
-    .. automethod:: BoxState._assume
-    .. automethod:: BoxState._output
-    .. automethod:: BoxState._substitute
+    .. automethod:: Box1State._assign
+    .. automethod:: Box1State._assume
+    .. automethod:: Box1State._output
+    .. automethod:: Box1State._substitute
 
     """
     def __init__(self, manager: PyManager, variables: Set[VariableIdentifier], precursory: State = None):
         super().__init__(manager, variables, PyBox, precursory=precursory)
         self.flag = None
 
-    def affine(self, left: List[PyVar], right: List[PyTexpr1]) -> 'BoxState':
+    def affine(self, left: List[PyVar], right: List[PyTexpr1]) -> 'Box1State':
         self.state = self.state.assign(left, right)
         return self
 
-    def relu(self, stmt: PyVar, active: bool = False, inactive: bool = False) -> 'BoxState':
+    def relu(self, stmt: PyVar, active: bool = False, inactive: bool = False) -> 'Box1State':
         self.flag = None
 
         if active:      # we only do the active case (h >= 0)

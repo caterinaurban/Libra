@@ -29,6 +29,7 @@ from libra.core.expressions import VariableIdentifier, Expression, BinaryCompari
     BinaryBooleanOperation, Lyra2APRON, \
     NegationFreeExpression, Literal
 from libra.core.utils import copy_docstring
+from libra.abstract_domains.bounds_domain import BoundsDomain
 
 
 class IntervalLattice:
@@ -261,7 +262,7 @@ def evaluate(dictionary, bounds):
 #     return texpr
 
 
-class DeepPolyState(State):
+class DeepPolyState(State, BoundsDomain):
     """DeepPoly [Singh et al. POPL2019] state.
 
     .. document private methods
@@ -572,6 +573,11 @@ class DeepPolyState(State):
                     break
         return found
 
-
     _negation_free = NegationFreeExpression()
     _lyra2apron = Lyra2APRON()
+
+    def get_bounds(self, var_name):
+        return self.bounds[var_name]
+
+    def resize_bounds(self, var_name, new_bounds):
+        self.bounds[var_name] = IntervalLattice(new_bounds.lower, new_bounds.upper)

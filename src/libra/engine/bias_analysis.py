@@ -22,7 +22,9 @@ from pip._vendor.colorama import Style
 from libra.abstract_domains.bias_domain import BiasState
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.neurify_domain import NeurifyState
-from libra.abstract_domains.interval_domain import BoxState
+from libra.abstract_domains.product_domain import ProductState
+from libra.abstract_domains.interval1_domain import Box1State
+from libra.abstract_domains.interval2_domain import Box2State
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
 from libra.abstract_domains.symbolic3_domain import Symbolic3State
@@ -36,12 +38,22 @@ from libra.frontend.cfg_generator import ast_to_cfg
 
 
 class AbstractDomain(Enum):
-    BOXES = 0
-    SYMBOLIC1 = 1
-    SYMBOLIC2 = 2
-    SYMBOLIC3 = 3
-    DEEPPOLY = 4
-    NEURIFY = 5
+    BOXES1 = 0
+    BOXES2 = 1
+    SYMBOLIC1 = 2
+    SYMBOLIC2 = 3
+    SYMBOLIC3 = 4
+    DEEPPOLY = 5
+    NEURIFY = 6
+
+    BOXES2_DEEPPOLY = 7
+    BOXES2_NEURIFY = 8
+    DEEPPOLY_NEURIFY = 9
+    DEEPPOLY_SYMBOLIC3 = 10
+    NEURIFY_SYMBOLIC3 = 11
+
+    BOXES2_DEEPPOLY_NEURIFY = 12
+    DEEPPOLY_NEURIFY_SYMBOLIC3 = 13
 
 
 class BiasAnalysis(Runner):
@@ -79,8 +91,10 @@ class BiasAnalysis(Runner):
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
-        if self.domain == AbstractDomain.BOXES:
-            precursory = BoxState(self.man1, variables)
+        if self.domain == AbstractDomain.BOXES1:
+            precursory = Box1State(self.man1, variables)
+        elif self.domain == AbstractDomain.BOXES2:
+            precursory = Box2State(self.inputs)
         elif self.domain == AbstractDomain.SYMBOLIC1:
             # generally faster than SYMBOLIC2 for small neural networks
             precursory = Symbolic1State(self.man1, variables)
@@ -92,9 +106,23 @@ class BiasAnalysis(Runner):
             precursory = Symbolic3State(self.inputs)
         elif self.domain == AbstractDomain.DEEPPOLY:
             precursory = DeepPolyState(self.inputs)
-        else:
-            assert self.domain == AbstractDomain.NEURIFY
+        elif self.domain == AbstractDomain.NEURIFY:
             precursory = NeurifyState(self.inputs)
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY:
+            precursory = ProductState(self.inputs, [Box2State(self.inputs), DeepPolyState(self.inputs)])
+        elif self.domain == AbstractDomain.BOXES2_NEURIFY:
+            precursory = ProductState(self.inputs, [Box2State(self.inputs), NeurifyState(self.inputs)])
+        elif self.domain == AbstractDomain.DEEPPOLY_SYMBOLIC3:
+            precursory = ProductState(self.inputs, [DeepPolyState(self.inputs), Symbolic3State(self.inputs)])
+        elif self.domain == AbstractDomain.DEEPPOLY_NEURIFY:
+            precursory = ProductState(self.inputs, [DeepPolyState(self.inputs), NeurifyState(self.inputs)])
+        elif self.domain == AbstractDomain.NEURIFY_SYMBOLIC3:
+            precursory = ProductState(self.inputs, [NeurifyState(self.inputs), Symbolic3State(self.inputs)])
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY_NEURIFY:
+            precursory = ProductState(self.inputs, [Box2State(self.inputs), DeepPolyState(self.inputs), NeurifyState(self.inputs)])
+        else:
+            assert self.domain == AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
+            precursory = ProductState(self.inputs, [DeepPolyState(self.inputs), NeurifyState(self.inputs), Symbolic3State(self.inputs)])
         return BiasState(self.man2, variables, precursory=precursory)
 
     @property

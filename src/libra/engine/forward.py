@@ -20,7 +20,7 @@ from libra.core.cfg import Node, Function, Activation
 class ForwardInterpreter(Interpreter):
     """Forward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager: PyManager, semantics):
+    def __init__(self, cfg, manager: PyManager, semantics, log=False):
         """Forward control flow graph interpreter construction.
 
         :param cfg: control flow graph to analyze
@@ -29,7 +29,7 @@ class ForwardInterpreter(Interpreter):
         """
         super().__init__(cfg, semantics)
         self.manager = manager
-        self._log = False
+        self._log = log
 
     def _state_log(self, state, outputs, full=False):
         """log of the state bounds (usually only Input/Output) of the state after a forward analysis step
@@ -38,7 +38,7 @@ class ForwardInterpreter(Interpreter):
         :param outputs: set of outputs name
         :param full: True for full print or False for just Input/Output (Default False)
         """
-        if not self._log:
+        if self._log:
             input_color = Fore.YELLOW
             output_color = Fore.MAGENTA
             mid_color = Fore.LIGHTBLACK_EX
@@ -57,11 +57,14 @@ class ForwardInterpreter(Interpreter):
 
             if hasattr(state, "bounds") and isinstance(state.bounds, dict):
                 inputs = [f"  {k} -> {state.bounds[k]}" for k in state.inputs]
+                inputs.sort()
                 print(input_color + "\n".join(inputs), Style.RESET_ALL)
                 if full:
                     mid_states = [f"  {k} -> {state.bounds[k]}" for k in state.bounds.keys() - state.inputs - outputs]
+                    mid_states.sort()
                     print(mid_color + "\n".join(mid_states), Style.RESET_ALL)
                 outputs = [f"  {k} -> {state.bounds[k]}" for k in outputs]
+                outputs.sort()
                 print(output_color + "\n".join(outputs), Style.RESET_ALL)
             else:
                 print(error_color + "Unable to show bounds on the param 'state'" +
@@ -110,7 +113,7 @@ class ForwardInterpreter(Interpreter):
             for node in self.cfg.successors(current):
                 worklist.put(self.cfg.nodes[node.identifier])
 
-        # self._state_log(state, outputs)
+        self._state_log(state, outputs)
         found = state.outcome(outputs)
 
         return activated, deactivated, found

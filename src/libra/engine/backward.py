@@ -31,11 +31,13 @@ from libra.core.cfg import Node, Function, Activation
 from libra.core.expressions import BinaryComparisonOperation, Literal, VariableIdentifier, BinaryBooleanOperation
 from libra.engine.interpreter import Interpreter
 from libra.semantics.backward import DefaultBackwardSemantics
+from libra.abstract_domains.interval2_domain import Box2State
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.symbolic3_domain import Symbolic3State
+from libra.abstract_domains.product_domain import ProductState
 
-NON_APRON_DOMAINS = (DeepPolyState, NeurifyState, Symbolic3State)
+NON_APRON_DOMAINS = (Box2State, DeepPolyState, NeurifyState, Symbolic3State, ProductState)
 
 rtype = TexprRtype.AP_RTYPE_REAL
 rdir = TexprRdir.AP_RDIR_RND

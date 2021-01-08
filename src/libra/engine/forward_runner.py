@@ -16,43 +16,65 @@ from libra.core.expressions import VariableIdentifier
 from libra.engine.runner import Runner
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.neurify_domain import NeurifyState
-from libra.abstract_domains.interval_domain import BoxState
+from libra.abstract_domains.interval1_domain import Box1State
+from libra.abstract_domains.interval2_domain import Box2State
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
+from libra.abstract_domains.symbolic3_domain import Symbolic3State
+from libra.abstract_domains.product_domain import ProductState
 from libra.core.statements import Assignment, Lyra2APRON
 from libra.frontend.cfg_generator import ast_to_cfg
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
 
 class ForwardAnalysis(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, log=False):
         super().__init__()
         self.spec = spec
         self.domain = domain
-        self.difference = difference
-        self.widening = widening
 
-        self.outputs: Set[VariableIdentifier] = None                            # output variables
+        self.outputs: Set[VariableIdentifier] = None
         self.man1: PyManager = PyBoxMPQManager() # legacy, for symbolic domain
 
+        self.log = log
+
     def interpreter(self):
-        return ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening)
+        return ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), log=self.log)
 
     def state(self):
         inputs, variables, self.outputs = self.variables
-        if self.domain == AbstractDomain.BOXES:
-            state = BoxState(self.man1, variables)
+        if self.domain == AbstractDomain.BOXES1:
+            state = Box1State(self.man1, variables)
+        elif self.domain == AbstractDomain.BOXES2:
+            state = Box2State(inputs)
         elif self.domain == AbstractDomain.SYMBOLIC1:
             # generally faster than SYMBOLIC2 for small neural networks
             state = Symbolic1State(self.man1, variables)
         elif self.domain == AbstractDomain.SYMBOLIC2:
             # generally faster than SYMBOLIC1 for large neural networks
             state = Symbolic2State(self.man1, variables)
+        elif self.domain == AbstractDomain.SYMBOLIC3:
+            # without using APRON
+            state = Symbolic3State(inputs)
         elif self.domain == AbstractDomain.DEEPPOLY:
             state = DeepPolyState(inputs)
-        else:
-            assert self.domain == AbstractDomain.NEURIFY
+        elif self.domain == AbstractDomain.NEURIFY:
             state = NeurifyState(inputs)
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY:
+            state = ProductState(inputs, [Box2State(inputs), DeepPolyState(inputs)])
+        elif self.domain == AbstractDomain.BOXES2_NEURIFY:
+            state = ProductState(inputs, [Box2State(inputs), NeurifyState(inputs)])
+        elif self.domain == AbstractDomain.DEEPPOLY_SYMBOLIC3:
+            state = ProductState(inputs, [DeepPolyState(inputs), Symbolic3State(inputs)])
+        elif self.domain == AbstractDomain.DEEPPOLY_NEURIFY:
+            state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs)])
+        elif self.domain == AbstractDomain.NEURIFY_SYMBOLIC3:
+            state = ProductState(inputs, [NeurifyState(inputs), Symbolic3State(inputs)])
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY_NEURIFY:
+            state = ProductState(inputs, [Box2State(inputs), DeepPolyState(inputs), NeurifyState(inputs)])
+        else:
+            assert self.domain == AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
+            state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs), Symbolic3State(inputs)])
         return state
 
     @property

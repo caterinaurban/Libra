@@ -12,14 +12,32 @@ from libra.engine.bias_analysis import BiasAnalysis, AbstractDomain
 
 def checker(domain):
     if domain == 'boxes':
-        return AbstractDomain.BOXES
+        return AbstractDomain.BOXES1
     elif domain == 'symbolic':
-        return AbstractDomain.SYMBOLIC3
+        return AbstractDomain.SYMBOLIC2
     elif domain == 'deeppoly':
         return AbstractDomain.DEEPPOLY
     elif domain == 'neurify':
         return AbstractDomain.NEURIFY
-    error = "Invalid abstract domain! Valid domains are 'boxes', 'symbolic', 'deeppoly', or 'neurify'."
+    elif domain == 'boxes_deeppoly':
+        return AbstractDomain.BOXES2_DEEPPOLY
+    elif domain == 'boxes_neurify':
+        return AbstractDomain.BOXES2_NEURIFY
+    elif domain == 'deeppoly_neurify':
+        return AbstractDomain.DEEPPOLY_NEURIFY
+    elif domain == 'deeppoly_symbolic':
+        return AbstractDomain.DEEPPOLY_SYMBOLIC3
+    elif domain == 'neurify_symbolic':
+        return AbstractDomain.NEURIFY_SYMBOLIC3
+    elif domain == 'boxes_deeppoly_neurify':
+        return AbstractDomain.BOXES2_DEEPPOLY_NEURIFY
+    elif domain == 'deeppoly_neurify_symbolic':
+        return AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
+
+    error = "Invalid abstract domain! Valid domains are 'boxes', 'symbolic', " + \
+            "'deeppoly', 'neurify', 'boxes_deeppoly', 'boxes_neurify'" + \
+            "'deeppoly_symbolic', 'deeppoly_neurify', 'neurify_symbolic'" + \
+            "'boxes_deeppoly_neurify', or 'deeppoly_neurify_symbolic'."
     raise argparse.ArgumentTypeError(error)
 
 
@@ -79,7 +97,6 @@ def main():
     nn = args.neural_network
 
     BiasAnalysis(spec, domain=domain, minL=minL, startL=L, startU=U, maxU=maxU, cpu=cpu).main(nn)
-
 
 if __name__ == '__main__':
     main()
