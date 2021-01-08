@@ -100,20 +100,20 @@ class BiasAnalysis(Runner):
             precursory = DeepPolyState(self.inputs)
         elif self.domain == AbstractDomain.NEURIFY:
             precursory = NeurifyState(self.inputs)
-        elif self.domain == AbstractDomain.PRODUCT_BOXES2_DEEPPOLY:
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY:
             precursory = ProductState(self.inputs, [Box2State(self.inputs), DeepPolyState(self.inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_BOXES2_NEURIFY:
+        elif self.domain == AbstractDomain.BOXES2_NEURIFY:
             precursory = ProductState(self.inputs, [Box2State(self.inputs), NeurifyState(self.inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3:
+        elif self.domain == AbstractDomain.DEEPPOLY_SYMBOLIC3:
             precursory = ProductState(self.inputs, [DeepPolyState(self.inputs), Symbolic3State(self.inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY:
+        elif self.domain == AbstractDomain.DEEPPOLY_NEURIFY:
             precursory = ProductState(self.inputs, [DeepPolyState(self.inputs), NeurifyState(self.inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
+        elif self.domain == AbstractDomain.NEURIFY_SYMBOLIC3:
             precursory = ProductState(self.inputs, [NeurifyState(self.inputs), Symbolic3State(self.inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_BOXES2_DEEPPOLY_NEURIFY:
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY_NEURIFY:
             precursory = ProductState(self.inputs, [Box2State(self.inputs), DeepPolyState(self.inputs), NeurifyState(self.inputs)])
         else:
-            assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3
+            assert self.domain == AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
             precursory = ProductState(self.inputs, [DeepPolyState(self.inputs), NeurifyState(self.inputs), Symbolic3State(self.inputs)])
         return BiasState(self.man2, variables, precursory=precursory)
 

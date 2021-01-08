@@ -17,19 +17,19 @@ if len(sys.argv) > 1:
         domain = AbstractDomain.DEEPPOLY
     elif sys.argv[1] == "symbolic":
         domain = AbstractDomain.SYMBOLIC3
-    elif sys.argv[1] == "product_boxes_deeppoly":
-        domain = AbstractDomain.PRODUCT_BOXES2_DEEPPOLY
-    elif sys.argv[1] == "product_deeppoly_neurify":
-        domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
-    elif sys.argv[1] == "product_deeppoly_symbolic":
-        domain = AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3
-    elif sys.argv[1] == "product_neurify_symbolic":
-        domain = AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3
-    elif sys.argv[1] == "product_boxes_deeppoly_neurify":
-        domain = AbstractDomain.PRODUCT_BOXES2_DEEPPOLY_NEURIFY
+    elif sys.argv[1] == "boxes_deeppoly":
+        domain = AbstractDomain.BOXES2_DEEPPOLY
+    elif sys.argv[1] == "deeppoly_neurify":
+        domain = AbstractDomain.DEEPPOLY_NEURIFY
+    elif sys.argv[1] == "deeppoly_symbolic":
+        domain = AbstractDomain.DEEPPOLY_SYMBOLIC3
+    elif sys.argv[1] == "neurify_symbolic":
+        domain = AbstractDomain.NEURIFY_SYMBOLIC3
+    elif sys.argv[1] == "boxes_deeppoly_neurify":
+        domain = AbstractDomain.BOXES2_DEEPPOLY_NEURIFY
     else:
-        assert sys.argv[1] == "product_deeppoly_neurify_symbolic"
-        domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3
+        assert sys.argv[1] == "deeppoly_neurify_symbolic"
+        domain = AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
 else:
     domain = AbstractDomain.NEURIFY # default
 print(f"> Domain chosen: '{domain}'")

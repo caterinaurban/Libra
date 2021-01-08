@@ -53,20 +53,20 @@ def main():
         BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
     if args.domain == 'neurify':
         BiasAnalysis(args.specification, domain=AbstractDomain.NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_boxes_deeppoly':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_BOXES2_DEEPPOLY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_boxes_neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_BOXES2_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_deeppoly_neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_deeppoly_symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_neurify_symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_boxes_deeppoly_neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_BOXES2_DEEPPOLY_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'product_deeppoly_neurify_symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'boxes_deeppoly':
+        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES2_DEEPPOLY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'boxes_neurify':
+        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES2_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'deeppoly_neurify':
+        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'deeppoly_symbolic':
+        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'neurify_symbolic':
+        BiasAnalysis(args.specification, domain=AbstractDomain.NEURIFY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'boxes_deeppoly_neurify':
+        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES2_DEEPPOLY_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    if args.domain == 'deeppoly_neurify_symbolic':
+        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
 
 if __name__ == '__main__':
     main()

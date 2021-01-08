@@ -60,20 +60,20 @@ class ForwardAnalysis(Runner):
             state = DeepPolyState(inputs)
         elif self.domain == AbstractDomain.NEURIFY:
             state = NeurifyState(inputs)
-        elif self.domain == AbstractDomain.PRODUCT_BOXES2_DEEPPOLY:
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY:
             state = ProductState(inputs, [Box2State(inputs), DeepPolyState(inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_BOXES2_NEURIFY:
+        elif self.domain == AbstractDomain.BOXES2_NEURIFY:
             state = ProductState(inputs, [Box2State(inputs), NeurifyState(inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3:
+        elif self.domain == AbstractDomain.DEEPPOLY_SYMBOLIC3:
             state = ProductState(inputs, [DeepPolyState(inputs), Symbolic3State(inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY:
+        elif self.domain == AbstractDomain.DEEPPOLY_NEURIFY:
             state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
+        elif self.domain == AbstractDomain.NEURIFY_SYMBOLIC3:
             state = ProductState(inputs, [NeurifyState(inputs), Symbolic3State(inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_BOXES2_DEEPPOLY_NEURIFY:
+        elif self.domain == AbstractDomain.BOXES2_DEEPPOLY_NEURIFY:
             state = ProductState(inputs, [Box2State(inputs), DeepPolyState(inputs), NeurifyState(inputs)])
         else:
-            assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3
+            assert self.domain == AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
             state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs), Symbolic3State(inputs)])
         return state
 
