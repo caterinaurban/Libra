@@ -10,6 +10,37 @@ from multiprocessing import cpu_count
 from libra.engine.bias_analysis import BiasAnalysis, AbstractDomain
 
 
+def checker(domain):
+    if args.domain == 'boxes':
+        return AbstractDomain.BOXES1
+    elif args.domain == 'symbolic':
+        return AbstractDomain.SYMBOLIC2
+    elif args.domain == 'deeppoly':
+        return AbstractDomain.DEEPPOLY
+    elif args.domain == 'neurify':
+        return AbstractDomain.NEURIFY
+    elif args.domain == 'boxes_deeppoly':
+        return AbstractDomain.BOXES2_DEEPPOLY
+    elif args.domain == 'boxes_neurify':
+        return AbstractDomain.BOXES2_NEURIFY
+    elif args.domain == 'deeppoly_neurify':
+        return AbstractDomain.DEEPPOLY_NEURIFY
+    elif args.domain == 'deeppoly_symbolic':
+        return AbstractDomain.DEEPPOLY_SYMBOLIC3
+    elif args.domain == 'neurify_symbolic':
+        return AbstractDomain.NEURIFY_SYMBOLIC3
+    elif args.domain == 'boxes_deeppoly_neurify':
+        return AbstractDomain.BOXES2_DEEPPOLY_NEURIFY
+    elif args.domain == 'deeppoly_neurify_symbolic':
+        return AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
+
+    error = "Invalid abstract domain! Valid domains are 'boxes', 'symbolic', " +
+            "'deeppoly', 'neurify', 'boxes_deeppoly', 'boxes_neurify'" +
+            "'deeppoly_symbolic', 'deeppoly_neurify', 'neurify_symbolic'" +
+            "'boxes_deeppoly_neurify', or 'deeppoly_neurify_symbolic'."
+    raise argparse.ArgumentTypeError(error)
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -22,20 +53,31 @@ def main():
 
     parser.add_argument(
         '--domain',
-        help='abstract domain to be used for the forward pre-analysis (boxes, symbolic, or deeppoly)',
+        help='abstract domain to be used for the forward pre-analysis (boxes, symbolic, deeppoly, or neurify)',
+        type=checker,
         default='symbolic')
 
+    parser.add_argument(
+        '--min_lower',
+        help='minimum lower bound for the forward pre-analysis',
+        type=float,
+        default=None)
     parser.add_argument(
         '--lower',
         help='lower bound for the forward pre-analysis',
         type=float,
-        default=0.25)
+        default=1)
 
     parser.add_argument(
         '--upper',
         help='upper bound for the forward pre-analysis',
         type=int,
-        default=2)
+        default=0)
+    parser.add_argument(
+        '--max_upper',
+        help='upper bound for the forward pre-analysis',
+        type=int,
+        default=None)
 
     parser.add_argument(
         '--cpu',
@@ -45,28 +87,16 @@ def main():
 
     args = parser.parse_args()
 
-    if args.domain == 'boxes':
-        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES1, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.SYMBOLIC2, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'deeppoly':
-        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'boxes_deeppoly':
-        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES2_DEEPPOLY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'boxes_neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES2_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'deeppoly_neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'deeppoly_symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'neurify_symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.NEURIFY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'boxes_deeppoly_neurify':
-        BiasAnalysis(args.specification, domain=AbstractDomain.BOXES2_DEEPPOLY_NEURIFY, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
-    if args.domain == 'deeppoly_neurify_symbolic':
-        BiasAnalysis(args.specification, domain=AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3, difference=args.lower, widening=args.upper, cpu=args.cpu).main(args.neural_network)
+    spec = args.specification
+    domain = args.domain
+    minL = args.lower if args.min_lower is None else args.min_lower
+    L = args.lower
+    U = args.upper
+    maxU = args.upper if args.max_upper is None else args.max_upper
+    cpu = args.cpu
+    nn = args.neural_network
+
+    BiasAnalysis(spec, domain=domain, minL=minL, startL=L, startU=U, maxU=maxU, cpu=cpu).main(nn)
 
 if __name__ == '__main__':
     main()

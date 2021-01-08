@@ -11,6 +11,6 @@ from libra.engine.bias_analysis import BiasAnalysis, AbstractDomain
 spec = 'tests/toy.txt'
 nn = 'tests/toy.py'
 domain = AbstractDomain.BOXES1
-lower = 0.25
-upper = 2
-BiasAnalysis(spec, domain=domain, difference=lower, widening=upper).main(nn)
+L = 0.25
+U = 2
+BiasAnalysis(spec, domain=domain, startL=L, startU=U).main(nn)

@@ -36,6 +36,7 @@ from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSem
 from libra.engine.runner import Runner
 from libra.frontend.cfg_generator import ast_to_cfg
 
+
 class AbstractDomain(Enum):
     BOXES1 = 0
     BOXES2 = 1
@@ -54,14 +55,17 @@ class AbstractDomain(Enum):
     BOXES2_DEEPPOLY_NEURIFY = 12
     DEEPPOLY_NEURIFY_SYMBOLIC3 = 13
 
+
 class BiasAnalysis(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, difference=0.25, widening=2, cpu=None, analysis=True):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC3, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, analysis=True):
         super().__init__()
         self.spec = spec
         self.domain = domain
-        self.difference = difference
-        self.widening = widening
+        self.minL = startL if minL is None else minL
+        self.startL = startL
+        self.startU = startU
+        self.maxU = startU if maxU is None else maxU
         self.analysis = analysis
         self.cpu = cpu
 
@@ -80,8 +84,10 @@ class BiasAnalysis(Runner):
         self.man2.manager.contents.option.funopt[FunId.AP_FUNID_FORGET_ARRAY].algorithm = min_int
 
     def interpreter(self):
-        precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics(), widening=self.widening)
-        return BackwardInterpreter(self.cfg, self.man2, self.domain, BiasBackwardSemantics(), self.spec, widening=self.widening, difference=self.difference, cpu=self.cpu, precursory=precursory)
+        precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics())
+        return BackwardInterpreter(self.cfg, self.man2, self.domain, BiasBackwardSemantics(), self.spec,
+                                   minL=self.minL, startL=self.startL, startU=self.startU, maxU=self.maxU,
+                                   cpu=self.cpu, precursory=precursory)
 
     def state(self):
         self.inputs, variables, self.outputs = self.variables
