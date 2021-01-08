@@ -3,35 +3,25 @@ import os
 def order(logfile):
     D = dict()
     D['boxes'] = 0
-    D['symbolic'] = 250
-    D['deeppoly'] = 500
+    D['symbolic'] = 10
+    D['deeppoly'] = 20
+    D['neurify'] = 30
+    D['boxes_deeppoly'] = 40
+    D['boxes_neurify'] = 50
+    D['deeppoly_symbolic'] = 60
+    D['neurify_symbolic'] = 70
+    D['deeppoly_neurify'] = 80
+    D['boxes_deeppoly_neurify'] = 90
+    D['deeppoly_neurify_symbolic'] = 100
     A = dict()
-    A['20F'] = 0
-    A['20E'] = 10
-    A['20D'] = 20
-    A['20C'] = 30
-    A['20B'] = 40
-    A['20A'] = 50
-    A['80F'] = 60
-    A['80E'] = 70
-    A['80D'] = 80
-    A['80C'] = 90
-    A['80B'] = 100
-    A['80A'] = 110
-    A['320F'] = 120
-    A['320E'] = 130
-    A['320D'] = 140
-    A['320C'] = 150
-    A['320B'] = 160
-    A['320A'] = 170
-    A['1280F'] = 180
-    A['1280E'] = 190
-    A['1280D'] = 200
-    A['1280C'] = 210
-    A['1280B'] = 220
-    A['1280A'] = 230
-    name = logfile.split('-')       # ['census', '20A', 'boxes', '0.25', '2.log']
-    return A[name[1]] + D[name[2]]
+    A['10'] = 0
+    A['12'] = 200
+    A['20'] = 400
+    A['40'] = 600
+    A['45'] = 800
+    name = logfile.split('-')       # ['census', '10', 'boxes', '0.5', '4.log']
+    return A[name[1]] + D[name[2]] + int(name[4].replace('.log', ''))
+
 
 # current directory
 directory = os.fsencode('.').decode('utf-8')
@@ -62,40 +52,33 @@ for logfile in sorted(logs, key=order):
             if line.startswith('Total'):
                 total = line.split()
 
-        if found:
+        patterns = found[1]
+        zipped = compressed[2] if compressed else ''
+        rest = found[4].split('[')
+        feasible = rest[0]
+        completed = rest[1].strip(']')
 
-            patterns = found[1]
-            zipped = compressed[2] if compressed else ''
-            rest = found[4].split('[')
-            feasible = rest[0]
-            completed = rest[1].strip(']')
+        _space = float(pre[4].strip('()').strip('%'))
+        space = '{0:.2f}%'.format(_space)
 
-            _space = float(pre[4].strip('()').strip('%'))
-            space = '{0:.2f}%'.format(_space)
+        if result:
 
-            if result:
+            seconds = float(total[-2].strip('s'))
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            seconds = seconds % 60
+            time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
 
-                seconds = float(total[-2].strip('s'))
-                hours = seconds // 3600
-                minutes = (seconds % 3600) // 60
-                seconds = seconds % 60
-                time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
-
-                if compressed:
-                    fetched = [logfile, space, completed, zipped, feasible, time]
-                else:
-                    fetched = [logfile, space, completed, patterns, feasible, time]
-                print('\t '.join(fetched))
-
+            if compressed:
+                fetched = [logfile, space, completed, zipped, feasible, time]
             else:
-
-                if compressed:
-                    fetched = [logfile, space, completed, zipped, feasible, '>13h']
-                else:
-                    fetched = [logfile, space, completed, patterns, feasible, '>13h']
-                print('\t '.join(fetched))
+                fetched = [logfile, space, completed, patterns, feasible, time]
+            print('\t '.join(fetched))
 
         else:
 
-            fetched = [logfile, '-', '-', '-', '-', '>13h']
+            if compressed:
+                fetched = [logfile, space, completed, zipped, feasible, '>13h']
+            else:
+                fetched = [logfile, space, completed, patterns, feasible, '>13h']
             print('\t '.join(fetched))

@@ -20,7 +20,7 @@ otherwise, it describes and quantifies the biased behavior.
 Libra was developed to implement and test the analysis method described in:
 
 	C. Urban, M. Christakis, V. Wüstholz, F. Zhang - Perfectly Parallel Fairness Certification of Neural Networks
-	Contidionally accepted to appear in Proceedings of the ACM on Programming Languages (OOPSLA), 2020.
+	In Proceedings of the ACM on Programming Languages (OOPSLA), 2020.
 
 ## Getting Started 
 
@@ -139,17 +139,35 @@ The following command line options are recognized:
         * boxes (interval abstract domain)
         * symbolic (combination of interval abstract domain with symbolic constant propagation [Li et al. 2019])
         * deeppoly (deeppoly abstract domain [Singh et al. 2019]]) 
+        * neurify (neurify symbolic relaxation [Wang et al. - Efficient Formal Safety Analysis of Neural Networks (NeurIPS 2018)]) 
+        * boxes_deeppoly (product of boxes and deeppoly)
+        * boxes_neurify (product of boxes and neurify)
+        * deeppoly_symbolic (product of deeppoly and symbolic)
+        * neurify_symbolic (product of neurify and symbolic)
+        * deeppoly_neurify (product of deeppoly and neurify)
+        * boxes_deeppoly_neurify (product of boxes, deeppoly, and neurify)
+        * deeppoly_neurify_symbolic (product of deeppoly, neurify, and symbolic)
         Default: symbolic
 
     --lower [LOWER BOUND]
     
         Sets the lower bound for the forward pre-analysis.
         Default: 0.25
+    
+    --min_lower [LOWER BOUND]
+    
+        Sets the minimum lower bound for the (autotuning of the) forward pre-analysis.
+        Default: the value of the lower bound
         
     --upper [UPPER BOUND]
     
         Sets the upper bound for the forward pre-analysis.
         Default: 2
+        
+    --max_upper [UPPER BOUND]
+    
+        Sets the maximum upper bound for the (autotuning of the) forward pre-analysis.
+        Default: the value of the upper bound
     
     --cpu [CPUs]
     
@@ -184,11 +202,11 @@ a 12-core Intel ® Xeon ® X5650 CPU @ 2.67GHz machine with 48GB of memory.
 
 ### RQ1: Detecting Seeded Bias
 
-The results of the experimental evaluation performed to answer RQ1 are shown in Tables 7-9 
-and summarized in Table 1. To reproduce them one can use the script `german.sh` 
+The results of the experimental evaluation performed to answer RQ1 are summarized in Table 1. 
+To reproduce them one can use the script `biases.sh` 
 within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
 
-    ./german.sh <path to env>/bin/libra
+    ./biases.sh <path to env>/bin/libra
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/german/logs`.
 These can be manually inspected or a table summary of them can be generated 
@@ -205,11 +223,11 @@ as well as the 8 neural networks trained on each of these datasets.
 
 ### RQ2: Answering Bias Queries
 
-The results of the experimental evaluation performed to answer RQ2 are shown in Tables 10-12 
-and summarized in Table 2. To reproduce them one can use the script `compas.sh` 
+The results of the experimental evaluation performed to answer RQ2 are summarized in Table 2. 
+To reproduce them one can use the script `queries.sh` 
 within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
 
-    ./compas.sh <path to env>/bin/libra
+    ./queries.sh <path to env>/bin/libra
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/compas/logs`.
 These can be manually inspected or a table summary of them can be generated 
@@ -220,21 +238,26 @@ On a less powerful machine than that used for our evaluation
 it might be preferable to comment out the most time consuming lines 
 from the script before launching it.
 
-In the `src/libra/tests/german` folder are also present the original dataset `compas.csv` 
+In the `src/libra/tests/compas` folder are also present the original dataset `compas.csv` 
 and the artificially fair and biased datasets `compas-fair.csv` and `compas-bias.csv`, 
 as well as the 8 neural networks trained on each of these datasets. 
 
 ### RQ3: Effect of Model Structure on Scalability
 
 The results of the experimental evaluation performed to answer RQ3 are shown in Table 3. 
-To reproduce them one can use the script `census1.sh` 
+To reproduce them one can use the script `models1.sh` 
 within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
 
-    ./census1.sh <path to env>/bin/libra
+    ./models1.sh <path to env>/bin/libra
 
 The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs1`.
 These can be manually inspected or a table summary of them can be generated 
 using the script `fetch.py` in Libra's `src/libra/tests/census/logs1` folder.
+
+The script `models2.sh` within Libra's `src/libra/` folder allows running the same experiment 
+with lower bound set to 0.5, upper bound set to 5, 
+and all available choices of abstract domains for the forward pre-analysis.
+The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs2`.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -247,14 +270,14 @@ as well as the 5 trained neural networks (`10`, `12`, `20`, `40`, `45`).
 ### RQ4: Effect of Analyzed Input Space on Scalability
 
 The results of the experimental evaluation performed to answer RQ4 are shown in Table 4. 
-To reproduce them one can use the script `census2.sh` 
+To reproduce them one can use the script `inputs.sh` 
 within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
 
-    ./census2.sh <path to env>/bin/libra
+    ./inputs.sh <path to env>/bin/libra
 
-The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs2`.
+The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs3`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.py` in Libra's `src/libra/tests/census/logs2` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/census/logs3` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -267,14 +290,19 @@ as well as the 4 trained neural networks (`20A`, `80A`, `320A`, `1280A`).
 ### RQ5: Scalability-vs-Precision Tradeoff
 
 The results of the experimental evaluation performed to answer RQ5 are shown in Table 5. 
-To reproduce them one can use the script `japanese.sh` 
+To reproduce them one can use the script `configurations1.sh` 
 within Libra's `src/libra/` folder. This expects the full path to Libra's executable as input:
 
-    ./japanese.sh <path to env>/bin/libra
+    ./configurations1.sh <path to env>/bin/libra
 
-The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs`.
+The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs1`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.py` in Libra's `src/libra/tests/japanese/logs` folder.
+using the script `fetch.py` in Libra's `src/libra/tests/japanese/logs1` folder.
+
+The script `configurations2.sh` within Libra's `src/libra/` folder allows running the same experiment 
+with lower bound set to 0.5 or 0.25, upper bound set to 3 or 5, 
+and all available choices of abstract domains for the forward pre-analysis.
+The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs2`.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -287,12 +315,18 @@ as well as the trained neural network (`20`).
 ### RQ6: Leveraging Multiple CPUs
 
 The results of the experimental evaluation perfomed to answer RQ6 are shown in Table 6 and 13.
-To reproduce them one can again use the script `japanese.sh`
+To reproduce them one can again use the script `configurations1.sh`
 within Libra's `src/libra/` folder. This time 
 passing as input an additional argument indicating the number of CPUs to be used for the analysis:
 
-    ./japanese.sh <path to env>/bin/libra 4
+    ./configurations1.sh <path to env>/bin/libra 4
+
+The same can be done for the script `configurations2.sh`.
 
 ## Authors
 
-* **Caterina Urban**, INRIA & École Normale Supérieure, Paris, France
+* **Caterina Urban**, Inria & École Normale Supérieure | Université PSL, Paris, France
+
+## Contributors
+
+* **Denis Mazzucato**, Inria & École Normale Supérieure | Université PSL, Paris, France
