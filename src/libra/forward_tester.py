@@ -5,31 +5,12 @@ import sys
 
 from libra.engine.forward_runner import ForwardAnalysis
 from libra.engine.bias_analysis import AbstractDomain
+from libra.main import checker
 
 spec = 'tests/census/census.txt'
 nn = 'tests/census/12.py'
 if len(sys.argv) > 1:
-    if sys.argv[1] == "boxes":
-        domain = AbstractDomain.BOXES2
-    elif sys.argv[1] == "neurify":
-        domain = AbstractDomain.NEURIFY
-    elif sys.argv[1] == "deeppoly":
-        domain = AbstractDomain.DEEPPOLY
-    elif sys.argv[1] == "symbolic":
-        domain = AbstractDomain.SYMBOLIC3
-    elif sys.argv[1] == "boxes_deeppoly":
-        domain = AbstractDomain.BOXES2_DEEPPOLY
-    elif sys.argv[1] == "deeppoly_neurify":
-        domain = AbstractDomain.DEEPPOLY_NEURIFY
-    elif sys.argv[1] == "deeppoly_symbolic":
-        domain = AbstractDomain.DEEPPOLY_SYMBOLIC3
-    elif sys.argv[1] == "neurify_symbolic":
-        domain = AbstractDomain.NEURIFY_SYMBOLIC3
-    elif sys.argv[1] == "boxes_deeppoly_neurify":
-        domain = AbstractDomain.BOXES2_DEEPPOLY_NEURIFY
-    else:
-        assert sys.argv[1] == "deeppoly_neurify_symbolic"
-        domain = AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
+    domain = checker(sys.argv[1])
 else:
     domain = AbstractDomain.NEURIFY # default
 print(f"> Domain chosen: '{domain}'")

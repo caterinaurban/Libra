@@ -11,32 +11,32 @@ from libra.engine.bias_analysis import BiasAnalysis, AbstractDomain
 
 
 def checker(domain):
-    if args.domain == 'boxes':
+    if domain == 'boxes':
         return AbstractDomain.BOXES1
-    elif args.domain == 'symbolic':
+    elif domain == 'symbolic':
         return AbstractDomain.SYMBOLIC2
-    elif args.domain == 'deeppoly':
+    elif domain == 'deeppoly':
         return AbstractDomain.DEEPPOLY
-    elif args.domain == 'neurify':
+    elif domain == 'neurify':
         return AbstractDomain.NEURIFY
-    elif args.domain == 'boxes_deeppoly':
+    elif domain == 'boxes_deeppoly':
         return AbstractDomain.BOXES2_DEEPPOLY
-    elif args.domain == 'boxes_neurify':
+    elif domain == 'boxes_neurify':
         return AbstractDomain.BOXES2_NEURIFY
-    elif args.domain == 'deeppoly_neurify':
+    elif domain == 'deeppoly_neurify':
         return AbstractDomain.DEEPPOLY_NEURIFY
-    elif args.domain == 'deeppoly_symbolic':
+    elif domain == 'deeppoly_symbolic':
         return AbstractDomain.DEEPPOLY_SYMBOLIC3
-    elif args.domain == 'neurify_symbolic':
+    elif domain == 'neurify_symbolic':
         return AbstractDomain.NEURIFY_SYMBOLIC3
-    elif args.domain == 'boxes_deeppoly_neurify':
+    elif domain == 'boxes_deeppoly_neurify':
         return AbstractDomain.BOXES2_DEEPPOLY_NEURIFY
-    elif args.domain == 'deeppoly_neurify_symbolic':
+    elif domain == 'deeppoly_neurify_symbolic':
         return AbstractDomain.DEEPPOLY_NEURIFY_SYMBOLIC3
 
-    error = "Invalid abstract domain! Valid domains are 'boxes', 'symbolic', " +
-            "'deeppoly', 'neurify', 'boxes_deeppoly', 'boxes_neurify'" +
-            "'deeppoly_symbolic', 'deeppoly_neurify', 'neurify_symbolic'" +
+    error = "Invalid abstract domain! Valid domains are 'boxes', 'symbolic', " + \
+            "'deeppoly', 'neurify', 'boxes_deeppoly', 'boxes_neurify'" + \
+            "'deeppoly_symbolic', 'deeppoly_neurify', 'neurify_symbolic'" + \
             "'boxes_deeppoly_neurify', or 'deeppoly_neurify_symbolic'."
     raise argparse.ArgumentTypeError(error)
 
