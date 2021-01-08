@@ -9,7 +9,6 @@ LIBRA=$1
 # boxes #
 #=======#
 
-
 if [ ! -z $2 ]
 then
     $1 tests/japanese/japanese.txt tests/japanese/20.py --domain boxes --lower 0.5 --upper 4 --cpu $2 | tee tests/japanese/logs/japanese-20-boxes-0.5-4.log
