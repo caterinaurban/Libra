@@ -26,6 +26,7 @@ from libra.core.statements import Assignment, Lyra2APRON
 from libra.frontend.cfg_generator import ast_to_cfg
 from libra.engine.forward import ForwardInterpreter, ActivationPatternForwardSemantics
 
+
 class ForwardAnalysis(Runner):
 
     def __init__(self, spec, domain=AbstractDomain.SYMBOLIC2, log=False):
