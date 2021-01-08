@@ -16,7 +16,8 @@ from libra.core.expressions import VariableIdentifier
 from libra.engine.runner import Runner
 from libra.abstract_domains.deeppoly_domain import DeepPolyState
 from libra.abstract_domains.neurify_domain import NeurifyState
-from libra.abstract_domains.interval_domain import BoxState
+from libra.abstract_domains.interval1_domain import Box1State
+from libra.abstract_domains.interval2_domain import Box2State
 from libra.abstract_domains.symbolic1_domain import Symbolic1State
 from libra.abstract_domains.symbolic2_domain import Symbolic2State
 from libra.abstract_domains.symbolic3_domain import Symbolic3State
@@ -42,8 +43,10 @@ class ForwardAnalysis(Runner):
 
     def state(self):
         inputs, variables, self.outputs = self.variables
-        if self.domain == AbstractDomain.BOXES:
-            state = BoxState(self.man1, variables)
+        if self.domain == AbstractDomain.BOXES1:
+            state = Box1State(self.man1, variables)
+        elif self.domain == AbstractDomain.BOXES2:
+            state = Box2State(inputs)
         elif self.domain == AbstractDomain.SYMBOLIC1:
             # generally faster than SYMBOLIC2 for small neural networks
             state = Symbolic1State(self.man1, variables)
@@ -57,12 +60,18 @@ class ForwardAnalysis(Runner):
             state = DeepPolyState(inputs)
         elif self.domain == AbstractDomain.NEURIFY:
             state = NeurifyState(inputs)
+        elif self.domain == AbstractDomain.PRODUCT_BOXES2_DEEPPOLY:
+            state = ProductState(inputs, [Box2State(inputs), DeepPolyState(inputs)])
+        elif self.domain == AbstractDomain.PRODUCT_BOXES2_NEURIFY:
+            state = ProductState(inputs, [Box2State(inputs), NeurifyState(inputs)])
         elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3:
             state = ProductState(inputs, [DeepPolyState(inputs), Symbolic3State(inputs)])
-        elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
-            state = ProductState(inputs, [NeurifyState(inputs), Symbolic3State(inputs)])
         elif self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY:
             state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs)])
+        elif self.domain == AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3:
+            state = ProductState(inputs, [NeurifyState(inputs), Symbolic3State(inputs)])
+        elif self.domain == AbstractDomain.PRODUCT_BOXES2_DEEPPOLY_NEURIFY:
+            state = ProductState(inputs, [Box2State(inputs), DeepPolyState(inputs), NeurifyState(inputs)])
         else:
             assert self.domain == AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3
             state = ProductState(inputs, [DeepPolyState(inputs), NeurifyState(inputs), Symbolic3State(inputs)])

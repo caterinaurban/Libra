@@ -10,7 +10,7 @@ from libra.engine.bias_analysis import BiasAnalysis, AbstractDomain
 
 spec = 'tests/example.txt'
 nn = 'tests/example.py'
-domain = AbstractDomain.BOXES
+domain = AbstractDomain.BOXES1
 lower = 0.015625
 upper = 4
 BiasAnalysis(spec, domain=domain, difference=lower, widening=upper).main(nn)

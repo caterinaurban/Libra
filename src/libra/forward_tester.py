@@ -6,26 +6,32 @@ import sys
 from libra.engine.forward_runner import ForwardAnalysis
 from libra.engine.bias_analysis import AbstractDomain
 
-spec = 'tests/deeppoly_custom.txt'
-nn = 'tests/deeppoly_custom.py'
+spec = 'tests/census/census.txt'
+nn = 'tests/census/12.py'
 if len(sys.argv) > 1:
-    if sys.argv[1] == "neurify":
+    if sys.argv[1] == "boxes":
+        domain = AbstractDomain.BOXES2
+    elif sys.argv[1] == "neurify":
         domain = AbstractDomain.NEURIFY
     elif sys.argv[1] == "deeppoly":
         domain = AbstractDomain.DEEPPOLY
     elif sys.argv[1] == "symbolic":
         domain = AbstractDomain.SYMBOLIC3
+    elif sys.argv[1] == "product_boxes_deeppoly":
+        domain = AbstractDomain.PRODUCT_BOXES2_DEEPPOLY
     elif sys.argv[1] == "product_deeppoly_neurify":
         domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY
     elif sys.argv[1] == "product_deeppoly_symbolic":
         domain = AbstractDomain.PRODUCT_DEEPPOLY_SYMBOLIC3
     elif sys.argv[1] == "product_neurify_symbolic":
         domain = AbstractDomain.PRODUCT_NEURIFY_SYMBOLIC3
+    elif sys.argv[1] == "product_boxes_deeppoly_neurify":
+        domain = AbstractDomain.PRODUCT_BOXES2_DEEPPOLY_NEURIFY
     else:
         assert sys.argv[1] == "product_deeppoly_neurify_symbolic"
         domain = AbstractDomain.PRODUCT_DEEPPOLY_NEURIFY_SYMBOLIC3
 else:
-    domain = AbstractDomain.NEURIFY
+    domain = AbstractDomain.NEURIFY # default
 print(f"> Domain chosen: '{domain}'")
 b = ForwardAnalysis(spec, domain=domain, log=True)
 try:
