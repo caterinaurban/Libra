@@ -58,10 +58,11 @@ class AbstractDomain(Enum):
 
 class BiasAnalysis(Runner):
 
-    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC3, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, analysis=True):
+    def __init__(self, spec, domain=AbstractDomain.SYMBOLIC3, steps=None, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, analysis=True):
         super().__init__()
         self.spec = spec
         self.domain = domain
+        self.steps = (0, 0) if steps is None else steps
         self.minL = startL if minL is None else minL
         self.startL = startL
         self.startU = startU
@@ -86,6 +87,7 @@ class BiasAnalysis(Runner):
     def interpreter(self):
         precursory = ForwardInterpreter(self.cfg, self.man1, ActivationPatternForwardSemantics())
         return BackwardInterpreter(self.cfg, self.man2, self.domain, BiasBackwardSemantics(), self.spec,
+                                   steps=self.steps,
                                    minL=self.minL, startL=self.startL, startU=self.startU, maxU=self.maxU,
                                    cpu=self.cpu, precursory=precursory)
 

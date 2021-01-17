@@ -85,7 +85,7 @@ def one_hots(variables: List[VariableIdentifier]) -> Set[OneHot1]:
 class BackwardInterpreter(Interpreter):
     """Backward control flow graph interpreter."""
 
-    def __init__(self, cfg, manager, domain, semantics, specification, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, precursory=None):
+    def __init__(self, cfg, manager, domain, semantics, specification, steps=None, minL=None, startL=0.25, startU=2, maxU=None, cpu=None, precursory=None):
         super().__init__(cfg, semantics, precursory=precursory)
         self.manager: PyManager = manager                               # manager to be used for the analysis
         from libra.engine.bias_analysis import AbstractDomain
@@ -110,10 +110,14 @@ class BackwardInterpreter(Interpreter):
         self.discarded = Value('i', 0)
         self.partitions = Value('i', 0)
 
+        self.autotuning = steps is not None
+        self.steps = (0, 0) if steps is None else steps                 # autotuning heuristic
         self.minL = startL if minL is None else minL                    # minimum lower bound (default: starting lower bound)
         self.startL = startL                                            # starting lower bound (default: 0.25)
         self.startU = startU                                            # starting upper bound (default: 2)
         self.maxU = startU if maxU is None else maxU                    # maximum upper bound (default: maximum upper bound)
+        self.lower = Value('d', 1)
+        self.upper = Value('i', 0)
 
         self.fair = Value('d', 0.0)                                     # percentage that is proven fair by the pre-analysis
         self.biased = Value('d', 0.0)                                   # percentage that is biased
@@ -246,9 +250,9 @@ class BackwardInterpreter(Interpreter):
         :param manager: manager to be used for the (forward) analysis
         """
         while True:
-            assumptions, size, disjuncts, pivot1, unpacked, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
+            assumptions, steps, size, disjuncts, pivot1, unpacked, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
             if assumptions is None:     # no more chunks
-                queue1.put((None, None, None, None, None, None, None, None, None, None))
+                queue1.put((None, None, None, None, None, None, None, None, None, None, None))
                 break
             r_assumptions = '1-Hot: {}'.format(
                 ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
@@ -287,7 +291,7 @@ class BackwardInterpreter(Interpreter):
                 with self.explored.get_lock():
                     self.explored.value += percent
                     if self.explored.value >= 100:
-                        queue1.put((None, None, None, None, None, None, None, None, None, None))
+                        queue1.put((None, None, None, None, None, None, None, None, None, None, None))
                 patterns: List[Tuple[OneHot1, Set[Node], Set[Node]]] = feasibility[1]
                 if patterns:
                     key = list()
@@ -335,7 +339,7 @@ class BackwardInterpreter(Interpreter):
                         _unpacked = frozenset(frozenset(item) for item in pack)
                         _pivot1 = len(self.uncontroversial1)
                         _percent = percent * len(pack) / self.count
-                        queue1.put((_assumptions, size, disjuncts, _pivot1, _unpacked, ranges, pivot2, splittable, _percent, key))
+                        queue1.put((_assumptions, steps, size, disjuncts, _pivot1, _unpacked, ranges, pivot2, splittable, _percent, key))
                 else:  # we can split the rest
                     if size == 0 and len(unpacked) > 1:  # unpack one-hots first if difference = 0
                         _percent = percent / len(unpacked)
@@ -346,7 +350,7 @@ class BackwardInterpreter(Interpreter):
                                 _assumptions.append((frozenset({var}), case, _case))
                             _unpacked = frozenset({item})
                             _assumptions = frozenset(_assumptions)
-                            queue1.put((_assumptions, size, disjuncts, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
+                            queue1.put((_assumptions, steps, size, disjuncts, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
                     elif self.uncontroversial2 and splittable:
                         rangesdict = dict(ranges)
                         (lower, upper) = rangesdict[self.uncontroversial2[pivot2]]
@@ -356,7 +360,7 @@ class BackwardInterpreter(Interpreter):
                             _splittable.remove(self.uncontroversial2[pivot2])
                             _pivot2 = (pivot2 + 1) % len(self.uncontroversial2)
                             _splittable = list(_splittable)
-                            queue1.put((assumptions, size, disjuncts, pivot1, unpacked, ranges, _pivot2, _splittable, percent, None))
+                            queue1.put((assumptions, steps, size, disjuncts, pivot1, unpacked, ranges, _pivot2, _splittable, percent, None))
                         else:
                             middle = lower + (upper - lower) / 2
                             print('Range split for {} at: {}'.format(self.uncontroversial2[pivot2], middle))
@@ -367,8 +371,8 @@ class BackwardInterpreter(Interpreter):
                             _pivot2 = (pivot2 + 1) % len(self.uncontroversial2)
                             _percent = percent / 2
                             _left, _right = list(left.items()), list(right.items())
-                            queue1.put((assumptions, size, disjuncts, pivot1, unpacked, _left, _pivot2, splittable, _percent, None))
-                            queue1.put((assumptions, size, disjuncts, pivot1, unpacked, _right, _pivot2, splittable, _percent, None))
+                            queue1.put((assumptions, steps, size, disjuncts, pivot1, unpacked, _left, _pivot2, splittable, _percent, None))
+                            queue1.put((assumptions, steps, size, disjuncts, pivot1, unpacked, _right, _pivot2, splittable, _percent, None))
                     elif len(unpacked) > 1:     # last resort: unpack the one-hot combinations
                         _percent = percent / len(unpacked)
                         print("Unpacking {}".format(r_assumptions))
@@ -378,26 +382,56 @@ class BackwardInterpreter(Interpreter):
                                 _assumptions.append((frozenset({var}), case, _case))
                             _unpacked = frozenset({item})
                             _assumptions = frozenset(_assumptions)
-                            queue1.put((_assumptions, size, disjuncts, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
-                    elif 2 * self.minL <= size or disjuncts < self.maxU:
-                        if 2 * self.minL <= size:
-                            _size = size / 2
-                            _pivot2 = 0
-                            _splittable = list(self.uncontroversial2)
-                            print(Fore.BLUE + "Lower bound decrease from: {} to: {}".format(size, _size), Style.RESET_ALL)
-                        else:
+                            queue1.put((_assumptions, steps, size, disjuncts, pivot1, _unpacked, ranges, pivot2, splittable, _percent, None))
+                    elif 2 * self.minL <= size or disjuncts < self.maxU:        # autotuning is possible
+                        (stepsL, stepsU) = steps
+                        if stepsU < self.steps[1] and disjuncts < self.maxU:
+                            _stepsL, _stepsU = 0 if stepsU + 1 <= self.steps[1] else stepsL, stepsU + 1
                             _size, _pivot2, _splittable = size, pivot2, splittable
-                        if disjuncts < self.maxU:
                             _disjuncts = disjuncts + 1
                             print(Fore.BLUE + "Upper bound increase from: {} to: {}".format(disjuncts, _disjuncts), Style.RESET_ALL)
-                        else:
+                        elif stepsU < self.steps[1] and 2 * self.minL <= size:
+                            _stepsL, _stepsU = stepsL, stepsU
+                            _size, _pivot2, _splittable = size / 2, 0, list(self.uncontroversial2)
                             _disjuncts = disjuncts
-                        queue1.put((assumptions, _size, _disjuncts, pivot1, unpacked, ranges, _pivot2, _splittable, percent, key))
+                            print(Fore.BLUE + "Lower bound decrease from: {} to: {}".format(size, _size), Style.RESET_ALL)
+                        elif stepsL < self.steps[0] and 2 * self.minL <= size:
+                            _stepsL, _stepsU = stepsL + 1, 0 if stepsL + 1 <= self.steps[0] else stepsU
+                            _size, _pivot2, _splittable = size / 2, 0, list(self.uncontroversial2)
+                            _disjuncts = disjuncts
+                            print(Fore.BLUE + "Lower bound decrease from: {} to: {}".format(size, _size), Style.RESET_ALL)
+                        elif stepsL < self.steps[0] and disjuncts < self.maxU:
+                            _stepsL, _stepsU = stepsL, stepsU
+                            _size, _pivot2, _splittable = size, pivot2, splittable
+                            _disjuncts = disjuncts + 1
+                            print(Fore.BLUE + "Upper bound increase from: {} to: {}".format(disjuncts, _disjuncts), Style.RESET_ALL)
+                        elif stepsL == self.steps[0] and stepsU == self.steps[1]:
+                            _stepsL, _stepsU = stepsL, stepsU
+                            if 2 * self.minL <= size:
+                                _size, _pivot2, _splittable = size / 2, 0, list(self.uncontroversial2)
+                                print(Fore.BLUE + "Lower bound decrease from: {} to: {}".format(size, _size), Style.RESET_ALL)
+                            else:
+                                _size, _pivot2, _splittable = size, pivot2, splittable
+                            if disjuncts < self.maxU:
+                                _disjuncts = disjuncts + 1
+                                print(Fore.BLUE + "Upper bound increase from: {} to: {}".format(disjuncts, _disjuncts), Style.RESET_ALL)
+                            else:
+                                _disjuncts = disjuncts
+                        else:
+                            _stepsL, _stepsU = stepsL, stepsU
+                            _size, _pivot2, _splittable = size, pivot2, splittable
+                            _disjuncts = disjuncts
+                        with self.lower.get_lock():
+                            self.lower.value = min(self.lower.value, _size)
+                        with self.upper.get_lock():
+                            self.upper.value = max(self.upper.value, _disjuncts)
+                        print(Fore.BLUE + "Autotuned to: L = {}, U = {}".format(_size, _disjuncts), Style.RESET_ALL)
+                        queue1.put((assumptions, (_stepsL, _stepsU), _size, _disjuncts, pivot1, unpacked, ranges, _pivot2, _splittable, percent, key))
                     else:
                         with self.explored.get_lock():
                             self.explored.value += percent
                             if self.explored.value >= 100:
-                                queue1.put((None, None, None, None, None, None, None, None, None, None))
+                                queue1.put((None, None, None, None, None, None, None, None, None, None, None))
                         found = '‼ Unchecked Bias in {}'.format(r_partition)
                         print(Fore.RED + found, Style.RESET_ALL)
                         progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
@@ -725,7 +759,7 @@ class BackwardInterpreter(Interpreter):
         print('||==============||\n', Style.RESET_ALL)
         # prepare the queue
         queue1 = Manager().Queue()
-        queue1.put((list(), self.startL, self.startU, 0, list(), list(ranges.items()), 0, list(self.uncontroversial2), 100, None))
+        queue1.put((list(), (0, 0), self.startL, self.startU, 0, list(), list(ranges.items()), 0, list(self.uncontroversial2), 100, None))
         # run the pre-analysis
         start1 = time.time()
         processes = list()
@@ -737,6 +771,8 @@ class BackwardInterpreter(Interpreter):
         for process in processes:
             process.join()
         end1 = time.time()
+        if self.autotuning:
+            print(Fore.BLUE + "\nAutotuned to: L = {}, U = {}".format(self.lower.value, self.upper.value), Style.RESET_ALL)
         #
         patterns = len(self.patterns)
         discarded = self.discarded.value
