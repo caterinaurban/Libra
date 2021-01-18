@@ -5,6 +5,7 @@ Bias Abstract Domain: Product between DeepPoly and Neurify
 Disjunctive relation abstract domain to be used for **algorithmic bias analysis**.
 
 """
+from copy import deepcopy
 from typing import Set, List, Dict
 
 from apronpy.texpr1 import PyTexpr1
@@ -97,7 +98,9 @@ class ProductState(State):
 
     def assume(self, condition, manager: PyManager = None, bwd: bool = False) -> 'ProductState':
         for domain in self._domains:
-            domain.assume(condition, manager, bwd)
+            domain.assume(deepcopy(condition), manager, bwd)
+        for input in self.inputs:
+            self._share_bounds(str(input))
         return self
 
     @copy_docstring(State._substitute)
