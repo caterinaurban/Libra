@@ -117,6 +117,11 @@ class ProductState(State):
             max([domain.get_bounds(var_name).lower for domain in self._domains]),
             min([domain.get_bounds(var_name).upper for domain in self._domains])
         )
+        if self.bounds[var_name].is_bottom():
+            self.bounds[var_name] = IntervalLattice(
+                min([domain.get_bounds(var_name).lower for domain in self._domains]),
+                max([domain.get_bounds(var_name).upper for domain in self._domains])
+            )
         for domain in self._domains:
             domain.resize_bounds(var_name, self.bounds[var_name])
 
