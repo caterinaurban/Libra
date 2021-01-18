@@ -111,7 +111,7 @@ class BackwardInterpreter(Interpreter):
         self.partitions = Value('i', 0)
 
         self.autotuning = steps is not None
-        self.steps = (0, 0) if steps is None else steps                 # autotuning heuristic
+        self.steps = (1, 1) if steps is None else steps                 # autotuning heuristic
         self.minL = startL if minL is None else minL                    # minimum lower bound (default: starting lower bound)
         self.startL = startL                                            # starting lower bound (default: 0.25)
         self.startU = startU                                            # starting upper bound (default: 2)

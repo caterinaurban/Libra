@@ -62,7 +62,7 @@ class BiasAnalysis(Runner):
         super().__init__()
         self.spec = spec
         self.domain = domain
-        self.steps = (0, 0) if steps is None else steps
+        self.steps = (1, 1) if steps is None else steps
         self.minL = startL if minL is None else minL
         self.startL = startL
         self.startU = startU
