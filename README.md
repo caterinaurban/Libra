@@ -259,6 +259,11 @@ with lower bound set to 0.5, upper bound set to 5,
 and all available choices of abstract domains for the forward pre-analysis.
 The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs2`.
 
+The script `autotuning.sh` within Libra's `src/libra/` folder allows running a similar experiment
+with lower and upper bound of the pre-analysis set by autotuning,
+and all available choices of abstract domains for the forward pre-analysis.
+The script will generate the corresponding log files in Libra's `src/libra/tests/census/logs4`.
+
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
 it might be preferable to comment out the most time consuming lines 
@@ -322,6 +327,12 @@ passing as input an additional argument indicating the number of CPUs to be used
     ./configurations1.sh <path to env>/bin/libra 4
 
 The same can be done for the script `configurations2.sh`.
+
+The script `cpus.sh` within Libra's `src/libra/` folder allows running a similar experiment 
+with lower and upper bound of the pre-analysis set by autotuning,
+all available choices of abstract domains for the forward pre-analysis, 
+and `4`, `8`, `16`, `32`, or `64` CPUs.
+The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs3`.
 
 ## Authors
 
