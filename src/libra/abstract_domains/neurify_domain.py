@@ -80,8 +80,13 @@ class NeurifyState(State, BoundsDomain):
     @copy_docstring(State._join)
     def _join(self, other: 'NeurifyState') -> 'NeurifyState':
         for var in self.bounds:
-            self.bounds[var][LOW].join(other.bounds[var][LOW])
-            self.bounds[var][UP].join(other.bounds[var][UP])
+            other_bound = IntervalLattice(other.bounds[var][LOW].lower, other.bounds[var][UP].upper)
+            self_bound = IntervalLattice(self.bounds[var][LOW].lower, self.bounds[var][UP].upper)
+            self_bound.join(other_bound)
+            self.bounds[var] = (
+                IntervalLattice(self_bound.lower, self_bound.lower),
+                IntervalLattice(self_bound.upper, self_bound.upper))
+
             self.poly[var] = (
                 {'_': self.bounds[var][LOW].lower},
                 {'_': self.bounds[var][UP].upper})
@@ -90,8 +95,13 @@ class NeurifyState(State, BoundsDomain):
     @copy_docstring(State._meet)
     def _meet(self, other: 'NeurifyState') -> 'NeurifyState':
         for var in self.bounds:
-            self.bounds[var][LOW].meet(other.bounds[var][LOW])
-            self.bounds[var][UP].meet(other.bounds[var][UP])
+            other_bound = IntervalLattice(other.bounds[var][LOW].lower, other.bounds[var][UP].upper)
+            self_bound = IntervalLattice(self.bounds[var][LOW].lower, self.bounds[var][UP].upper)
+            self_bound.meet(other_bound)
+            self.bounds[var] = (
+                IntervalLattice(self_bound.lower, self_bound.lower),
+                IntervalLattice(self_bound.upper, self_bound.upper))
+
             self.poly[var] = (
                 {'_': self.bounds[var][LOW].lower},
                 {'_': self.bounds[var][UP].upper})
