@@ -125,7 +125,8 @@ class ForwardAnalysis(Runner):
             for node in self.cfg.successors(current):
                 worklist.put(node)
 
-    def main(self, path):
+
+    def main(self, path, forced_active=None, forced_inactive=None):
         self.path = path
         with open(self.path, 'r') as source:
             self.source = source.read()
@@ -138,7 +139,7 @@ class ForwardAnalysis(Runner):
                 r_vars.append(PyVar(variable.name))
             environment = PyEnvironment([], r_vars)
             self.lyra2apron(environment)
-        self.run()
+        self.run(forced_active=forced_active, forced_inactive=forced_inactive)
 
-    def run(self):
-        self.interpreter().analyze(self.state(), outputs=self.outputs)
+    def run(self, forced_active=None, forced_inactive=None):
+        self.interpreter().analyze(self.state(), outputs=self.outputs, forced_active=forced_active, forced_inactive=forced_inactive)
