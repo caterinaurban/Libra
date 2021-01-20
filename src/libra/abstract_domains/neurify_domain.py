@@ -269,7 +269,6 @@ class NeurifyState(State, BoundsDomain):
         elif 0 <= up_lower or active:
             if active and up_lower < 0:
                 self.bounds[name] = (self.bounds[name][LOW], IntervalLattice(0, up_upper))
-                self.poly[name] = (self.poly[name][LOW], {'_': 0.0})
         else:
             m = up_upper / (up_upper - up_lower)
             q = up_upper * (-up_lower) / (up_upper - up_lower)
