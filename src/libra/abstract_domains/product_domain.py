@@ -118,19 +118,6 @@ class ProductState(State):
             upper, lower = lower, upper
         self.bounds[var_name] = IntervalLattice(lower, upper)
 
-        if self.bounds[var_name].is_bottom():
-            self.bounds[var_name] = IntervalLattice(
-                min([domain.get_bounds(var_name).lower for domain in self._domains]),
-                max([domain.get_bounds(var_name).upper for domain in self._domains])
-            )
-            # print(f"> Exception status fo var {var_name}:")
-            # for domain in self._domains:
-            #     print(f"> [{var_name}] Domain {type(domain)}: ({domain.get_bounds(var_name)})")
-            # print(f"> Input partition: ")
-            # for input in self.inputs:
-            #     b = self._domains[0].get_bounds(str(input))
-            #     print(f"> assume({b.lower} <= {input} <= {b.upper})")
-            # raise Exception(f"self.bounds[{var_name}] = {self.bounds[var_name]} (lower={max([domain.get_bounds(var_name).lower for domain in self._domains])}, upper={min([domain.get_bounds(var_name).upper for domain in self._domains])})")
         for domain in self._domains:
             domain.resize_bounds(var_name, self.bounds[var_name])
 
