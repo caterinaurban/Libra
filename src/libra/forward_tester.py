@@ -3,22 +3,35 @@ forward runner to toy example
 """
 import sys
 
+from apronpy.var import PyVar
+from libra.core.cfg import Activation
+
 from libra.engine.forward_runner import ForwardAnalysis
 from libra.engine.bias_analysis import AbstractDomain
 from libra.main import checker
 
 spec = 'tests/census/census.txt'
-nn = 'tests/census/12.py'
+nn = 'tests/census/20.py'
 if len(sys.argv) > 1:
     domain = checker(sys.argv[1])
 else:
-    domain = AbstractDomain.NEURIFY # default
+    domain = AbstractDomain.NEURIFY_SYMBOLIC3 # default
 print(f"> Domain chosen: '{domain}'")
 b = ForwardAnalysis(spec, domain=domain, log=True)
-try:
-    b.main(nn)
-except NotImplementedError as e:
-    print(f"> NotImplementedError: '{e}'")
+# forced_active = {
+#     Activation(23+3, PyVar("x10")), 
+#     Activation(23+5, PyVar("x12")), 
+#     Activation(23+6, PyVar("x13")), 
+#     Activation(23+9, PyVar("x20")), 
+#     Activation(23+12, PyVar("x23"))
+# }
+# forced_inactive = {
+#     Activation(23+17, PyVar("x32")), 
+#     Activation(23+15, PyVar("x30")), 
+#     Activation(23+13, PyVar("x24")), 
+#     Activation(23+7, PyVar("x14"))
+# }
+b.main(nn) # , forced_active_names=forced_active, forced_inactive_names=forced_inactive)
 
 """
 By-hand analysis (exact, using rational numbers) using Neurify in the 'tests/oy.py' neural network:

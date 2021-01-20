@@ -5,7 +5,9 @@ Bias Abstract Domain: Product between DeepPoly and Neurify
 Disjunctive relation abstract domain to be used for **algorithmic bias analysis**.
 
 """
+from copy import deepcopy
 from typing import Set, List, Dict
+from math import isclose
 
 from apronpy.texpr1 import PyTexpr1
 from apronpy.var import PyVar
@@ -97,7 +99,9 @@ class ProductState(State):
 
     def assume(self, condition, manager: PyManager = None, bwd: bool = False) -> 'ProductState':
         for domain in self._domains:
-            domain.assume(condition, manager, bwd)
+            domain.assume(deepcopy(condition), manager, bwd)
+        for input in self.inputs:
+            self._share_bounds(str(input))
         return self
 
     @copy_docstring(State._substitute)
@@ -108,12 +112,12 @@ class ProductState(State):
         raise NotImplementedError(f"Call to _forget is unexpected!")
 
     def _share_bounds(self, var_name):
-        max([domain.get_bounds(var_name).lower for domain in self._domains])
-        min([domain.get_bounds(var_name).upper for domain in self._domains])
-        self.bounds[var_name] = IntervalLattice(
-            max([domain.get_bounds(var_name).lower for domain in self._domains]),
-            min([domain.get_bounds(var_name).upper for domain in self._domains])
-        )
+        lower = max([domain.get_bounds(var_name).lower for domain in self._domains])
+        upper = min([domain.get_bounds(var_name).upper for domain in self._domains])
+        if upper < lower and isclose(lower, upper):
+            upper, lower = lower, upper
+        self.bounds[var_name] = IntervalLattice(lower, upper)
+
         for domain in self._domains:
             domain.resize_bounds(var_name, self.bounds[var_name])
 

@@ -281,6 +281,7 @@ class Symbolic3State(State, BoundsDomain):
             if active and lower < 0:
                 bounds = self.bounds[name]
                 self.bounds[name] = bounds.meet(IntervalLattice(0, upper))
+                del self.symbols[name]
             self.flag = 1
         else:
             _active, _inactive = deepcopy(self.bounds), deepcopy(self.bounds)
