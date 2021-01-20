@@ -178,7 +178,6 @@ class Box2State(State, BoundsDomain):
         elif 0 <= lower or active:
             if active and lower < 0:
                 self.bounds[name] = IntervalLattice(0, upper)
-                del self.symbols[name]
             self.flag = 1
         else:   # case (c) in Fig. 4, equation (4)
             _active, _inactive = deepcopy(self.bounds), deepcopy(self.bounds)
