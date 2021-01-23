@@ -2,23 +2,23 @@ import os
 
 def order(logfile):
     D = dict()
-    D['boxes'] = 00
-    D['symbolic'] = 100
-    D['deeppoly'] = 200
-    D['neurify'] = 300
-    D['boxes_deeppoly'] = 400
-    D['boxes_neurify'] = 500
-    D['deeppoly_symbolic'] = 600
-    D['neurify_symbolic'] = 700
-    D['deeppoly_neurify'] = 800
-    D['boxes_deeppoly_neurify'] = 900
-    D['deeppoly_neurify_symbolic'] = 1000
+    D['boxes'] = 0
+    D['symbolic'] = 10
+    D['deeppoly'] = 20
+    D['neurify'] = 30
+    D['boxes_deeppoly'] = 40
+    D['boxes_neurify'] = 50
+    D['deeppoly_symbolic'] = 60
+    D['neurify_symbolic'] = 70
+    D['deeppoly_neurify'] = 80
+    D['boxes_deeppoly_neurify'] = 90
+    D['deeppoly_neurify_symbolic'] = 100
     C = dict()
     C['4'] = 0
-    C['8'] = 10
-    C['16'] = 20
-    C['32'] = 30
-    C['64'] = 40
+    C['8'] = 200
+    C['16'] = 400
+    C['32'] = 600
+    C['64'] = 800
     name = logfile.split('-')       # ['japanese', '20', 'boxes', '4cpu.log']
     return D[name[2]] + C[name[3].replace('cpu.log', '')]
 
@@ -66,11 +66,12 @@ for logfile in sorted(logs, key=order):
         _space = float(pre[4].strip('()').strip('%'))
         space = '{0:.2f}%'.format(_space)
 
-        seconds = float(total[-2].strip('s')) if total != None else -1.0
-        hours = seconds // 3600
-        minutes = (seconds % 3600) // 60
-        seconds = seconds % 60
-        time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
+        seconds = float(total[-2].strip('s'))
+        # hours = seconds // 3600
+        # minutes = (seconds % 3600) // 60
+        # seconds = seconds % 60
+        # time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
+        time = str(seconds//60)
 
         if compressed:
             fetched = [logfile, lower, upper, space, completed, zipped, feasible, time]
