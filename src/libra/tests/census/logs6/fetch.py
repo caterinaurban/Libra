@@ -66,12 +66,16 @@ for logfile in sorted(logs, key=order):
         _space = float(pre[4].strip('()').strip('%'))
         space = '{0:.2f}%'.format(_space)
 
-        seconds = float(total[-2].strip('s'))
-        # hours = seconds // 3600
-        # minutes = (seconds % 3600) // 60
-        # seconds = seconds % 60
-        # time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
-        time = str(seconds//60)
+        if total != None:
+            seconds = float(total[-2].strip('s'))
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            total_minutes = str(seconds // 60).split(".")[0]
+            seconds = seconds % 60
+            time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
+        else:
+            total_minutes = "NN"
+            time = "still running"
 
         if compressed:
             fetched = [logfile, lower, upper, space, completed, zipped, feasible, time]

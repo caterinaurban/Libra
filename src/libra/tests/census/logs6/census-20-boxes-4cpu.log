@@ -1,0 +1,15 @@
+[34m
+||==================================||
+|| domain: AbstractDomain.BOXES1
+|| min_difference: 0.0
+|| start_difference: 1.0
+|| start_widening: 0
+|| max_widening: 20
+||==================================|| [0m
+
+Available CPUs: 4
+Autotuned to: L = 0.5, U = 1
+Found: 0 patterns for 0[0] partitions
+Compressed to: 0 patterns
+Pre-Analysis Result: 0.0% fair (0.0% feasible)
+Pre-Analysis Time: 0.0
