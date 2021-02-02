@@ -12,9 +12,9 @@ from libra.engine.bias_analysis import BiasAnalysis, AbstractDomain
 
 def checker(domain):
     if domain == 'boxes':
-        return AbstractDomain.BOXES1
+        return AbstractDomain.BOXES2
     elif domain == 'symbolic':
-        return AbstractDomain.SYMBOLIC2
+        return AbstractDomain.SYMBOLIC3
     elif domain == 'deeppoly':
         return AbstractDomain.DEEPPOLY
     elif domain == 'neurify':
