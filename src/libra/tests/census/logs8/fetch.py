@@ -69,6 +69,7 @@ for logfile in sorted(logs, key=order):
         if total != None:
             seconds = float(total[-2].strip('s'))
             hours = seconds // 3600
+            hours_str = str(hours)
             minutes = (seconds % 3600) // 60
             total_minutes = str(seconds // 60).split(".")[0]
             seconds = seconds % 60
@@ -78,7 +79,7 @@ for logfile in sorted(logs, key=order):
             time = "still running"
 
         if compressed:
-            fetched = [logfile, lower, upper, space, completed, zipped, feasible, time]
+            fetched = [logfile, lower, upper, space, completed, zipped, feasible, hours_str, time]
         else:
-            fetched = [logfile, lower, upper, space, completed, patterns, feasible, time]
+            fetched = [logfile, lower, upper, space, completed, patterns, feasible, hours_str, time]
         print('\t '.join(fetched))
