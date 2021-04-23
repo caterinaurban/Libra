@@ -37,6 +37,7 @@ from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.symbolic3_domain import Symbolic3State
 from libra.abstract_domains.product_domain import ProductState
 
+from libra.core.utils import Ticker
 
 rtype = TexprRtype.AP_RTYPE_REAL
 rdir = TexprRdir.AP_RDIR_RND
@@ -611,6 +612,8 @@ class BackwardInterpreter(Interpreter):
                             state = state.assume({value}, manager=manager)
                             check[(chosen, case)].add(state)
             # check for bias
+            ticker = Ticker()
+            ticker.tick()
             for assumptions, unpacked, ranges, percent in pack:
                 r_assumptions = '1-Hot: {}'.format(
                     ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
@@ -639,6 +642,8 @@ class BackwardInterpreter(Interpreter):
                     self.bias_check(r_partition, partition, ranges, percent)
             with self.analyzed.get_lock():
                 self.analyzed.value += len(pack)
+            ticker.tick()
+            (t_start, t_end) = ticker.get()
             analyzed = self.analyzed.value
             discarded = self.discarded.value
             partitions = self.partitions.value
@@ -646,6 +651,7 @@ class BackwardInterpreter(Interpreter):
             biased = self.biased.value
             progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, considered, biased)
             print(Fore.YELLOW + progress, Style.RESET_ALL)
+            print(f'Timing for #{id}, start: {t_start}, end: {t_end}')
 
     def analyze(self, initial, inputs=None, outputs=None, activations=None, analysis=True):
         """Backward analysis checking for algorithmic bias
