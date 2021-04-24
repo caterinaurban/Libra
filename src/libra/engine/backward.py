@@ -671,6 +671,7 @@ class BackwardInterpreter(Interpreter):
             progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, considered, biased)
             timing_output += f'\n[Timing] Total Bias check for {len(pack)} partitions: (start: {bias_check_time[0]}, end: {bias_check_time[1]})'
             print(timing_output)
+            timing_output = ''
             print(Fore.YELLOW + progress, Style.RESET_ALL)
 
     def analyze(self, initial, inputs=None, outputs=None, activations=None, analysis=True):
