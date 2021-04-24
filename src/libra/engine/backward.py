@@ -37,7 +37,7 @@ from libra.abstract_domains.neurify_domain import NeurifyState
 from libra.abstract_domains.symbolic3_domain import Symbolic3State
 from libra.abstract_domains.product_domain import ProductState
 
-from libra.core.utils import Ticker
+from libra.core.utils import Ticker, function_timing
 
 rtype = TexprRtype.AP_RTYPE_REAL
 rdir = TexprRdir.AP_RDIR_RND
@@ -250,7 +250,9 @@ class BackwardInterpreter(Interpreter):
         :param queue1: queue from which to get the current chunk
         :param manager: manager to be used for the (forward) analysis
         """
+        ticker = Ticker()
         while True:
+            ticker.tick()
             assumptions, steps, size, disjuncts, pivot1, unpacked, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
             if assumptions is None:     # no more chunks
                 queue1.put((None, None, None, None, None, None, None, None, None, None, None))
@@ -437,6 +439,10 @@ class BackwardInterpreter(Interpreter):
                         print(Fore.RED + found, Style.RESET_ALL)
                         progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
                         print(Fore.YELLOW + progress, Style.RESET_ALL)
+            ticker.tick()
+            forward_time = ticker.get()
+            ticker.reset()
+            print(f'[ForwardTiming] forward task for {id}: (start: {forward_time[0]}, end: {forward_time[1]})')
 
     def bias_check(self, chunk, result, ranges, percent):
         """Check for algorithmic bias
@@ -589,8 +595,15 @@ class BackwardInterpreter(Interpreter):
         :param manager: manager to be used for the (backward) analysis
         :param total: total number of abstract activation patterns
         """
+        timing_output = f'[Timing] Progress for {id}' # score indication will follow
+        outer_ticker = Ticker()
         while True:
+            outer_ticker.tick()
             idx, (key, pack) = queue2.get(block=True)
+            if key:
+                timing_output += f'(rated {sum(len(s[0]) + len(s[1]) for s in key) + len(pack)})'
+            else:
+                timing_output += '(unrated)'
             if idx is None:     # no more abstract activation patterns
                 queue2.put((None, (None, None)))
                 break
@@ -603,7 +616,6 @@ class BackwardInterpreter(Interpreter):
                     discarded = remaining.pop()
                     outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
                     for discarded in remaining:
-                        cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
                         outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
                     result = self.initial.assume({outcome}, manager=manager, bwd=True)
                     check[(chosen, case)] = set()
@@ -611,9 +623,12 @@ class BackwardInterpreter(Interpreter):
                         if state:
                             state = state.assume({value}, manager=manager)
                             check[(chosen, case)].add(state)
+            outer_ticker.tick()
+            check_prep_time = outer_ticker.get()
+            outer_ticker.reset()
+            timing_output += f'\n[Timing] Preparation time: (start: {check_prep_time[0]}, end: {check_prep_time[1]})'
             # check for bias
-            ticker = Ticker()
-            ticker.tick()
+            outer_ticker.tick()
             for assumptions, unpacked, ranges, percent in pack:
                 r_assumptions = '1-Hot: {}'.format(
                     ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
@@ -632,26 +647,31 @@ class BackwardInterpreter(Interpreter):
                                     state.assume({assumption}, manager=manager)
                                 # forget the sensitive variables
                                 state.forget(self.sensitive)
-                        self.bias_check(r_partition, partition, ranges, _percent)
+                        (_, bias_timing) = function_timing(self.bias_check, r_partition, partition, ranges, _percent)
+                        timing_output += f'\n[Timing] Bias Check (unpacked): (start: {bias_timing[0]}, end: {bias_timing[1]})'
+                        
                 else:
                     partition = deepcopy(check)
                     for states in partition.values():
                         for state in states:
                             # forget the sensitive variables
                             state.forget(self.sensitive)
-                    self.bias_check(r_partition, partition, ranges, percent)
+                    (_, bias_timing) = function_timing(self.bias_check, r_partition, partition, ranges, percent)
+                    timing_output += f'\n[Timing] Bias Check: (start: {bias_timing[0]}, end: {bias_timing[1]})'
             with self.analyzed.get_lock():
                 self.analyzed.value += len(pack)
-            ticker.tick()
-            (t_start, t_end) = ticker.get()
+            outer_ticker.tick()
+            bias_check_time = outer_ticker.get()
+            outer_ticker.reset()
             analyzed = self.analyzed.value
             discarded = self.discarded.value
             partitions = self.partitions.value
             considered = partitions - discarded
             biased = self.biased.value
             progress = 'Progress for #{}: {} of {} partitions ({}% biased)'.format(id, analyzed, considered, biased)
+            timing_output += f'\n[Timing] Total Bias check for {len(pack)} partitions: (start: {bias_check_time[0]}, end: {bias_check_time[1]})'
+            print(timing_output)
             print(Fore.YELLOW + progress, Style.RESET_ALL)
-            print(f'Timing for #{id}, start: {t_start}, end: {t_end}')
 
     def analyze(self, initial, inputs=None, outputs=None, activations=None, analysis=True):
         """Backward analysis checking for algorithmic bias
