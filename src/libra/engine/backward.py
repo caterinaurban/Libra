@@ -595,10 +595,12 @@ class BackwardInterpreter(Interpreter):
         :param manager: manager to be used for the (backward) analysis
         :param total: total number of abstract activation patterns
         """
-        timing_output = f'[Timing] Progress for {id}' # score indication will follow
+        timing_output = ''
         outer_ticker = Ticker()
         while True:
             outer_ticker.tick()
+            timing_output = f'[Timing] Progress for {id}' # score indication will follow
+
             idx, (key, pack) = queue2.get(block=True)
             if key:
                 timing_output += f'(rated {sum(len(s[0]) + len(s[1]) for s in key) + len(pack)})'
