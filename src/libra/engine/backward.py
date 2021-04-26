@@ -618,6 +618,7 @@ class BackwardInterpreter(Interpreter):
                     discarded = remaining.pop()
                     outcome = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
                     for discarded in remaining:
+                        cond = BinaryComparisonOperation(discarded, BinaryComparisonOperation.Operator.Lt, chosen)
                         outcome = BinaryBooleanOperation(outcome, BinaryBooleanOperation.Operator.And, cond)
                     result = self.initial.assume({outcome}, manager=manager, bwd=True)
                     check[(chosen, case)] = set()
