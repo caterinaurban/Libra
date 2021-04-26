@@ -250,9 +250,7 @@ class BackwardInterpreter(Interpreter):
         :param queue1: queue from which to get the current chunk
         :param manager: manager to be used for the (forward) analysis
         """
-        ticker = Ticker()
         while True:
-            ticker.tick()
             assumptions, steps, size, disjuncts, pivot1, unpacked, ranges, pivot2, splittable, percent, key = queue1.get(block=True)
             if assumptions is None:     # no more chunks
                 queue1.put((None, None, None, None, None, None, None, None, None, None, None))
@@ -439,10 +437,6 @@ class BackwardInterpreter(Interpreter):
                         print(Fore.RED + found, Style.RESET_ALL)
                         progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
                         print(Fore.YELLOW + progress, Style.RESET_ALL)
-            ticker.tick()
-            forward_time = ticker.get()
-            ticker.reset()
-            print(f'[ForwardTiming] forward task for {id}: (start: {forward_time[0]}, end: {forward_time[1]})')
 
     def bias_check(self, chunk, result, ranges, percent):
         """Check for algorithmic bias
