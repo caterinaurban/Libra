@@ -4,7 +4,7 @@ Bias Abstract Domain
 
 Disjunctive relational abstract domain to be used for **algorithmic bias analysis**.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from copy import deepcopy
 from typing import Set, List

@@ -4,7 +4,7 @@ Statements
 
 Libra's internal representation of Python statements.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 
 from abc import ABCMeta, abstractmethod

@@ -4,7 +4,7 @@ Forward Semantics
 
 Libra's internal forward semantics of statements.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from libra.semantics.semantics import Semantics, DefaultSemantics
 

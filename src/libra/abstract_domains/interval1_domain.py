@@ -2,7 +2,7 @@
 Intervals
 =========
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from copy import deepcopy
 from typing import Set, List

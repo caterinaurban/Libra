@@ -6,7 +6,7 @@ Relational abstract domain to be used for **numerical analysis**.
 The set of possible numerical values of a program variable in a program state
 is represented by a conjunction of linear constraints.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from typing import Set
 

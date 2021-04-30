@@ -2,7 +2,7 @@
 Analysis Engine
 ===============
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 
 from abc import ABCMeta, abstractmethod

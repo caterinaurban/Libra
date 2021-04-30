@@ -4,7 +4,7 @@ Control Flow Graph
 
 Lyra's internal representation of a Python program.
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 
 from abc import ABCMeta, abstractmethod

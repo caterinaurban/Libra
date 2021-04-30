@@ -2,7 +2,7 @@
 Symbolic Constant Propagation
 =============================
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from abc import abstractmethod
 from typing import Set, List, Dict, Tuple

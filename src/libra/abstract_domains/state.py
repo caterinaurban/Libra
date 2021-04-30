@@ -5,7 +5,7 @@ Abstract Domain
 Interface of an abstract domain.
 Abstract domain elements support lattice operations and program statements.
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 
 

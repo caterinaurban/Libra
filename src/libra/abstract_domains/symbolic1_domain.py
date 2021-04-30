@@ -2,7 +2,7 @@
 Symbolic Constant Propagation (Variant 1)
 =========================================
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from copy import deepcopy
 from typing import List

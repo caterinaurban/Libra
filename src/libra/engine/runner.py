@@ -2,7 +2,7 @@
 Program Analysis
 ================
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 
 import ast

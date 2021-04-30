@@ -4,7 +4,7 @@ Expressions
 
 Libra's internal representation of Python expressions.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 
 from abc import ABCMeta, abstractmethod

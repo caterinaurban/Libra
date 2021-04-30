@@ -2,7 +2,7 @@
 Taylor1+ Abstract Domain
 ========================
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from typing import Set
 

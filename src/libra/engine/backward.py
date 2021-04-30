@@ -2,7 +2,7 @@
 Backward Analysis Engine
 ========================
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 
 import itertools

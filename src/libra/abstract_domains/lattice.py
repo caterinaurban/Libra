@@ -4,7 +4,7 @@ Lattice
 
 Interface of a lattice. Lattice elements support lattice operations.
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 
 from abc import ABCMeta, abstractmethod

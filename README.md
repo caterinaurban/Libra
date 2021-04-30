@@ -333,11 +333,3 @@ with lower and upper bound of the pre-analysis set by autotuning,
 all available choices of abstract domains for the forward pre-analysis, 
 and `4`, `8`, `16`, `32`, or `64` CPUs.
 The script will generate the corresponding log files in Libra's `src/libra/tests/japanese/logs3`.
-
-## Authors
-
-* **Caterina Urban**, Inria & École Normale Supérieure | Université PSL, Paris, France
-
-## Contributors
-
-* **Denis Mazzucato**, Inria & École Normale Supérieure | Université PSL, Paris, France

@@ -4,7 +4,7 @@ Semantics
 
 Libra's internal semantics of statements.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 
 

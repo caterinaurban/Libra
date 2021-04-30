@@ -2,7 +2,7 @@
 Forward Analysis Engine
 =======================
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 from copy import deepcopy
 from queue import Queue

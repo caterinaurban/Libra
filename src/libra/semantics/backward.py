@@ -4,7 +4,7 @@ Backward Semantics
 
 Libra's internal backward semantics of statements.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 from libra.semantics.semantics import Semantics, DefaultSemantics
 

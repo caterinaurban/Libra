@@ -6,7 +6,7 @@ Abstract domain based on APRON to be used for **numerical analysis**.
 The set of possible numerical values of a program variable in a program state
 is represented by a conjunction of (more of less complex) linear constraints.
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 import sys
 from abc import ABCMeta

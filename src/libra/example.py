@@ -2,7 +2,7 @@
 Small Example
 =============
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 import faulthandler
 faulthandler.enable()

@@ -2,7 +2,7 @@
 Libra Static Neural Network Analyzer
 ====================================
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 import argparse
 from multiprocessing import cpu_count

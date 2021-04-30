@@ -2,7 +2,7 @@
 Bias Analysis
 =============
 
-:Author: Caterina Urban
+:Author: Anonymous
 """
 import ast
 import ctypes

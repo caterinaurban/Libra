@@ -2,7 +2,7 @@
 Symbolic Constant Propagation (Variant 3)
 =========================================
 
-:Authors: Caterina Urban
+:Authors: Anonymous
 """
 import time
 from copy import deepcopy
