@@ -6,15 +6,15 @@ def order(logfile):
     D['symbolic'] = 10
     D['deeppoly'] = 20
     D['neurify'] = 30
-    D['boxes_deeppoly'] = 40
-    D['boxes_neurify'] = 50
-    D['deeppoly_symbolic'] = 60
-    D['neurify_symbolic'] = 70
-    D['deeppoly_neurify'] = 80
-    D['boxes_deeppoly_neurify'] = 90
     D['deeppoly_neurify_symbolic'] = 100
-    name = logfile.split('-')       # ['census', '10', 'boxes.log']
-    return D[name[2].replace('.log', '')]
+    C = dict()
+    C['4'] = 0
+    C['8'] = 200
+    C['16'] = 200
+    C['32'] = 200
+    C['64'] = 200
+    name = logfile.split('-')       # ['census', '20', 'boxes', '4cpu.log']
+    return D[name[2]] + C[name[3].replace('cpu.log', '')]
 
 # current directory
 directory = os.fsencode('.').decode('utf-8')
@@ -60,24 +60,14 @@ for logfile in sorted(logs, key=order):
         _space = float(pre[4].strip('()').strip('%'))
         space = '{0:.2f}%'.format(_space)
 
-        if result:
+        seconds = float(total[-2].strip('s'))
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
 
-            seconds = float(total[-2].strip('s'))
-            hours = seconds // 3600
-            minutes = (seconds % 3600) // 60
-            seconds = seconds % 60
-            time =  '|{}h |{}m |{}s'.format(int(hours), int(minutes), int(seconds)).replace('|0h ', '').replace('|0m ', '').replace('|', '')
-
-            if compressed:
-                fetched = [logfile, lower, upper, space, completed, zipped, feasible, time]
-            else:
-                fetched = [logfile, lower, upper, space, completed, patterns, feasible, time]
-            print('\t '.join(fetched))
-
+        if compressed:
+            fetched = [logfile, lower, upper, space, completed, zipped, feasible, time]
         else:
-
-            if compressed:
-                fetched = [logfile, lower, upper, space, completed, zipped, feasible, '>13h']
-            else:
-                fetched = [logfile, lower, upper, space, completed, patterns, feasible, '>13h']
-            print('\t '.join(fetched))
+            fetched = [logfile, lower, upper, space, completed, patterns, feasible, time]
+        print('\t '.join(fetched))
