@@ -10,7 +10,7 @@ config = {
     'package_dir': {'': 'src'},
     'entry_points': {
              'console_scripts': [
-                 'libra = libra.main:main',
+                 'tool = tool.main:main',
                  ]
              },
     'install_requires': [
