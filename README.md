@@ -39,37 +39,41 @@ Additionally, we already installed `nano` and `vim` inside the container to insp
 
 The container is organized as follow:
 ```
-/home                           # tool repository
+/home                               # tool repository
 ├── src                         
 │   └── tool
-│       ├── abstract_domains    # code
-│       ├── core                # code
-│       ├── engine              # code
-│       ├── frontend            # code
-│       ├── semantics           # code 
+│       ├── abstract_domains        # code
+│       ├── core                    # code
+│       ├── engine                  # code
+│       ├── frontend                # code
+│       ├── semantics               # code 
 │       ├── tests
 │       │   ├── census
-│       │   │   ├── logs1       # logs for experiment A
-│       │   │   ├── logs2       # logs for experiment B
-│       │   │   ├── logs3       # logs for experiment C
-│       │   │   ├── 10.py       # network with 10 ReLU
-│       │   │   ├── 12.py       # network with 12 ReLU
-│       │   │   ├── 20.py       # network with 20 ReLU
-│       │   │   ├── 40.py       # network with 40 ReLU
-│       │   │   ├── 45.py       # network with 45 ReLU
-│       │   │   ├── census.txt  # experiments specification file
+│       │   │   ├── logs1           # logs for experiment A
+│       │   │   │   └── fetch.py    # log fetch script
+│       │   │   ├── logs2           # logs for experiment B
+│       │   │   │   └── fetch.py    # log fetch script
+│       │   │   ├── logs3           # logs for experiment C
+│       │   │   │   └── fetch.py    # log fetch script
+│       │   │   ├── 10.py           # network with 10 ReLU
+│       │   │   ├── 12.py           # network with 12 ReLU
+│       │   │   ├── 20.py           # network with 20 ReLU
+│       │   │   ├── 40.py           # network with 40 ReLU
+│       │   │   ├── 45.py           # network with 45 ReLU
+│       │   │   ├── census.txt      # experiments specification file
+│       │   │   ├── census.csv      # original dataset
 │       │   │   └── ...
-│       │   ├── example.py      # simple example network
+│       │   ├── example.py          # simple example network
 │       │   ├── example.txt     
-│       │   ├── toy.py          # another simple example network
+│       │   ├── toy.py              # another simple example network
 │       │   ├── toy.txt
 │       │   └── ...
-│       ├── configurations.sh   # experiment B
-│       ├── cpus.sh             # experiment C
-│       ├── keras2python.py     # keras to python conversion script
-│       ├── models.sh           # experiment A
+│       ├── configurations.sh       # experiment B
+│       ├── cpus.sh                 # experiment C
+│       ├── keras2python.py         # keras to python conversion script
+│       ├── models.sh               # experiment A
 │       └── ...
-├── README.md                   # this file
+├── README.md                       # this file
 └── ...
 ```
 
@@ -189,7 +193,7 @@ with two 16-core Intel ® Xeon ® 5218 CPU @ 2.4GHz, 192GB of RAM, and running C
 ### Experiment 1: Effect of Neural Network Structure on Precision and Scalability
 
 To reproduce the results shown in Table 1 one can use the script `models.sh` 
-within Tool's `src/tool/` folder. This expects the full path to Tool's executable as input:
+within Tool's `src/tool/` folder.
 
     > ./models.sh
 
@@ -205,13 +209,13 @@ from the script before launching it.
 ### Experiment 2: Scalability-vs-Precision Tradeoff
 
 To reproduce the results shown in Table 2 one can use the script `configurations.sh` 
-within Tool's `src/tool/` folder. This expects the full path to Tool's executable as input:
+within Tool's `src/tool/` folder.
 
     > ./configurations.sh
 
 The script will generate the corresponding log files in Tool's `src/tool/tests/census/logs2`.
 These can be manually inspected or a table summary of them can be generated 
-using the script `fetch.py` in Tool's `src/tool/tests/japanese/logs2` folder.
+using the script `fetch.py` in Tool's `src/tool/tests/census/logs2` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
@@ -221,13 +225,18 @@ from the script before launching it.
 ### Experiment 3: Leveraging Multiple CPUs
 
 To reproduce the results shown in Table 3 one can use the script `cpus.sh`
-within Tool's `src/tool/` folder. This expects the full path to Tool's executable as input:
+within Tool's `src/tool/` folder.
 
     > ./cpus.sh
 
 The script will generate the corresponding log files in Tool's `src/tool/tests/census/logs3`.
 These can be manually inspected or a table summary of them can be generated 
 using the script `fetch.py` in Tool's `src/tool/tests/census/logs3` folder.
+
+> Please take note of the expected execution times before launching the script. 
+On a less powerful machine than that used for our evaluation 
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it. Note also that this script requires 64 CPUs, modify the script to fit your available resources before running it.
 
 In the `src/tool/tests/census` folder is also present the original dataset `census.csv` 
 as well as the 5 trained neural networks (`10`, `12`, `20`, `40`, `45`).
