@@ -30,7 +30,12 @@ These new features are described in:
 
 ### Docker Container
 
-The provided Docker container is a virtual image ready to run Tool and replicate the experiments presented in the SAS submission. To modify, create, and inspect files we already installed `nano` and `vim`.
+The provided Docker container is a virtual image ready to run Tool and replicate the experiments presented in the SAS submission. We suggest reviewers to run the container using `bash` as follows
+
+    docker exec -it tool16 bash
+
+Otherwise, without bash the arrow navigators are not available.
+Additionally, we already installed `nano` and `vim` inside the container to inspect and modify files.
 
 The container is organized as follow:
 ```
