@@ -23,7 +23,7 @@ a new auto-tuning mechanism for finding the optimal configuration for Tool’s f
 a tasks scheduling optimization to leverage all the available CPUs for Tool’s backward analysis. 
 These new features are described in:
 	
-	Anonymous - Reduced Products of Abstract Domains for Fairness Certification of Neural Networks
+	Anonynous - Reduced Products of Abstract Domains for Fairness Certification of Neural Networks
 	Submitted to SAS 2021, tool-paper #16.
 
 ## Getting Started 
@@ -32,44 +32,61 @@ These new features are described in:
 
 The provided Docker container is a virtual image ready to run Tool and replicate the experiments presented in the SAS submission. We suggest reviewers to run the container using `bash` as follows
 
-    docker exec -it tool16 bash
+    > docker exec -it tool16 bash
 
 Otherwise, without bash the arrow navigators are not available.
 Additionally, we already installed `nano` and `vim` inside the container to inspect and modify files.
 
 The container is organized as follow:
 ```
-/home
-├── networks              # neural networks as python scripts
-│   ├── 10.py               # network with 10 ReLU nodes
-│   ├── 12.py               # network with 12 ReLU nodes
-│   ├── 20.py               # network with 20 ReLU nodes
-│   ├── 40.py               # network with 40 ReLU nodes
-│   ├── 45.py               # network with 45 ReLU nodes
-│   └── example.py          # toy network
-├── scripts               # experiment scripts               
-│   ├── configurations.sh   # experiment A   
-│   ├── cpus.sh             # experiment B
-│   └── models.sh           # experiment C
-├── specs                 # network specifications
-│   ├── census.txt          # spec file for all the experiments
-│   └── example.txt         # spec for the toy network 
-├── logs                  # scripts print their logs here
-├── fetch.py              # python script to fetch logs
-└── README.md             # this file
+/home                           # tool repository
+├── src                         
+│   └── tool
+│       ├── abstract_domains    # code
+│       ├── core                # code
+│       ├── engine              # code
+│       ├── frontend            # code
+│       ├── semantics           # code 
+│       ├── tests
+│       │   ├── census
+│       │   │   ├── logs1       # logs for experiment A
+│       │   │   ├── logs2       # logs for experiment B
+│       │   │   ├── logs3       # logs for experiment C
+│       │   │   ├── 10.py       # network with 10 ReLU
+│       │   │   ├── 12.py       # network with 12 ReLU
+│       │   │   ├── 20.py       # network with 20 ReLU
+│       │   │   ├── 40.py       # network with 40 ReLU
+│       │   │   ├── 45.py       # network with 45 ReLU
+│       │   │   ├── census.txt  # experiments specification file
+│       │   │   └── ...
+│       │   ├── example.py      # simple example network
+│       │   ├── example.txt     
+│       │   ├── toy.py          # another simple example network
+│       │   ├── toy.txt
+│       │   └── ...
+│       ├── configurations.sh   # experiment B
+│       ├── cpus.sh             # experiment C
+│       ├── keras2python.py     # keras to python conversion script
+│       ├── models.sh           # experiment A
+│       └── ...
+├── README.md                   # this file
+└── ...
 ```
 
 ### Command Line Usage
 
-#### Tool Input
+Tool expects as input a *ReLU-based feed-forward neural network* in Python program format.
+This can be obtained from a Keras model using the script `keras2python.py` (within Tool's `src/tool/` folder) as follows:
 
-Tool expects as input a *ReLU-based feed-forward neural network* in Python program format. 
-We already provided some neural networks in the right input format in `/home/networks`
+    > python3.7 keras2python.py <model>.h5
+   
+The script will produce the corresponding `<model>.py` file. 
+In the file, the inputs are named `x00`, `x01`, `x02`, etc. 
 
 A *specification* of the input features is also necessary for the analysis.
 This has the following format, 
 depending on whether the chosen sensitive feature for the analysis 
-is categorical or continuous (some examples are provided in `/home/specs`):
+is categorical or continuous:
 
   | Categorical | Continuous |
   | ----------- | ---------- |
@@ -92,9 +109,7 @@ For instance, these are two examples of valid specification files:
 
 In the case on the left there is one unspecified non-sensitive continuous feature (`x02`). 
 
-#### Running Tool
-
-To analyze a specific neural network run:
+To analyze a specific neural network  run:
 
     > tool <specification> <neural-network>.py [OPTIONS]
 
@@ -150,14 +165,17 @@ which regions of the input space are certified to be fair,
 which regions are found to be biased, 
 and which regions are instead excluded from the analysis due to budget constraints.
 
-We also provided a toy network, to 
-To test Tool, we also provided a toy network `/home/networks/example.py` and the relative  specification file `/home/specs/example.txt`. Run Tool as follows:
+The analysis of the running example from the OOPSLA paper can be run as follows (from within Tool's `src/tool/` folder):
 
-    > tool specs/example.txt networks/example.py --domain boxes -- lower 0.25 --upper 2
+     > tool tests/toy.txt tests/toy.py --domain boxes --lower 0.25 --upper 2
 
-The `/home/networks/example.py` file represents a small neural network with three inputs representing two input features 
+Another small example can be run as follows (again from within Tool's `src/tool/` folder):
+
+     > tool tests/example.txt tests/example.py --domain boxes --lower 0.015625 --upper 4
+
+The `tests/example.py` file represents a small neural network with three inputs representing two input features 
 (one, represented by `x`, is continuous and one, represented by `y0` and `y1`, is categorical). 
-The specification `/home/specs/example.txt` tells the analysis to consider the categorical feature sensitive to bias.
+The specification `tests/example.txt` tells the analysis to consider the categorical feature sensitive to bias.
 In this case the analysis should be able to certify 23.4375% of the input space, 
 find bias in 71.875% of the input space, and leave 4.6875% of the input space unanalyzed.
 Changing the domain to any of the other options should analyze the entire input space finding bias in 73.44797685362308% of it.
@@ -166,49 +184,51 @@ The input regions in which bias is found are reported on standard output.
 ## Step-by-Step Experiment Reproducibility
 
 The experimental evaluation in the SAS submission was conducted on a machine 
-with two 16-core Intel ® Xeon ® 5218 CPU @ 2.4GHz, 192GB of RAM, and running CentOS 7.7 with linux kernel 3.10.0.
+with two 16-core Intel ® Xeon ® 5218 CPU @ 2.4GHz, 192GB of RAM, and running CentOS 7.7. with linux kernel 3.10.0.
 
 ### Experiment 1: Effect of Neural Network Structure on Precision and Scalability
 
-To reproduce the results shown in Table 1 one can use the script `/home/scripts/models.sh` as follows
+To reproduce the results shown in Table 1 one can use the script `models.sh` 
+within Tool's `src/tool/` folder. This expects the full path to Tool's executable as input:
 
-    > sh /home/scripts/models.sh
+    > ./models.sh
 
-The script will generate the corresponding log files in `/home/models/logs` at the end of the executions (logs will be also available in the stdout channel during the execution).
+The script will generate the corresponding log files in Tool's `src/tool/tests/census/logs1`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.py` in Tool's `src/tool/tests/census/logs1` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
-it might be preferable to run only single executions, running Tool directly from outside the script.
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it.
 
 ### Experiment 2: Scalability-vs-Precision Tradeoff
 
-To reproduce the results shown in Table 2 one can use the script `/home/scripts/configurations.sh` as follows
+To reproduce the results shown in Table 2 one can use the script `configurations.sh` 
+within Tool's `src/tool/` folder. This expects the full path to Tool's executable as input:
 
-    > sh /home/scripts/configurations.sh
+    > ./configurations.sh
 
-The script will generate the corresponding log files in `/home/logs/configurations`.
+The script will generate the corresponding log files in Tool's `src/tool/tests/census/logs2`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.py` in Tool's `src/tool/tests/japanese/logs2` folder.
 
 > Please take note of the expected execution times before launching the script. 
 On a less powerful machine than that used for our evaluation 
-it might be preferable to run only single executions, running Tool directly from outside the script.
+it might be preferable to comment out the most time consuming lines 
+from the script before launching it.
 
 ### Experiment 3: Leveraging Multiple CPUs
 
-To reproduce the results shown in Table 3 and Figure 1 one can use the script `/home/scripts/cpus.sh`.
-Note that, this experiment requires 64 CPUs. Please, modify the script before running, in order to fit your resources.
+To reproduce the results shown in Table 3 one can use the script `cpus.sh`
+within Tool's `src/tool/` folder. This expects the full path to Tool's executable as input:
 
-    > sh /home/scripts/cpus.sh
+    > ./cpus.sh
 
-The script will generate the corresponding log files in `/home/logs/cpus`.
+The script will generate the corresponding log files in Tool's `src/tool/tests/census/logs3`.
+These can be manually inspected or a table summary of them can be generated 
+using the script `fetch.py` in Tool's `src/tool/tests/census/logs3` folder.
 
-> Please take note of the expected execution times before launching the script. 
-On a less powerful machine than that used for our evaluation 
-it might be preferable to run only single executions, running Tool directly from outside the script.
+In the `src/tool/tests/census` folder is also present the original dataset `census.csv` 
+as well as the 5 trained neural networks (`10`, `12`, `20`, `40`, `45`).
  
-## Utilities
-
-We provided a python script to fetch log files automatically, to retrieve only major information about the execution.
- 
-    > python3 fetch.py <log-path>
-
-The script will return a json composed by: the autotuning parameters (lower and upper bound where autotuning stabilizes), partitions information (the number of feasible and completed partitions), total space analyzed and biased space found, and the total running time. 
