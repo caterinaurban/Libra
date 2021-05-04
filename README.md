@@ -30,14 +30,25 @@ These new features are described in:
 
 ### Docker Container
 
-The provided Docker container is a virtual image ready to run Tool and replicate the experiments presented in the SAS submission. We suggest reviewers to run the container using `bash` as follows
+Here we show the instructions to run our container in Unix-based systems.
+In order to try Tool, `docker` is required. 
 
-    > docker exec -it tool16 bash
+First load the compressed docker image `tool-16.tar.gz` as follows (from within `tool-16.tar.gz` location):
+    
+    > docker load < tool-16.tar.gz
 
-Otherwise, without bash the arrow navigators are not available.
+This command create the docker image `tool-16`. See all the docker images available in your host using 
+
+    > docker image ls
+
+Then, run the container in an interactive session using
+
+    > docker run -it tool-16
+    
+Note that, as soon as the process is finished, the container stops and everything inside of it is removed. 
 Additionally, we already installed `nano` and `vim` inside the container to inspect and modify files.
 
-The container is organized as follow:
+Inside, the docker container is organized as follow:
 ```
 /home                               # tool repository
 ├── src                         
@@ -76,6 +87,8 @@ The container is organized as follow:
 ├── README.md                       # this file
 └── ...
 ```
+
+The *code* directories (cf. `abstract_domains`, `core`, `engine`, `frontend`, and `semantic`) contain the python code modules. The architecture of Tool is explained in Section 2 in the SAS submission.
 
 ### Command Line Usage
 
