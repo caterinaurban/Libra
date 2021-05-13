@@ -809,47 +809,47 @@ class BackwardInterpreter(Interpreter):
             skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
             print(skey, '->', len(pack))
         #
-        # expanded = dict()
-        # idx = 0
-        # for key, pack in self.patterns.items():
-        #     for value in pack:
-        #         expanded[idx] = (key, {value})
-        #         idx += 1
-        # if len(expanded) > len(self.patterns):
-        #     print('Expanded to: {} patterns'.format(len(expanded)))
+        expanded = dict()
+        idx = 0
+        for key, pack in self.patterns.items():
+            for value in pack:
+                expanded[idx] = (key, {value})
+                idx += 1
+        if len(expanded) > len(self.patterns):
+            print('Expanded to: {} patterns'.format(len(expanded)))
         #
-        compressed = dict()
-        for key1, pack1 in sorted(self.patterns.items(), key=lambda v: len(v[1]), reverse=False):
-            unmerged = True
-            for key2 in compressed:
-                mergeable1, mergeable2 = True, True
-                for (s11, s12), (s21, s22) in zip(key1, key2):
-                    if (not s21.issubset(s11)) or (not s22.issubset(s12)):
-                        mergeable1 = False
-                    if (not s11.issubset(s21)) or (not s12.issubset(s22)):
-                        mergeable2 = False
-                if mergeable1:
-                    unmerged = False
-                    compressed[key2] = compressed[key2].union(pack1)
-                    break
-                if mergeable2:
-                    unmerged = False
-                    compressed[key1] = compressed[key2].union(pack1)
-                    del compressed[key2]
-                    break
-            if unmerged:
-                compressed[key1] = pack1
-        def max_disj(key):
-            a1, i1 = key[0]
-            a2, i2 = key[1]
-            return max(len(self.activations) - len(a1) - len(i1), len(self.activations) - len(a2) - len(i2))
-        prioritized = sorted(compressed.items(), key=lambda v: max_disj(v[0]) + len(v[1]), reverse=True)
-        if len(compressed) < len(self.patterns):
-            print('Compressed to: {} patterns'.format(len(compressed)))
-            for key, pack in prioritized:
-                sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
-                skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
-                print(skey, '->', len(pack))
+        # compressed = dict()
+        # for key1, pack1 in sorted(self.patterns.items(), key=lambda v: len(v[1]), reverse=False):
+        #     unmerged = True
+        #     for key2 in compressed:
+        #         mergeable1, mergeable2 = True, True
+        #         for (s11, s12), (s21, s22) in zip(key1, key2):
+        #             if (not s21.issubset(s11)) or (not s22.issubset(s12)):
+        #                 mergeable1 = False
+        #             if (not s11.issubset(s21)) or (not s12.issubset(s22)):
+        #                 mergeable2 = False
+        #         if mergeable1:
+        #             unmerged = False
+        #             compressed[key2] = compressed[key2].union(pack1)
+        #             break
+        #         if mergeable2:
+        #             unmerged = False
+        #             compressed[key1] = compressed[key2].union(pack1)
+        #             del compressed[key2]
+        #             break
+        #     if unmerged:
+        #         compressed[key1] = pack1
+        # def max_disj(key):
+        #     a1, i1 = key[0]
+        #     a2, i2 = key[1]
+        #     return max(len(self.activations) - len(a1) - len(i1), len(self.activations) - len(a2) - len(i2))
+        # prioritized = sorted(compressed.items(), key=lambda v: max_disj(v[0]) + len(v[1]), reverse=True)
+        # if len(compressed) < len(self.patterns):
+        #     print('Compressed to: {} patterns'.format(len(compressed)))
+        #     for key, pack in prioritized:
+        #         sset = lambda s: '{{{}}}'.format(', '.join('{}'.format(e) for e in s))
+        #         skey = ' | '.join('{}, {}'.format(sset(pair[0]), sset(pair[1])) for pair in key)
+        #         print(skey, '->', len(pack))
         #
         result = '\nPre-Analysis Result: {}% fair ({}% feasible)'.format(self.fair.value, self.feasible.value)
         print(Fore.BLUE + result)
@@ -864,9 +864,9 @@ class BackwardInterpreter(Interpreter):
             print('||==========||\n', Style.RESET_ALL)
             # prepare the queue
             queue2 = Queue()
-            # for idx, idxkeypack in enumerate(expanded.items()):
-            #     (_, (key, pack)) = idxkeypack
-            for idx, (key, pack) in enumerate(prioritized):
+            for idx, idxkeypack in enumerate(expanded.items()):
+                (_, (key, pack)) = idxkeypack
+            # for idx, (key, pack) in enumerate(prioritized):
                 queue2.put((idx+1, (key, pack)))
             queue2.put((None, (None, None)))
             # run the analysis
@@ -875,8 +875,8 @@ class BackwardInterpreter(Interpreter):
             for i in range(cpu):
                 color = colors[i % len(colors)]
                 man = PyPolkaMPQstrictManager()
-                # process = Process(target=self.worker2, args=(i, color, queue2, man, len(expanded)))
-                process = Process(target=self.worker2, args=(i, color, queue2, man, len(compressed)))
+                process = Process(target=self.worker2, args=(i, color, queue2, man, len(expanded)))
+                # process = Process(target=self.worker2, args=(i, color, queue2, man, len(compressed)))
                 processes.append(process)
                 process.start()
             for process in processes:
