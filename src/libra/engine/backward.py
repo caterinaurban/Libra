@@ -6,6 +6,7 @@ Backward Analysis Engine
 """
 
 import itertools
+import json
 import operator
 import time
 from copy import deepcopy
@@ -127,6 +128,8 @@ class BackwardInterpreter(Interpreter):
 
         self.cpu = cpu_count() if cpu is None else cpu
 
+        self.json = Manager().dict()
+
     @property
     def initial(self):
         """Initial analysis state
@@ -165,6 +168,13 @@ class BackwardInterpreter(Interpreter):
         if len(outcomes) <= 1 and None not in outcomes:
             classes = ', '.join(str(outcome) for outcome in outcomes)
             print(Fore.GREEN + '✔︎ No Bias ({}) in {}'.format(classes, chunk), Style.RESET_ALL)
+            lock.acquire()
+            curr = self.json.get('fair', list())
+            curr.append({
+                'partition': self.chunk2json(chunk)
+            })
+            self.json['fair'] = curr
+            lock.release()
             return True, list(), len(self.activations)
         return feasible, patterns, _disjunctions
 
@@ -255,10 +265,10 @@ class BackwardInterpreter(Interpreter):
                 queue1.put((None, None, None, None, None, None, None, None, None, None, None))
                 break
             r_assumptions = '1-Hot: {}'.format(
-                ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
+                ', '.join('{}'.format('∨'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
             ) if assumptions else ''
             r_ranges = 'Ranges: {}'.format(
-                ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
+                '; '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
             )
             r_partition = '{} | {}'.format(r_assumptions, r_ranges) if r_assumptions else '{}'.format(r_ranges)
             print(color + r_partition, Style.RESET_ALL)
@@ -433,9 +443,39 @@ class BackwardInterpreter(Interpreter):
                             if self.explored.value >= 100:
                                 queue1.put((None, None, None, None, None, None, None, None, None, None, None))
                         found = '‼ Unchecked Bias in {}'.format(r_partition)
+                        lock.acquire()
+                        curr = self.json.get('unknown', list())
+                        curr.append({
+                            'partition': self.chunk2json(r_partition)
+                        })
+                        self.json['unknown'] = curr
+                        lock.release()
                         print(Fore.RED + found, Style.RESET_ALL)
                         progress = 'Progress for #{}: {}% of {}% ({}% fair)'.format(id, self.feasible.value, self.explored.value, self.fair.value)
                         print(Fore.YELLOW + progress, Style.RESET_ALL)
+
+    def chunk2json(self, chunk):
+        chunks = chunk.split('|')
+        if len(chunks) > 1:
+            onehot = list(map(lambda x: x.split('∨'), chunks[0].strip().replace('1-Hot: ', '').split(', ')))
+            chunksranges = chunks[1].strip().replace('Ranges: ', '').split('; ')
+        else:
+            onehot = list()
+            chunksranges = chunks[0].strip().replace('Ranges: ', '').split('; ')
+        ranges = dict()
+        for chunkrange in chunksranges:
+            chunked = chunkrange.split(' ∈ ')
+            bounds = chunked[1].strip().replace('[', '').replace(']', '').split(', ')
+            ranges[chunked[0]] = {
+                'lower bound': float(bounds[0]),
+                'upper bound': float(bounds[1])
+            }
+        partition = {
+            'active 1-hot encoded inputs': onehot,
+            'ranges for continuous inputs': ranges,
+            'constraints': list()
+        }
+        return partition
 
     def bias_check(self, chunk, result, ranges, percent):
         """Check for algorithmic bias
@@ -483,6 +523,22 @@ class BackwardInterpreter(Interpreter):
                                     biases.add(representation)
                                     pair = '{}->{} vs {}->{}'.format(sensitive1, outcome1, sensitive2, outcome2)
                                     found = '✘ Bias Found ({})! in {}:\n{}'.format(pair, chunk, representation)
+                                    counterexample = {
+                                        'sensitive1': str(sensitive1),
+                                        'outcome1': str(outcome1),
+                                        'sensitive2': str(sensitive2),
+                                        'outcome2': str(outcome2)
+                                    }
+                                    partition = self.chunk2json(chunk)
+                                    partition['constraints'] = representation.split(' ∧ ')
+                                    lock.acquire()
+                                    curr = self.json.get('biased', list())
+                                    curr.append({
+                                        'counterexample': counterexample,
+                                        'partition': partition,
+                                    })
+                                    self.json['biased'] = curr
+                                    lock.release()
                                     print(Fore.RED + found, Style.RESET_ALL)
         if nobias:
             outcomes = set()
@@ -502,6 +558,13 @@ class BackwardInterpreter(Interpreter):
                             outcomes.add(outcome)
             classes = ', '.join(str(outcome) for outcome in outcomes)
             print(Fore.GREEN + '✔︎ No Bias ({}) in {}'.format(classes, chunk), Style.RESET_ALL)
+            lock.acquire()
+            curr = self.json.get('fair', list())
+            curr.append({
+                'partition': self.chunk2json(chunk)
+            })
+            self.json['fair'] = curr
+            lock.release()
         else:
             total_size = 1
             for _, (lower, upper) in ranges:
@@ -613,10 +676,10 @@ class BackwardInterpreter(Interpreter):
             # check for bias
             for assumptions, unpacked, ranges, percent in pack:
                 r_assumptions = '1-Hot: {}'.format(
-                    ', '.join('{}'.format('|'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
+                    ', '.join('{}'.format('∨'.join('{}'.format(var) for var in case)) for (case, _, _) in assumptions)
                 ) if assumptions else ''
                 r_ranges = 'Ranges: {}'.format(
-                    ', '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
+                    '; '.join('{} ∈ [{}, {}]'.format(feature, lower, upper) for feature, (lower, upper) in ranges)
                 )
                 r_partition = '{} | {}'.format(r_assumptions, r_ranges) if r_assumptions else '{}'.format(r_ranges)
                 if unpacked:
@@ -868,7 +931,7 @@ class BackwardInterpreter(Interpreter):
         else:
             log = '{} ({}% certified in the pre-analysis) {}s'.format(self.feasible.value, self.fair.value, end1 - start1)
         print('\nDone!')
-        return log
+        return self.json.copy()
 
 
 class BiasBackwardSemantics(DefaultBackwardSemantics):
