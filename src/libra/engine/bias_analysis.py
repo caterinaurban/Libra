@@ -6,6 +6,8 @@ Bias Analysis
 """
 import ast
 import ctypes
+import json
+import os
 import time
 from enum import Enum
 from queue import Queue
@@ -203,11 +205,14 @@ class BiasAnalysis(Runner):
                 r_vars.append(PyVar(variable.name))
             environment = PyEnvironment([], r_vars)
             self.activations, self.splits, self.relus = self.lyra2apron(environment)
-        self.run()
+        result = self.run()
+        with open(os.path.basename(self.path).replace('.py','.json'), 'w', encoding='utf8') as outfile:
+            json.dump(result, outfile, indent=4, separators=(',', ':'), ensure_ascii=False)
 
     def run(self):
         start = time.time()
-        log = self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations, analysis=self.analysis)
+        result = self.interpreter().analyze(self.state(), inputs=self.inputs, outputs=self.outputs, activations=self.activations, analysis=self.analysis)
         end = time.time()
         print('Total Time: {}s'.format(end - start), Style.RESET_ALL)
         # print('{} {}s'.format(log, end - start))
+        return result
